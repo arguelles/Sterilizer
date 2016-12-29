@@ -1,2 +1,2 @@
-# SterileChakuy
+# SterileHunt
 Sterile hunt.
