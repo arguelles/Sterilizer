@@ -7,6 +7,7 @@
 #include <queue>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/optional.hpp>
 #include <boost/math/constants/constants.hpp>
 using boost::math::constants::pi;
 #include <boost/math/distributions/normal.hpp>
