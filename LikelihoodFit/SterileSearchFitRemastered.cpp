@@ -8,6 +8,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <boost/optional.hpp>
 using boost::math::constants::pi;
 #include <boost/math/distributions/normal.hpp>
 #include <boost/math/distributions/chi_squared.hpp>
@@ -1758,6 +1759,7 @@ int main(int argc, char* argv[]){
           bin(sample,sampleHist,binner);
         }
 
+        /*
         if(save_dc_sample){
           //std::cout << dc_seed << std::endl;
           //if(data_challenge_histogram_filepath == "")
@@ -1790,6 +1792,7 @@ int main(int argc, char* argv[]){
 
           dump_file.close();
         }
+        */
       }
 
 
