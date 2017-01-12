@@ -1,6 +1,12 @@
 #ifndef _H_STERILE_SEARCH_
 #define _H_STERILE_SEARCH_
 
+struct fitResult {
+  std::vector<double> params;
+  double likelihood;
+  unsigned int nEval, nGrad;
+  bool succeeded;
+};
 
 struct SterileNeutrinoParameters {
   double th14 = 0;
@@ -13,50 +19,103 @@ struct SterileNeutrinoParameters {
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24)
 };
 
+using namespace phys_tools::histograms;
+using namespace likelihood;
+using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
+
+auto binner = [](HistType& h, const Event& e){
+  h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
+};
+
 class SterileHunter {
   private:
     /// Parameters used in the fit
-    double maxFitEnergy=2.e4;
-    double minCosth = -1.;
-    double maxCosth = 0.2;
-    double minAstroEnergy=0.0;
-    double maxAstroEnergy=1e10;
-    double minAzimuth = 0.;
-    double maxAzimuth = 2.*pi<double>();
+    double maxFitEnergy_ = 2.e4;
+    double minCosth_ = -1.;
+    double maxCosth_ = 0.2;
+    double minAstroEnergy_ =0.0;
+    double maxAstroEnergy_ =1e10;
+    double minAzimuth_ = 0.;
+    double maxAzimuth_ = 2.*pi<double>();
 
     // To store best fit point, fit seed, and data challenge
-    std::vector<double> existingBest;
-    std::vector<double> fitSeed{1.02,0,0,0.05,.0985,1.1,1,0};
-    std::vector<double> dataChallenge_nuisance_parameters{1,0,0,0,.1,1,1,0};
+    std::vector<double> existingBest_;
+    std::vector<double> fitSeed_{1.02,0,0,0.05,.0985,1.1,1,0};
+    std::vector<double> dataChallenge_nuisance_parameters_{1,0,0,0,.1,1,1,0};
 
-    unsigned int number_of_data_challenges = 1;
+    unsigned int number_of_data_challenges_ = 1;
     // options
-    bool use_factorization_technique=false;
-    bool use_datachallenge_histogram=false;
-    bool writeCompact=false;
-    bool readCompact=false;
-    bool doDataChallenge=false;
-    bool exitAfterLoading=false;
-    bool UseBurnsample=true;
-    bool use_gsl_minimizer = false;
-    bool do_asimov_sensitivity = false;
+    bool use_factorization_technique_=false;
+    bool use_datachallenge_histogram_=false;
+    bool writeCompact_=false;
+    bool readCompact_=false;
+    bool doDataChallenge_=false;
+    bool exitAfterLoading_=false;
+    bool UseBurnsample_=true;
+    bool use_gsl_minimizer_ = false;
+    bool do_asimov_sensitivity_ = false;
 
-    int yearsIC86=1;
+    int yearsIC86_=1;
     // sterile neutrino parameters
-    double th24_null = 0;
-    double dm41sq_null = 0;
-    bool dump_data = false;
-    bool dump_mc_data = false;
-    bool dump_real_data = false;
-    bool dump_fit = false;
-    bool save_flux = false;
-    bool save_dc_sample = false;
+    double th24_null_ = 0;
+    double dm41sq_null_ = 0;
+    bool dump_data_ = false;
+    bool dump_mc_data_ = false;
+    bool dump_real_data_ = false;
+    bool dump_fit_ = false;
+    bool save_flux_ = false;
+    bool save_dc_sample_ = false;
 
+    std::vector<double> livetime;
+
+    // to store events
+    std::deque<Event> mainSimulation;
+    std::deque<Event> alternativeSimulation;
+    std::deque<Event> sample;
+
+    // random number generator
+    unsigned int rng_seed;
+    std::mt19937 rng;
+
+    // histograms
+    HistType data_hist;
+    HistType sim_hist;
+
+    // weighter object
+    DiffuseFitWeighterMaker DFWM;
+    LW::LeptonWeighter PionFluxWeighter;
+    LW::LeptonWeighter KaonFluxWeighter;
+    LW::LeptonWeighter PromptFluxWeighter;
   public:
     /// \brief Constructor
     SterileHunter(){
-
-    };
+      if(readCompact_){
+        LoadCompactData(data_filepath);
+        LoadCompactMC(mc_filepath);
+      } else {
+        LoadData(data_filepath);
+        LoadMC(mc_filepath);
+      }
+      LoadFluxes(flux_path,snp)
+    }
+  protected:
+    void LoadData(std::string filepath);
+    void LoadCompactData(std::string filepath) {}
+    void LoadMC(std::string filepath) {}
+    void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
+    void LoadCompactMC(std::string filepath) {}
+    void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
+    void MakeDataHistogram() {}
+    void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
+  public:
+    marray<double,3> GetDataDistribution();
+    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
+    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance);
+    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
+    fitResult llh(SterileNeutrinoParameters snp) {}
+    // set functions
+    void SetRandomNumberGeneratorSeed(unsigned int seed) { }
+    void GetRandomNumberGeneratorSeed(unsigned int seed) { return(rng_seed);}
 };
 
 #endif
