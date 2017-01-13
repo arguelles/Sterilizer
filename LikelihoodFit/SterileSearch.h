@@ -40,7 +40,6 @@ struct SteeringParams {
   std::string modelName = "HondaGaisser";
   std::string deltaModelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
-  bool reuseBestFit=true;
   bool ReadCompact=true;
   std::string xs_model_name="";
 }
@@ -102,7 +101,7 @@ class Sterilizer {
     LW::mcgenWeighter mcw_;
     bool cross_section_weighter_constructed_=false;
     bool flux_section_weighter_constructed_=false;
-    bool lepton_weighter_constructed=true;
+    bool lepton_weighter_constructed_=true;
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;

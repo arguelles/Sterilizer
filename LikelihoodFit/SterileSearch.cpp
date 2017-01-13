@@ -115,7 +115,7 @@ void Sterilizer::ConstructFluxWeighter(){
       fluxPion = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5");
   }
   fluxPrompt = std::make_shared<LW::SQUIDSFlux>(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0.000000_0.000000.hdf5");
-  flux_weighter_constructed=true;
+  flux_weighter_constructed_=true;
 }
 
 void Sterilizer::ConstructMonteCarloGenerationWeighter(){
@@ -123,21 +123,21 @@ void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   simSetsToLoad.push_back(steeringParams_.simToLoad);
   for( std::string sim_name : simSetsToLoad )
     mcw_.addGenerationSpectrum(simInfo.find(sim_name)->second.details);
-  mc_generation_weighter_constructed=true;
+  mc_generation_weighter_constructed_=true;
 }
 
 void Sterilizer::ConstructLeptonWeighter(){
-  if(not mc_generation_weighter_constructed)
+  if(not mc_generation_weighter_constructed_)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
-  if(not flux_weighter_constructed)
+  if(not flux_weighter_constructed_)
     throw std::runtime_error("Flux weighter has to be constructed first.");
-  if(not cross_section_weighter_constructed)
+  if(not cross_section_weighter_constructed_)
     throw std::runtime_error("Cross section weighter has to be constructed first.");
 
   PionFluxWeighter_ = LW::LeptonWeighter(fluxPion_,xsw_,mcw_);
   KaonFluxWeighter_ = LW::LeptonWeighter(fluxKaon_,xsw_,mcw_);
   PromptFluxWeighter_ = LW::LeptonWeighter(fluxPrompt_,xsw_,mcw_);
-  lepton_weighter_constructed=true;
+  lepton_weighter_constructed_=true;
 }
 
 /*************************************************************************************************************
@@ -145,7 +145,7 @@ void Sterilizer::ConstructLeptonWeighter(){
  * **********************************************************************************************************/
 
 void Sterilizer::WeightMC(){
-  if(not lepton_weighter_constructed)
+  if(not lepton_weighter_constructed_)
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
 
 }
@@ -169,6 +169,8 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
     }
     return array;
 }
+
+
 
 marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
     MakeSimulationHistogram(snp,nuisance);
