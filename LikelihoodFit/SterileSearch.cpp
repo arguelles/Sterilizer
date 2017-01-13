@@ -302,32 +302,23 @@ double Sterilizer::llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) con
   return llhFull(snp,ConvertNuisance(nuisance));
 }
 
+
+
+
 /*************************************************************************************************************
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-void Sterilizer::ConstructLikelihoodProblem(){
-  if(not data_histogram_constructed_))
+void Sterilizer::ConstructLikelihoodProblem(Priors priors){
+  if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
-  if(not simulation_histogram_constructed_))
+  if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
-
-  double alpha = delta_alpha[steeringParams_.modelName];
-
-	UniformPrior positivePrior(0.0,std::numeric_limits<double>::infinity());
-	GaussianPrior normalizationPrior(1.,0.4);
-	UniformPrior noPrior;
-	GaussianPrior crSlopePrior(0.0,0.05);
-	UniformPrior simple_domEffPrior(-.1,.3);
-	GaussianPrior kaonPrior(1.0,0.1);
-	GaussianPrior ZCPrior(0.0,0.038*alpha);
-	GaussianPrior nanPrior(1.0,0.1);
-
-	auto priors=makePriorSet(normalizationPrior,positivePrior,positivePrior,
-							 crSlopePrior,simple_domEffPrior,kaonPrior,nanPrior,ZCPrior);
+  
+  llhpriors=ConvertPriors(priors);
 
   prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
-      dataHist_, {simHist_}, priors_, {1.0}, likelihood::simpleDataWeighter(), DFWM,
+      dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
       likelihood::poissonLikelihood(),fitSeed_ );
   prob_.setEvaluationThreadCount(SteeringParams_.evalThreads);
 
