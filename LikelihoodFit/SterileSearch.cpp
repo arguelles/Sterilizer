@@ -458,7 +458,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> ConvertNuisance(Nuisance ns)
 {
-  return std::vector<double> Nuisance{
+  return std::vector<double> nuis{
     ns.normalization,
       ns.astroFlux,
       ns.promptFlux,
