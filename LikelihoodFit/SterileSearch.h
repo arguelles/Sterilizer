@@ -66,7 +66,7 @@ class SterileHunter {
     bool save_flux_ = false;
     bool save_dc_sample_ = false;
 
-    std::vector<double> livetime;
+    std::vector<double> livetime_;
 
     // to store events
     std::deque<Event> mainSimulation;
@@ -100,7 +100,7 @@ class SterileHunter {
     }
   protected:
     void LoadData(std::string filepath);
-    void LoadCompactData(std::string filepath) {}
+    void LoadCompactData(std::string filepath);
     void LoadMC(std::string filepath) {}
     void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
     void LoadCompactMC(std::string filepath) {}
@@ -115,7 +115,9 @@ class SterileHunter {
     fitResult llh(SterileNeutrinoParameters snp) {}
     // set functions
     void SetRandomNumberGeneratorSeed(unsigned int seed) { }
-    void GetRandomNumberGeneratorSeed(unsigned int seed) { return(rng_seed);}
+    unsigned int GetRandomNumberGeneratorSeed(unsigned int seed) { return(rng_seed); }
+    void SetUseBurnSample(bool ubs) { UseBurnsample = ubs; }
+    bool GetUseBurnSample() { return(UseBurnsample); }
 };
 
 #endif
