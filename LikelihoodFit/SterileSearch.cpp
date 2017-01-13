@@ -27,7 +27,7 @@ void Sterilizer::LoadData(){
 void Sterilizer::LoadMC(){
     bool loadTargeted=true;
 
-    std::map<int,double> livetime;
+    std::map<unsigned int,double> livetime;
     if(!steeringParams_.useBurnSample)
       livetime=steeringParams_.fullLivetime;
     else
@@ -84,12 +84,12 @@ void Sterilizer::ClearSimulation(){
  * **********************************************************************************************************/
 
 void Sterilizer::LoadDOMEfficiencySplines(){
-  years=steeringParams_.years;
+  std::vector<unsigned int> years=steeringParams_.years;
   for(size_t year_index=0; year_index<steeringParams_.years.size(); year_index++){
     domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
-  dom_efficiency_splines_loaded_=true;
+  dom_efficiency_splines_constructed_=true;
 }
 
 
@@ -99,7 +99,7 @@ void Sterilizer::LoadDOMEfficiencySplines(){
 
 void Sterilizer::ConstructCrossSectionWeighter(){
   xsw_ = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(dataPaths_.xs_spline_path),steeringParams_.xs_model_name);
-  cross_section_weighter_constructed_=true;
+  xs_weighter_constructed_=true;
 }
 
 void Sterilizer::ConstructFluxWeighter(){
@@ -143,7 +143,7 @@ void Sterilizer::ConstructLeptonWeighter(){
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
   if(not flux_weighter_constructed_)
     throw std::runtime_error("Flux weighter has to be constructed first.");
-  if(not cross_section_weighter_constructed_)
+  if(not xs_weighter_constructed_)
     throw std::runtime_error("Cross section weighter has to be constructed first.");
 
   PionFluxWeighter_ = LW::LeptonWeighter(fluxPion_,xsw_,mcw_);
@@ -255,9 +255,8 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
   rng_.seed(seed);
-  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation,expected,rng);
-
-  for(const Event& e : mainSimulation){
+  double expected=0;
+  for(const Event& e : mainSimulation_){
     auto w=weighter(e);
     if(std::isnan(w) || std::isinf(w) || w<0){
       std::cout << "Bad weight!" << std::endl;
@@ -344,7 +343,7 @@ void Sterilizer::SetSterileNuParams(SterileNuParams snp){
     throw std::runtime_error("No simulation has been loaded. Cannot weight to sterile hypothesis without simulation.");
   if(not mc_generation_weighter_constructed_)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
-  if(not cross_section_weighter_constructed_)
+  if(not xs_weighter_constructed_)
     throw std::runtime_error("Cross section weighter has to be constructed first.");
 
   sterileNuParams_=snp;

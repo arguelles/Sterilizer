@@ -144,11 +144,11 @@ class Sterilizer {
     OversizeWeighter osw_;
 
     // Status flags
-    bool cross_section_weighter_constructed_ = (false);
+    bool xs_weighter_constructed_ = (false);
     bool flux_weighter_constructed_ = (false);
     bool lepton_weighter_constructed_ = (false);
     bool oversize_weighter_constructed_ = (false);
-    bool dom_efficiency_splines_loaded_ = (false);
+    bool dom_efficiency_splines_constructed_ = (false);
     bool data_histogram_constructed_ = (false);
     bool simulation_histogram_constructed_ = (false);
     bool simulation_loaded_ = (false);
@@ -207,11 +207,11 @@ class Sterilizer {
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
     bool CheckSimulationLoaded() const                 {return simulation_loaded_;};
-    bool CheckDOMEfficiencySplinesLoaded() const       {return dom_efficiency_splines_constructed_;};
+    bool CheckDOMEfficiencySplinesConstructed() const  {return dom_efficiency_splines_constructed_;};
     bool CheckCrossSectionWeighterConstructed() const  {return xs_weighter_constructed_;};
     bool CheckFluxWeighterConstructed() const          {return flux_weighter_constructed_;};
-    bool CheckLeptonWeighterConstructed() const        {return lepton_weighter_constructed;};
-    bool CheckDataHistogramConstructed() const         {return data_histogram_constructed;};
+    bool CheckLeptonWeighterConstructed() const        {return lepton_weighter_constructed_;};
+    bool CheckDataHistogramConstructed() const         {return data_histogram_constructed_;};
     bool CheckSimulationHistogramConstructed() const   {return simulation_histogram_constructed_;};
     bool CheckLikelihoodProblemConstruction() const    {return likelihood_problem_constructed_;};
 
