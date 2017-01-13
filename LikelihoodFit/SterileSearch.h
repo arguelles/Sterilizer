@@ -95,13 +95,14 @@ struct SteeringParams {
 };
 
 struct SterileNuParams {
+  unsigned int modelId =0;
   double th14 = 0;
   double th24 = 0;
   double th34 = 0;
   double del14 = 0;
   double del24 = 0;
   double dm41sq = 0;
-  SterileNuParams(double th14,double th24, double th34, double del14, double del24, double dm41sq):
+  SterileNuParams(unsigned int modelId, double th14,double th24, double th34, double del14, double del24, double dm41sq):
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24){}
 };
 
@@ -222,12 +223,11 @@ class Sterilizer {
     marray<double,3> GetRealization(Nuisance nuisance) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
-    fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
-    void Sterilizer::SetSterileNuParams(SterileNuParams snp);
+    fitResult MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
+    void SetSterileNuParams(SterileNuParams snp);
   private:
     // Make the fit
     template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
-    void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
   public:
     // set functions
 
