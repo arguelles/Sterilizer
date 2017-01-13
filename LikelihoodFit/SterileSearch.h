@@ -1,6 +1,10 @@
 #ifndef _H_STERILE_SEARCH_
 #define _H_STERILE_SEARCH_
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "oversizeWeight.h"
+
 struct fitResult {
   std::vector<double> params;
   double likelihood;
@@ -21,7 +25,7 @@ struct Nuisance {
   float nuNubarRatio;
   float zenithCorrection;
 };
-  
+
 struct Priors {
   float normCenter=1.;
   float normWidth=0.4;
@@ -59,6 +63,7 @@ struct SteeringParams {
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
   bool quiet=false;
+  size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;

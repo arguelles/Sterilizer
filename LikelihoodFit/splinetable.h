@@ -3,12 +3,18 @@
 
 #include <unistd.h>
 #include <numeric>
+#include <iostream>
+#include <cmath>
+#include <cassert>
 
 #include <photospline/splinetable.h>
 #include <photospline/bspline.h>
 #include <photospline/glam.h>
 
-#include "plottingExtras.h"
+#include <boost/lexical_cast.hpp>
+#include <PhysTools/plottable_histograms.h>
+
+//#include "plottingExtras.h"
 
 //wrapper for sucky C code
 class Splinetable{

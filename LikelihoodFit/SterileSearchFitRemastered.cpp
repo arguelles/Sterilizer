@@ -722,7 +722,7 @@ void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
  
 
 // Check that the directories where files are mean to be exist               
- bool Sterilizer::CheckDataPaths(DataPaths dp)
+ bool Sterilizer::CheckDataPaths(DataPaths dp) const
  {
    CheckDataPath(dp.compact_file_path);
    CheckDataPath(dp.squids_files_path);
@@ -736,7 +736,7 @@ void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
  }
 
  // Check a directory exists and throw a relevant error otherwise.            
- bool Sterilizer::CheckDataPath(std::string p)
+ bool Sterilizer::CheckDataPath(std::string p) const
  {
    struct stat info;
    if(p!="")
