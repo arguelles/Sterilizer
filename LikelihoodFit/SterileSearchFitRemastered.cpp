@@ -41,6 +41,30 @@ using boost::math::constants::pi;
 size_t evalThreads=1;
 bool quiet=false;
 
+// Constructor
+Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp){
+
+  // Set the parameter sets of this object                               
+  steeringParams_=steeringParams;
+  dataPaths_=dataPaths;
+  sterileNuParams=snp;
+
+  // Set up the RNG                                                      
+  SetRandomNumberGeneratorSeed(steeringParams.rngSeed);
+
+  // Load the data
+  if(readCompact_){
+    LoadCompactData(dataPaths_.compact_file_path);
+    LoadCompactMC(dataPaths_.compact_file_path);
+  } else {
+    LoadData(dataPaths_.data_path);
+    LoadMC(dataPaths_.mc_path);
+  }
+  LoadFluxes(dataPaths_.flux_splines_path,snp);
+}
+
+
+
 bool sameGeneration(particleType p1, particleType p2){
 	switch(p1){
 		case particleType::NuE:
@@ -195,33 +219,12 @@ void initializeSimulationWeights(ContainerType& simulation, const WeighterType& 
 
 
 int main(int argc, char* argv[]){
-  std::string compact_data_path =        "../compact_data/";
-  std::string plot_path =                "../plots/";
-  std::string output_path =              "/home/carguelles/work/TheSterileSearch/output/the_new_output/";
-  std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
-  std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
-  std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
-  std::string data_path =                "/data/ana/NuFSGenMC/Data/";
-  std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
-  std::string oversize_function_main =   "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
-  std::string oversize_function_dc =     "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
-  std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
-  std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
 
-  std::string model_name = "HondaGaisser";
-  
-  std::string delta_model_name = "Honda+Gaisser";
-  uint32_t rngSeed=0;
-  double minFitEnergy=4e2;
-  double maxFitEnergy=2.e4;
-  double minCosth = -1.;
-  double maxCosth = 0.2;
-  double minAstroEnergy=0.0;
-  double maxAstroEnergy=1e10;
-  std::string outputFile;
-  bool drawPlots=true;
+  std::string model_name = "HondaGaisser";  
+  std::string delta_model_name = "HondaGaisser";
+
+
   std::pair<unsigned int, double> fixedParams;
-  std::vector<double> existingBest;
   std::vector<double> fitSeed{1.02,0,0,0.05,.0985,1.1,1,0};
   std::vector<double> dataChallenge_nuisance_parameters{1,0,0,0,.1,1,1,0};
   std::vector<double> data{1,0,0,0,.1,1,1,0};
@@ -231,51 +234,17 @@ int main(int argc, char* argv[]){
   unsigned int number_of_data_challenges = 1;
   std::vector<double> dataChallenge_seeds {1234};
   std::vector<double> dataChallenge_seeds_(dataChallenge_seeds);
-  bool use_factorization_technique=false;
   bool use_datachallenge_histogram=false;
-	bool writeCompact=false;
-	bool readCompact=false;
-	bool doDataChallenge=false;
-	bool exitAfterLoading=false;
-	int yearsIC86=1;
-  bool UseBurnsample=true;
-  double th14 = 0;
-  double th24 = 0;
-  double th34 = 0;
-  double del14 = 0;
-  double del24 = 0;
-  double dm41sq = 0;
-  double th24_null = 0;
-  double dm41sq_null = 0;
-  bool use_gsl_minimizer = false;
-  bool dump_data = false;
-  bool dump_mc_data = false;
-  bool dump_real_data = false;
-  bool dump_fit = false;
-  bool save_flux = false;
-  bool save_dc_sample = false;
-  bool do_asimov_sensitivity = false;
 
-  std::string simulation_to_load = "nufsgen_mie_0_99";
+	bool doDataChallenge=false;
+	int yearsIC86=1;
+
   std::string dcsimulation_to_load = "nufsgen_mie_0_99";
   std::string xs_model_name = "";
   std::string data_challenge_histogram_filepath = "";
   std::string modelId = "";
 
 	OptionParser op;
-	op.addOption({"j","numEvalThreads"},evalThreads,"Number of threads to use when computing likelihoods. Must be >0.");
-	op.addOption({"s","rngSeed"},rngSeed,"Seed value for the RNG, if 0 system clock time is used.");
-	op.addOption({"q","quiet"},[&](){quiet=true;},"Reduce chatter to stdout.");
-	op.addOption("minFitEnergy",minFitEnergy,"Minimum reconstructed energy in GeV for events to participate in the likelihood fit.");
-	op.addOption("maxFitEnergy",maxFitEnergy,"Maximum reconstructed energy in GeV for events to participate in the likelihood fit.");
-	op.addOption("minCosth",minCosth,"Minimum reconstructed cos(th) for events to participate in the likelihood fit.");
-	op.addOption("maxCosth",maxCosth,"Maximum reconstructed cos(th) for events to participate in the likelihood fit.");
-	op.addOption("minAstroEnergy",minAstroEnergy,"Minimum true energy in GeV for the astrophysical flux to be non-zero.");
-	op.addOption("maxAstroEnergy",maxAstroEnergy,"Maximum true energy in GeV for the astrophysical flux to be non-zero.");
-	op.addOption("sampleTestStatistics",sampleTestStatistics,"Whether to sample likelihood ratio test statistics using MC trials.");
-	op.addOption({"o","output"},outputFile,"If specified as non-empty the file into which to direct standard output.");
-	op.addOption({"p","drawPlots"},drawPlots,"Whether to generate plots directly.");
-	op.addOption({"f","fix"},fixedParams,"Parameters to hold fixed to particular values in the fit.");
 	op.addOption("bestFit",existingBest_,"Specifiy a best fit computed in a previous run so that it need not be recomputed.");
 	op.addOption("fitSeed",fitSeed_,"Specifiy the set of parameters to use when seeding the fitter.");
 	op.addOption("dataChallenge_nuisance_parameters",dataChallenge_nuisance_parameters_,"Specifiy the set of nuisance parameters to use when performing a data challenge.");
@@ -313,8 +282,6 @@ int main(int argc, char* argv[]){
   op.addOption("xs_model_name",xs_model_name,"Name of the cross section model to use");
   op.addOption("domeff_spline_path",domeff_spline_path,"Path to the DOM efficiencies splines");
   op.addOption("flux_splines_path",flux_splines_path,"Path to the propaged flux splines");
-  op.addOption("model_name",model_name, "Hadronic model name, if empty will use Honda+Gaisser");
-  op.addOption("delta_model_name",delta_model_name, "Hadronic model name, if empty will use Honda+Gaisser");
   op.addOption("output_path",output_path, "String that specifies the output data path");
   op.addOption("oversize_function_main",oversize_function_main,"Main oversize correction function to use");
   op.addOption("oversize_function_dc",oversize_function_dc,"Data challenge oversize correction function to use");
@@ -636,7 +603,7 @@ int main(int argc, char* argv[]){
     std::cout << "Begin constructing priors" << std::endl;
 
   std::map<std::string,double> delta_alpha {
-                                            {"Honda+Gaisser",8./7.},
+                                            {"HondaGaisser",8./7.},
                                             {"CombinedGHandHG_H3a_QGSJET",4./7.},
                                             {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
                                             {"PolyGonato_QGSJET-II-04",0.5},
@@ -905,3 +872,49 @@ const std::string sterile_params_str = "_"+modelId+"_"+std::to_string(dm41sq)+"_
  exit(0);
 
 }
+
+
+
+	
+//Set the RNG seed
+void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
+{
+  steeringParams_.rngSeed=seed;
+  rng_.seed(seed);
+  if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
+}
+ 
+
+// Check that the directories where files are mean to be exist               
+ bool Sterilizer::CheckDataPaths(DataPaths dp)
+ {
+   CheckDataPath(dp.compact_file_path);
+   CheckDataPath(dp.squids_files_path);
+   CheckDataPath(dp.prompt_squids_files_path);
+   CheckDataPath(dp.xs_spline_path);
+   CheckDataPath(dp.data_path);
+   CheckDataPath(dp.mc_path);
+   CheckDataPath(dp.oversize_function_path);
+   CheckDataPath(dp.domeff_spline_path);
+   CheckDataPath(dp.flux_splines_path);
+ }
+
+ // Check a directory exists and throw a relevant error otherwise.            
+ bool Sterilizer::CheckDataPath(std::string p)
+ {
+   struct stat info;
+   if(p!="")
+     {
+       if( stat( p, &info ) != 0 )
+	 {
+	   throw std::runtime_error("cannot access "+ p);
+	 }
+       else if( !(info.st_mode & S_IFDIR) )
+	 {
+	   throw std::runtime_error("is not a directory: " +p);
+	 }
+     }
+   else
+     std::cout<<"Warning, there are unset paths in DataPaths. Check you want \
+this."<<std::endl;
+ }
