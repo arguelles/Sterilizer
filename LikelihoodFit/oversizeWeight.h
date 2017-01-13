@@ -32,8 +32,8 @@ class OversizeWeighter
 OversizeWeighter::OversizeWeighter(std::string FileName)
 {
   std::ifstream file(FileName);
-  if(!file.good()):
-    throw std::runtime_error("Oversize file " <<FileName<<" does not exist!");
+  if(!file.good())
+    throw std::runtime_error("Oversize file "+FileName+" does not exist!");
   std::string line;
   std::vector<std::string> elements;
 
@@ -67,17 +67,17 @@ OversizeWeighter::OversizeWeighter(std::string FileName)
 	throw std::runtime_error("Mismatching row length in OversizeWeight!");
     }
 }
- 
-//Evaluator 
+
+//Evaluator
 double  OversizeWeighter::EvaluateOversizeCorrection(double energy, double zenith) const
 {
   double coszenith=cos(zenith);
-  
+
   if( ( energy>EnergyBinEdges.at(EnergyBinEdges.size()-1) ) 
       || ( energy<EnergyBinEdges.at(0) ) ) return 0;
   if( ( coszenith>ZenithBinEdges.at(ZenithBinEdges.size()-1) ) 
       || ( coszenith<ZenithBinEdges.at(0) ) ) return 0;
-  
+
   int ebin=0, zbin=0;
   for(int i=0; i!=EnergyBinEdges.size()-1; ++i)
     if ( (energy > EnergyBinEdges[i]) && (energy < EnergyBinEdges[i+1]) )
@@ -91,7 +91,7 @@ double  OversizeWeighter::EvaluateOversizeCorrection(double energy, double zenit
 	zbin=j;
 	break;
       }
-  
+
   return CorrectionFunction.at(ebin).at(zbin);
 }
 
