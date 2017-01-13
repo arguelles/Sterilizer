@@ -91,9 +91,9 @@ struct SteeringParams {
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;
   std::string xs_model_name="";
-  std::vector<int> years={2011};
-  std::map<int, double> fullLivetime      = std::map<int,double>{{2011,758.59*60*60}};   
-  std::map<int, double> burnSampleLivetime= std::map<int,double>{{2011,8249.6*3600}};
+  std::vector<unsigned int> years={2011};
+  std::map<unsigned int, double> fullLivetime      = std::map<unsigned int,double>{{2011,758.59*60*60}};
+  std::map<unsigned int, double> burnSampleLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
 };
 
 struct SterileNuParams {
@@ -121,9 +121,6 @@ class Sterilizer {
 
     //hypothesis point we fit to
     SterileNuParams sterileNuParams_;
-
-    std::vector<double> years_;
-    std::vector<double> livetime_;
 
     // to store events
     std::deque<Event> mainSimulation_;
