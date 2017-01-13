@@ -37,10 +37,9 @@ struct SteeringParams {
   std::string simToLoad="nufsgen_mie_0_99";
   std::string secondarySimToLoad="";
   bool quiet=false;
-  std::string model_name = "HondaGaisser";
-  std::string delta_model_name = "HondaGaisser";
+  std::string modelName = "HondaGaisser";
+  std::string deltaModelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
-  bool reuseBestFit=true;
   bool ReadCompact=true;
   std::string xs_model_name="";
 }
@@ -98,6 +97,8 @@ class Sterilizer {
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
     bool cross_section_weighter_constructed_=false;
+    bool flux_section_weighter_constructed_=false;
+    bool lepton_weighter_constructed_=true;
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
