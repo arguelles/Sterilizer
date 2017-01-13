@@ -444,7 +444,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 
 
 // Given a human readable nuisance parameter set, make a nuisance vector
-std::vector<double> ConvertNuisance(Nuisance ns)
+ std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns)
 {
   return std::vector<double> nuis{
     ns.normalization,
@@ -459,7 +459,7 @@ std::vector<double> ConvertNuisance(Nuisance ns)
 }
 
 // Given a human readable flag set, make a bool vector
-std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns)
+ std::vector<bool> Sterilizer::ConvertNuisanceFlag(NuisanceFlag ns)
 {
   return std::vector<bool> nuis{
     ns.normalization,
@@ -477,7 +477,7 @@ std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns)
 
 
 // And go back to human readable
-std::vector<double> ConvertVecToNuisance(std::vector<double> vecns)
+ std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns)
 {
   Nuisance ns;
   ns.normalization = vecns[0];
@@ -494,7 +494,7 @@ std::vector<double> ConvertVecToNuisance(std::vector<double> vecns)
 
 // Do the fit business
 template<typename LikelihoodType>
-FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
+  Sterilizer::FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
 		      std::vector<unsigned int> indicesToFix={}){
   using namespace likelihood;
 

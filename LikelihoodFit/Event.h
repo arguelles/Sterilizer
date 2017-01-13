@@ -9,7 +9,6 @@
 #include "tableio.h"
 #include "particleType.h"
 
-//#define _FULL_EVENT_
 
 double differenceAngle(double zenith1, double azimuth1, double zenith2, double azimuth2);
 herr_t collectTableNames(hid_t group_id, const char * member_name, void* operator_data);
@@ -78,17 +77,6 @@ public:
   double azimuth;
   double energy;
 
-#ifdef _FULL_EVENT_
-  // other cut variables
-  double cogx;
-  double cogy;
-  double cogz;
-  double time;
-  double rlogl;
-  double n_chan;
-  double n_chan_nodc;
-#endif
-
   // cached quantities
 	double cachedLivetime;
 	double cachedNugenWeight;
@@ -127,15 +115,7 @@ public:
     inelasticityProbability(std::numeric_limits<float>::quiet_NaN()),
     intX(std::numeric_limits<float>::quiet_NaN()),
     intY(std::numeric_limits<float>::quiet_NaN()),
-#ifdef _FULL_EVENT_
-    cogx(std::numeric_limits<float>::quiet_NaN()),
-    cogy(std::numeric_limits<float>::quiet_NaN()),
-    cogz(std::numeric_limits<float>::quiet_NaN()),
-    time(std::numeric_limits<float>::quiet_NaN()),
-    rlogl(std::numeric_limits<float>::quiet_NaN()),
-    n_chan(std::numeric_limits<float>::quiet_NaN()),
-    n_chan_nodc(std::numeric_limits<float>::quiet_NaN()),
-#endif
+
     livetime(std::numeric_limits<double>::quiet_NaN()),
     primaryType(particleType::unknown),
     cutL3(false),paraboloidStatus(0),
@@ -195,9 +175,6 @@ void readFile(const std::string& filePath, CallbackType action){
         [](const particle& p, Event& e){
           e.runid = p.id.run;
           e.eventid = p.id.event;
-#ifdef _FULL_EVENT_
-          e.time=p.get<CTS("time")>();
-#endif
           e.zenith=p.get<CTS("zenith")>();
           e.azimuth=p.get<CTS("azimuth")>();
           e.energy=p.get<CTS("energy")>();
@@ -231,35 +208,7 @@ void readFile(const std::string& filePath, CallbackType action){
     [](const paraboloidParams& c, Event& e){ e.paraboloidStatus = c.get<CTS("status")>(); });
 
   }
-#ifdef _FULL_EVENT_
-  using trackfitcutsprop = TableRow<field<short,CTS("n_chan")>,
-                                    field<double,CTS("cog_x")>,
-                                    field<double,CTS("cog_y")>,
-                                    field<double,CTS("cog_z")>>;
-  if(tables.count("TrackFitCuts"))
-    readTable<trackfitcutsprop>(h5file,"TrackFitCuts",intermediateData,
-                 [](const trackfitcutsprop& p, Event& e){
-                    e.n_chan = static_cast<double>(p.get<CTS("n_chan")>());
-                    e.cogx = p.get<CTS("cog_x")>();
-                    e.cogy = p.get<CTS("cog_y")>();
-                    e.cogz = p.get<CTS("cog_z")>();
-                 });
 
-  using trackfitcutsprop_nodc = TableRow<field<short,CTS("n_chan")>>;
-
-  if(tables.count("TrackFitCuts_NoDC"))
-    readTable<trackfitcutsprop_nodc>(h5file,"TrackFitCuts_NoDC",intermediateData,
-                 [](const trackfitcutsprop_nodc& p, Event& e){
-                    e.n_chan_nodc = static_cast<double>(p.get<CTS("n_chan")>());
-                 });
-
-  using trackfitfitparams = TableRow<field<double,CTS("rlogl")>>;
-  if(tables.count("TrackFitFitParams"))
-    readTable<trackfitfitparams>(h5file,"TrackFitFitParams",intermediateData,
-                 [](const trackfitfitparams& p, Event& e){
-                    e.rlogl = p.get<CTS("rlogl")>();
-                 });
-#endif
 
   using nmcprop = TableRow<field<double,CTS("injectedEnergy")>,
                            field<double,CTS("muonEnergyFraction")>,
