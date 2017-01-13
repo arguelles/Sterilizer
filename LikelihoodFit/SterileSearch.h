@@ -100,9 +100,10 @@ class Sterilizer {
     LW::mcgenWeighter mcw_;
     OversizeWeighter osw_;
 
-    bool cross_section_weighter_constructed_=false;
-    bool flux_section_weighter_constructed_=false;
-    bool lepton_weighter_constructed_=true;
+    bool cross_section_weighter_constructed_(false);
+    bool flux_section_weighter_constructed_(false);
+    bool lepton_weighter_constructed_(false);
+    bool oversize_weighter_constructed_(false);
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
