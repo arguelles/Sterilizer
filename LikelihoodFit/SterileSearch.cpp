@@ -253,11 +253,44 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
   return GetExpectation(ConvertNuisance(nuisance));
 }
 
-marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance) const{
-
+marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
+  
+  
+  rng_.seed(seed);
+  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation,expected,rng);
+  
+  for(const Event& e : mainSimulation){
+    auto w=weighter(e);
+    if(std::isnan(w) || std::isinf(w) || w<0){
+      std::cout << "Bad weight!" << std::endl;
+      std::cout << e.cachedConvPionWeight  << ' ' << e.cachedConvKaonWeight << ' ' << e.cachedLivetime << ' ';
+      std::cout << e.energy << ' ' << e.year << ' ' << w << std::endl;
+    }
+    weights.push_back(w);
+    expected+=w;
+  }
+  
+  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng_);
+  realizationHist = makeEmptyHistogramCopy(dataHist_);
+  bin(realization,realizationHist,binner);
+  
+  marray<double,3> array {static_cast<size_t>(realizationHist.getBinCount(2)),
+      static_cast<size_t>(realizationHist.getBinCount(1)),
+      static_cast<size_t>(realizationHist.getBinCount(0))};
+  
+  for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year                                                            
+    for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith                                                        
+      for(size_t ie=0; ie<realizationHist.getBinCount(0); ie++){ // energy                                                      
+	auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(realizationHist_(ie,ic,iy));
+      array[iy][ic][ie] = itc.size();
+    }
+  }
+  return array;
 }
 
-marray<double,3> Sterilizer::GetRealization(Nuisance nuisance) const{
+
+
+marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const{
   return GetRealization(ConvertNuisance(nuisance));
 }
 
@@ -452,7 +485,7 @@ std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) 
 
 // Do the fit business
 template<typename LikelihoodType>
-  Sterilizer::FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
+FitResult Sterilizer::DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
 		      std::vector<unsigned int> indicesToFix={}){
   using namespace likelihood;
 
