@@ -10,7 +10,7 @@ int main(int argc, char* argv[]){
   SterileNuParams snp;
   
   std::cout<<"==Making an object with non-compact data =="<<std::endl<<std::endl;
-  dp.ReadCompact=false;
+  sp.ReadCompact=false;
   
   //Make the object
   Sterilizer * ster = new Sterilizer(dp, sp, snp);
@@ -23,12 +23,15 @@ int main(int argc, char* argv[]){
 
   std::cout<< "Getting expectation for nominal nuisance"<<std::endl;
   Nuisance ns;
+  std::cout<< " Normalization : " <<ns.normalization<<std::endl;
+  
   marray<double,3> NominalExpectation=ster->GetExpectation(ns);
   std::cout<<"   Bin 1,1" << NominalExpectation[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5" << NominalExpectation[0][5][5] << std::endl;
 
   std::cout<< "Getting expectation for adjusted nuisance"<<std::endl;
   ns.normalization=1.2;
+  std::cout<< " Normalization : " <<ns.normalization<<std::endl;
   marray<double,3> AdjustedExpectation=ster->GetExpectation(ns);
   std::cout<<"   Bin 1,1" << AdjustedExpectation[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5" << AdjustedExpectation[0][5][5] << std::endl;
@@ -38,18 +41,18 @@ int main(int argc, char* argv[]){
   marray<double,3> Realization=ster->GetRealization(ns,seed);
   std::cout<<"   Bin 1,1" << Realization[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5" << Realization[0][5][5] << std::endl;
-  
-  ns.normalization=1.0;
 
+  ns.normalization=1.0;
+  std::cout<< " Normalization : " <<ns.normalization<<std::endl;
   std::cout<<"Destructing the Sterilizer"<<std::endl;
   delete ster;
   
 
 
   std::cout<<std::endl<<"==Making an object with compact data=="<<std::endl<<std::endl;
-  dp.ReadCompact=true;
+  sp.ReadCompact=true;
 
-  Sterilizer * ster = new Sterilizer(dp, sp, snp);
+  ster = new Sterilizer(dp, sp, snp);
   ster->ReportStatus();
 
   std::cout<< "Getting the data distribution"<<std::endl;
