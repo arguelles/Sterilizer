@@ -1,8 +1,15 @@
 #ifndef _H_GENERATION_SPECIFICATIONS_
 #define _H_GENERATION_SPECIFICATIONS_
 
-// number of events per file
-  const std::map<std::string,run> simInfo = {
+#include <LeptonWeighter/lepton_weighter.h>
+#include <LeptonWeighter/event.h>
+#include <LeptonWeighter/particleType.h>
+#include "runspec.h"
+using boost::math::constants::pi;
+
+std::map<std::string,run> GetSimInfo(std::string mc_dataPath)
+{
+   std::map<std::string,run> simInfo = {
                                 {"nufsgen_mie_0_9",run(mc_dataPath,"noover_mie_0.9.h5",particleType::NuMu,0.9,
                                         LW::SimDetails {1,615360000, //total events
                                                         2011,//year
@@ -113,4 +120,6 @@
                                 )}
                               };
 
+  return simInfo;
+}
 #endif
