@@ -82,7 +82,6 @@ struct SteeringParams {
   double maxFitEnergy=2.e4;
   double minCosth = -1.;
   double maxCosth = 0.2;
-  uint32_t rngSeed=0;
   bool useFactorization=false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
@@ -222,8 +221,8 @@ class Sterilizer {
     marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;
     marray<double,3> GetExpectation(Nuisance nuisance) const;
-    marray<double,3> GetRealization(std::vector<double> nuisance) const;
-    marray<double,3> GetRealization(Nuisance nuisance) const;
+    marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
+    marray<double,3> GetRealization(Nuisance nuisance, int seed) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
     double EvalLL(Nuisance nuisance) const;
@@ -239,9 +238,8 @@ class Sterilizer {
     DataPaths            GetDataPaths()       { return dataPaths_; };
     SterileNuParams      GetSterileNuParams() { return sterileNuParams_;};
 
-    void       SetSteeringParams(SteeringParams p)   { steeringParams_=p; SetRandomNumberGeneratorSeed(p.rngSeed);};
+    void       SetSteeringParams(SteeringParams p)   { steeringParams_=p;};
     void       SetDataPaths(DataPaths p)             { dataPaths_=p; CheckDataPaths(p); };
-    void       SetRandomNumberGeneratorSeed(unsigned int seed);
 };
 
 #endif
