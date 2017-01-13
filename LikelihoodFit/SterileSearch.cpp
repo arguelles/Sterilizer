@@ -9,6 +9,10 @@ std::string GetSterileNeutrinoModelIdentifier(SterileNuParams snp){
   return std::to_string(snp.modelId)+"_"+std::to_string(snp.dm41sq)+"_"+std::to_string(snp.th14)+"_"+std::to_string(snp.th24)+"_"+std::to_string(snp.th34)+"_"+std::to_string(snp.del14)+"_"+std::to_string(snp.del24);
 }
 
+auto binner = [](HistType& h, const Event& e){
+                h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
+};
+
 /*************************************************************************************************************
  * Functions to read and write data
  * **********************************************************************************************************/
@@ -186,7 +190,6 @@ void Sterilizer::ConstructDataHistogram(){
   dataHist_.getAxis(0)->setUpperLimit(steeringParams_.maxFitEnergy);
   dataHist_.getAxis(1)->setLowerLimit(steeringParams_.minCosth);
   dataHist_.getAxis(1)->setUpperLimit(steeringParams_.maxCosth);
-
   // fill in the histogram with the data
   bin(sample_, dataHist_, binner);
   data_histogram_constructed_=true;
