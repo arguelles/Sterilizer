@@ -333,11 +333,7 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
-<<<<<<< HEAD
-fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const {
-=======
 fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
->>>>>>> ed946e0c7263c123b5e64e7b572e6a46e02b1a00
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
   
