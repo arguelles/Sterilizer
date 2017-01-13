@@ -228,7 +228,6 @@ class Sterilizer {
     bool CheckLikelihoodProblemConstruction() const    {return likelihood_problem_constructed_;};
     void ReportStatus() const;
 
-
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;
