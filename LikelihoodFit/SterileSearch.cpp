@@ -342,14 +342,9 @@ fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
   std::vector<double> seed=prob.getSeed();
   std::vector<unsigned int> fixedIndices;
   
-  if(fixedParams.normalization>0.5)     fixedIndices.push_back(0);
-  if(fixedParams.astroFlux>0.5)         fixedIndices.push_back(1);
-  if(fixedParams.promptFlux>0.5)        fixedIndices.push_back(2);
-  if(fixedParams.crSlope>0.5)           fixedIndices.push_back(3);
-  if(fixedParams.domEfficiency>0.5)     fixedIndices.push_back(4);
-  if(fixedParams.piKRatio>0.5)          fixedIndices.push_back(5);
-  if(fixedParams.nuNubarRatio>0.5)      fixedIndices.push_back(6);
-  if(fixedParams.zenithCorrection>0.5)  fixedIndices.push_back(7);
+  std::vector<double> FixVec=ConvertNuisance(fixedParams);
+  for(size_t i; i!=FixVec.size(); ++i)
+      if(FixVec[i]>0.1) fixedIndices.push_back(i);
   
 
   return doFitLBFGSB(prob_, fitSeed_, fixedIndices);
