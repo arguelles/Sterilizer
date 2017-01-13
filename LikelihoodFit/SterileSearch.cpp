@@ -193,7 +193,7 @@ void Sterilizer::ConstructDataHistogram(){
   if(not data_loaded_)
     throw std::runtime_error("No data has been loaded. Cannot construct data histogram.");
 
-  dataHist_ = HistType(LogarithmicAxis(0, 0.1), LinearAxis(0, 0.1), LinearAxis(2010, 1));
+  dataHist_ = HistType(LogarithmicAxis(steeringParams_.logEbinEdge, steeringParams_.logEbinWidth), LinearAxis(steeringParams_.cosThbinEdge, steeringParams_.cosThbinWidth), LinearAxis(2011, 1));
 
   dataHist_.getAxis(0)->setLowerLimit(steeringParams_.minFitEnergy);
   dataHist_.getAxis(0)->setUpperLimit(steeringParams_.maxFitEnergy);
@@ -408,46 +408,6 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
      std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
  }
 
-
-// Given a human readable prior set, make a weaverized version
-template<typename... PriorTypes>
-    FixedSizePriorSet<PriorTypes...> Sterilizer::ConvertPriorSet(Priors pr) const
-{
-  // construct continuous nuisance priors      
-  UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
-  GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
-  GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
-  UniformPrior  simple_domEffPrior(pr.domEffCenter,pr.domEffWidth);
-  GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
-  GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
-
-  // construct zenith correction prior                   
-  std::map<std::string,double> delta_alpha {
-      {"HondaGaisser",8./7.},
-      {"CombinedGHandHG_H3a_QGSJET",4. /7.},
-      {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
-      {"PolyGonato_QGSJET-II-04",0.5},
-      {"PolyGonato_SIBYLL2",1.0},
-      {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
-      {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
-	  };
-
-  if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
-    throw std::runtime_error("Jordi delta key not found. Aborting.");
-  double alpha = delta_alpha[steeringParams_.modelName];
-
-  GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
-
-  // make and return priorset  
-  return makePriorSet(normalizationPrior,
-                             positivePrior, 
-                             positivePrior,
-                             crSlopePrior,
-                             simple_domEffPrior,
-                             kaonPrior,
-                             nanPrior,
-                             ZCPrior);
-}
 
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {

@@ -79,10 +79,14 @@ struct DataPaths {
 };
 
 struct SteeringParams {
-  double minFitEnergy=4e2;
-  double maxFitEnergy=2.e4;
-  double minCosth = -1.;
-  double maxCosth = 0.2;
+  float minFitEnergy=4e2;
+  float maxFitEnergy=2.e4;
+  float minCosth = -1.;
+  float maxCosth = 0.2;
+  float logEbinEdge = 0.0;
+  float logEbinWidth = 0.169;
+  float cosThbinEdge = 0.0;
+  float cosThbinWidth = 0.06;
   bool useFactorization=false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
@@ -209,8 +213,6 @@ class Sterilizer {
     // functions to construct the likelihood problem
     void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
     // Converters between human and vector forms
-    template<typename... PriorTypes>
-    FixedSizePriorSet<PriorTypes...> ConvertPriorSet(Priors pr) const;
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
     Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
@@ -311,6 +313,49 @@ class Sterilizer {
         }
       }
     }
+
+    // Given a human readable prior set, make a weaverized version                                                                              
+template<typename... PriorTypes>
+  FixedSizePriorSet<PriorTypes...> Sterilizer::ConvertPriorSet(Priors pr) const
+  {
+    // construct continuous nuisance priors                                                                                                   
+    UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
+    GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
+    GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
+    UniformPrior  simple_domEffPrior(pr.domEffCenter,pr.domEffWidth);
+    GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
+    GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
+
+    // construct zenith correction prior                                                                                                      
+    std::map<std::string,double> delta_alpha {
+      {"HondaGaisser",8./7.},
+	{"CombinedGHandHG_H3a_QGSJET",4. /7.},
+	  {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
+	    {"PolyGonato_QGSJET-II-04",0.5},
+	      {"PolyGonato_SIBYLL2",1.0},
+		{"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
+		  {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
+		    };
+
+    if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
+      throw std::runtime_error("Jordi delta key not found. Aborting.");
+    double alpha = delta_alpha[steeringParams_.modelName];
+
+    GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
+
+    // make and return priorset                                                                                                               
+    return makePriorSet(normalizationPrior,
+			positivePrior,
+			positivePrior,
+			crSlopePrior,
+			simple_domEffPrior,
+			kaonPrior,
+			nanPrior,
+			ZCPrior);
+  };
+
+
+
   public:
     // set functions
 
