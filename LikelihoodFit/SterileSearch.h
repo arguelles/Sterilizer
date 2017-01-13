@@ -122,6 +122,7 @@ using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 using CPrior=FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>;
+using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>;
 
 template<typename ContainerType, typename HistType, typename BinnerType>
   void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){
@@ -175,7 +176,8 @@ class Sterilizer {
     std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
     // likehood problem object
-    std::shared_ptr<LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>> prob_;
+    //std::shared_ptr<LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>> prob_;
+    std::shared_ptr<LType> prob_;
   public:
     // Constructor
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp);
@@ -210,7 +212,7 @@ class Sterilizer {
     void ConstructDataHistogram();
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
-    //void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
+    void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
     // Converters between human and vector forms
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
@@ -238,9 +240,9 @@ class Sterilizer {
     marray<double,3> GetExpectation(Nuisance nuisance) const;
     marray<double,3> GetRealization(Nuisance nuisance, int seed) const;
     // functions to evaluate the likelihood
-    //double EvalLLH(std::vector<double> nuisance) const;
-    //double EvalLL(Nuisance nuisance) const;
-    //FitResult MinLLH(NuisanceFlag fixedParams) const;
+    double EvalLLH(std::vector<double> nuisance) const;
+    double EvalLL(Nuisance nuisance) const;
+    FitResult MinLLH(NuisanceFlag fixedParams) const;
     void SetSterileNuParams(SterileNuParams snp);
   private:
     // Do the fit business
@@ -336,7 +338,7 @@ class Sterilizer {
                         {"PolyGonato_SIBYLL2",1.0},
                         {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
                         {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
-          };
+      };
 
       if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
         throw std::runtime_error("Jordi delta key not found. Aborting.");

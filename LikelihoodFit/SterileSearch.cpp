@@ -338,7 +338,6 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-/*
 void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
@@ -348,10 +347,11 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
   auto llhpriors = ConvertPriorSet(priors);
   auto fitseed   = ConvertNuisance(nuisanceSeed);
 
-  prob_ = std::make_shared<likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>>(
+  //prob_ = std::make_shared<likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>>(
+  prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
-      likelihood::poissonLikelihood(), fitseed );
-  prob_.setEvaluationThreadCount(steeringParams_.evalThreads);
+      likelihood::poissonLikelihood(), fitseed ));
+  prob_->setEvaluationThreadCount(steeringParams_.evalThreads);
 
   likelihood_problem_constructed_=true;
 }
@@ -359,7 +359,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
 double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
-  return -prob_.evaluateLikelihood(nuisance);
+  return -prob_->evaluateLikelihood(nuisance);
 }
 
 double Sterilizer::EvalLL(Nuisance nuisance) const {
@@ -370,17 +370,15 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
 
-  std::vector<double> seed=prob_.getSeed();
+  std::vector<double> seed=prob_->getSeed();
   std::vector<unsigned int> fixedIndices;
 
   std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams);
   for(size_t i=0; i!=FixVec.size(); ++i)
       if(FixVec[i]) fixedIndices.push_back(i);
 
-  return DoFitLBFGSB(prob_, seed, fixedIndices);
+  return DoFitLBFGSB(*prob_, seed, fixedIndices);
 }
-
-*/
 
 /*************************************************************************************************************
  * Functions to change the sterile neutrino hypothesis
