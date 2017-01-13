@@ -30,7 +30,7 @@ struct Nuisance {
   float domEfficiency=-0.1;
   float piKRatio=1.0;
   float nuNubarRatio=1.0;
-  float zenithCorrection=0..0;
+  float zenithCorrection=0.0;
 };
 
 struct NuisanceFlag {
@@ -64,7 +64,6 @@ struct FitResult {
   unsigned int nEval, nGrad;
   bool succeeded;
 };
-
 
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
@@ -117,6 +116,7 @@ using namespace nusquids;
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
+using CPrior=FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>;
 
 template<typename ContainerType, typename HistType, typename BinnerType>
   void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){
@@ -174,6 +174,12 @@ class Sterilizer {
     template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
              typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>>
     LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension> prob_;
+*/
+    LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6> prob_;
+/*
+  prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
+      dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
+      likelihood::poissonLikelihood(), fitseed );
 */
   public:
     // Constructor
@@ -242,7 +248,7 @@ class Sterilizer {
     // Do the fit business
     template<typename LikelihoodType>
     FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
-              std::vector<unsigned int> indicesToFix){
+              std::vector<unsigned int> indicesToFix) const{
       using namespace likelihood;
 
       LBFGSB_Driver minimizer;
@@ -313,8 +319,8 @@ class Sterilizer {
     }
 
     // Given a human readable prior set, make a weaverized version
-    FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>
-    ConvertPriorSet(Priors pr) const {
+    //FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>
+    CPrior ConvertPriorSet(Priors pr) const {
       // construct continuous nuisance priors
       UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
       GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);

@@ -315,7 +315,6 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-/*
 void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
@@ -356,7 +355,6 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
 
   return DoFitLBFGSB(prob_, seed, fixedIndices);
 }
-*/
 
 /*************************************************************************************************************
  * Functions to change the sterile neutrino hypothesis
