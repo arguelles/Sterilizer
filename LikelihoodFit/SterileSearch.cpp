@@ -12,52 +12,55 @@ std::string GetSterileNeutrinoModelIdentifier(SterileNeutrinoParameters snp){
  * Functions to read and write data
  * **********************************************************************************************************/
 
-void Sterilizer::LoadData(std::string dataPath){
-		try{
-			sample=loadExperimentalData(dataPath,UseBurnsample);
-		} catch(std::exception& ex){
-			std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
-			return(1);
-		}
-		if(!quiet)
-			std::cout << "Loaded " << sample.size() << " experimental events" << std::endl;
+void Sterilizer::LoadData(){
+  try{
+    sample=loadExperimentalData(dataPaths.data_path,steeringParams_.useBurnsample);
+  } catch(std::exception& ex){
+    std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
+    return(1);
+  }
+  if(!quiet)
+    std::cout << "Loaded " << sample.size() << " experimental events" << std::endl;
 }
 
-void Sterilizer::LoadMC(std::string simulationPath,std::vector<std::string> simSetsToLoad){
+
+void Sterilizer::LoadMC(){
     bool loadTargeted=true;
-		try{
-      loadSimulatedData(mainSimulation,simulationPath,livetime,simInfo,simSetsToLoad,loadTargeted);
-		} catch(std::exception& ex){
-			std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
-			return(1);
-		}
-		if(!quiet)
-			std::cout << "Loaded " << mainSimulation.size() << " events in main simulation set" << std::endl;
+    std::vector<std::string> simSetsToLoad;
+    simSetsToLoad.push_back(steeringParams_.simToLoad_);
+    try{
+      loadSimulatedData(mainSimulation_,dataPaths.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
+    } catch(std::exception& ex){
+      std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
+      return(1);
+    }
+    if(!quiet)
+      std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
 }
 
-void Sterilizer::LoadCompact(std::string compact_data_path, std::string simulation_to_load) {
-		try{
-			unsplatData(compact_data_path+"/"+simulation_to_load+"_compact_data.dat",getFileChecksum(argv[0]),sample,mainSimulation);
-			if(!quiet){
-				std::cout << "Loaded " << sample.size() << " experimental events." << std::endl;
-				std::cout << "Loaded " << mainSimulation.size() << " events in main simulation set." << std::endl;
-			}
-		} catch(std::runtime_error& re){
-			std::cerr << re.what() << std::endl;
-			std::cerr << "Failed to load compact data" << std::endl;
-			return(1);
-		}
+void Sterilizer::LoadCompact() {
+  try{
+    unsplatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
+    if(!quiet){
+      std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
+      std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
+    }
+  } catch(std::runtime_error& re){
+    std::cerr << re.what() << std::endl;
+    std::cerr << "Failed to load compact data" << std::endl;
+    return(1);
+  }
 }
 
-void Sterilizer::WriteCompact(std::string compact_data_path, std::string simulation_to_load) const {
-		try{
-			splatData(compact_data_path+"/"+simulation_to_load+"_compact_data.dat",
-                getFileChecksum(argv[0]),sample,mainSimulation);
-		} catch(std::runtime_error& re){
-			std::cerr << re.what() << std::endl;
-			std::cerr << "Failed to save compact data" << std::endl;
-			return(1);
-		}
+void Sterilizer::WriteCompact() const {
+  try{
+    splatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
+	      getFileChecksum(argv[0]),sample_,mainSimulation_);
+  } catch(std::runtime_error& re){
+    std::cerr << re.what() << std::endl;
+    std::cerr << "Failed to save compact data" << std::endl;
+    return(1);
+  }
 }
 
 /*************************************************************************************************************
@@ -71,10 +74,10 @@ void Sterilizer::LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) 
  * Functions to load to load DOM efficiency splines
  * **********************************************************************************************************/
 
-void Sterilizer::LoadDOMEfficiencySplines(){
+void Sterilizer::LoadDOMEfficiencySplines(std::vector<int> years){
   for(size_t year_index=0; year_index<years.size(); year_index++){
-    domEffConv[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
-    domEffPrompt[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
+    domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
+    domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
 }
 
@@ -82,9 +85,9 @@ void Sterilizer::LoadDOMEfficiencySplines(){
  * Functions to construct weighters
  * **********************************************************************************************************/
 
-void Sterilizer::ConstructCrossSectionWeighter(std::string xs_spline_path, std::string xs_model_name){
-  xsw = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(xs_spline_path),xs_model_name);
-  cross_section_weighter_constructed=true;
+void Sterilizer::ConstructCrossSectionWeighter(){
+  xsw_ = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(dataPaths.xs_spline_path),steeringParams_.xs_model_name);
+  cross_section_weighter_constructed_=true;
 }
 
 void Sterilizer::ConstructFluxWeighter(std::string conv_squids_files_path,std::string prompt_squids_files_path,std::string splines_path,SterileNeutrinoParameters snp){
@@ -95,10 +98,10 @@ void Sterilizer::ConstructFluxWeighter(std::string conv_squids_files_path,std::s
     std::string atmospheric_model_pion = model_name + "_pion";
     std::string atmospheric_model_kaon = model_name + "_kaon";
 
-    flux_pion = std::make_shared<LW::FactorizedSQUIDSFlux>(squids_files_path+oscillation_model,
+    fluxPion_ = std::make_shared<LW::FactorizedSQUIDSFlux>(squids_files_path+oscillation_model,
                                                            flux_splines_path+atmospheric_model_pion+"_neutrino_spline.fits",
                                                            flux_splines_path+atmospheric_model_pion+"_antineutrino_spline.fits");
-    flux_kaon = std::make_shared<LW::FactorizedSQUIDSFlux>(squids_files_path+oscillation_model,
+    fluxKaon_ = std::make_shared<LW::FactorizedSQUIDSFlux>(squids_files_path+oscillation_model,
                                                            flux_splines_path+atmospheric_model_kaon+"_neutrino_spline.fits",
                                                            flux_splines_path+atmospheric_model_kaon+"_antineutrino_spline.fits");
   } else{

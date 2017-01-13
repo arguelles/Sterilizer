@@ -42,6 +42,7 @@ struct SteeringParams {
   std::string oversizeFunction="NullCorrection";
   bool reuseBestFit=true;
   bool ReadCompact=true;
+  std::string xs_model_name="";
 }
 
 struct SterileNuParams {
@@ -99,10 +100,11 @@ class Sterilizer {
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
+    bool cross_section_weighter_constructed_=false;
 
     // DOM efficiency splines
-    std::vectior<std::unique_ptr<Splinetable>> domEffConv_;
-    std::vectior<std::unique_ptr<Splinetable>> domEffPrompt_;
+    std::vector<std::unique_ptr<Splinetable>> domEffConv_;
+    std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
   public:
     // Constructor
