@@ -197,3 +197,47 @@ marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::
 marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
 
 }
+
+
+
+//Set the RNG seed                                                           
+ void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
+ {
+   steeringParams_.rngSeed=seed;
+   rng_.seed(seed);
+   if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
+ }
+
+
+ // Check that the directories where files are mean to be exist           
+ bool Sterilizer::CheckDataPaths(DataPaths dp)
+ {
+   CheckDataPath(dp.compact_file_path);
+   CheckDataPath(dp.squids_files_path);
+   CheckDataPath(dp.prompt_squids_files_path);
+   CheckDataPath(dp.xs_spline_path);
+   CheckDataPath(dp.data_path);
+   CheckDataPath(dp.mc_path);
+   CheckDataPath(dp.oversize_function_path);
+   CheckDataPath(dp.domeff_spline_path);
+   CheckDataPath(dp.flux_splines_path);
+ }
+
+ // Check a directory exists and throw a relevant error otherwise. 
+ bool Sterilizer::CheckDataPath(std::string p)
+ {
+   struct stat info;
+   if(p!="")
+     {
+       if( stat( p, &info ) != 0 )
+         {
+           throw std::runtime_error("cannot access "+ p);
+         }
+       else if( !(info.st_mode & S_IFDIR) )
+         {
+           throw std::runtime_error("is not a directory: " +p);
+         }
+     }
+   else
+     std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
+ }
