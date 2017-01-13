@@ -451,3 +451,16 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   return ns;
 }
 
+
+void Sterilizer::ReportStatus() const
+{
+  std::cout<< "Data loaded:                   " << CheckDataLoaded() <<std::endl;
+  std::cout<< "Sim loaded:                    " << CheckSimulationLoaded()  <<std::endl;
+  std::cout<< "Dom eff spline constructed:    " << CheckDOMEfficiencySplinesConstructed()<<std::endl;
+  std::cout<< "XS weighter constructed:       " << CheckCrossSectionWeighterConstructed() <<std::endl;
+  std::cout<< "Flux weighter constructed:     " <<CheckFluxWeighterConstructed()<<std::endl;
+  std::cout<< "Lepton weighter constructed:   " <<CheckLeptonWeighterConstructed()<<std::endl;
+  std::cout<< "Data histogram constructed:    " <<CheckDataHistogramConstructed()<<std::endl;
+  std::cout<< "Sim histogram constructed:     " <<CheckSimulationHistogramConstructed()<<std::endl;
+  std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
+}
