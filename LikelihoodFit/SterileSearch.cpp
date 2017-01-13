@@ -189,9 +189,11 @@ bool SterileSearch::CheckLeptonWeighterConstructed() const {
 void Sterilizer::WeightMC(){
   if(not lepton_weighter_constructed_)
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
+  if(not oversize_weighter_constructed_)
+    throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded))
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_dc_);
+  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
   simulation_initialized_=true;
 }
 
