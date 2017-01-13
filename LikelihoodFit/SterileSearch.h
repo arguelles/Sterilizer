@@ -55,13 +55,11 @@ struct SterileNuParams {
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24)
 };
 
+
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 
-auto binner = [](HistType& h, const Event& e){
-  h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
-};
 
 
 
@@ -133,8 +131,12 @@ class Sterilizer {
 
     void SetRandomNumberGeneratorSeed(unsigned int seed);
 
+ private:
+    // Test if two particles are in the same generation (e.g., mu / numu)
+    bool SameGeneration(particleType p1, particleType p2);
 
-
+    // Make the fit
+    template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
 
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
 
