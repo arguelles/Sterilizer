@@ -92,6 +92,9 @@ struct SteeringParams {
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;
   std::string xs_model_name="";
+  std::vector<int> years={2011};
+  std::map<int, double> fullLivetime      = std::map<int,double>{{2011,758.59*60*60}};   
+  std::map<int, double> burnSampleLivetime= std::map<int,double>{{2011,8249.6*3600}};
 };
 
 struct SterileNuParams {
@@ -120,14 +123,11 @@ class Sterilizer {
     //hypothesis point we fit to
     SterileNuParams sterileNuParams_;
 
-    // To store best fit point, fit seed, and data challenge
-    std::vector<double> existingBest_;
-
+    std::vector<double> years_;
     std::vector<double> livetime_;
 
     // to store events
     std::deque<Event> mainSimulation_;
-    std::deque<Event> alternativeSimulation_;
     std::deque<Event> sample_;
 
     // random number generator
@@ -205,15 +205,15 @@ class Sterilizer {
 
   public:
     // functions to check the status of the object
-    bool CheckDataLoaded() const {return data_loaded_;};
-    bool CheckSimulationLoaded() const {return simulation_loaded_;};
-    bool CheckDOMEfficiencySplinesLoaded() const {return dom_efficiency_splines_constructed_;};
-    bool CheckCrossSectionWeighterConstructed() const {return xs_weighter_constructed_;};
-    bool CheckFluxWeighterConstructed() const {return flux_weighter_constructed_;};
-    bool CheckLeptonWeighterConstructed() const {return lepton_weighter_constructed;};
-    bool CheckDataHistogramConstructed() const {return data_histogram_constructed;};
-    bool CheckSimulationHistogramConstructed() const {return simulation_histogram_constructed_;};
-    bool CheckLikelihoodProblemConstruction() const {return likelihood_problem_constructed_;};
+    bool CheckDataLoaded() const                       {return data_loaded_;};
+    bool CheckSimulationLoaded() const                 {return simulation_loaded_;};
+    bool CheckDOMEfficiencySplinesLoaded() const       {return dom_efficiency_splines_constructed_;};
+    bool CheckCrossSectionWeighterConstructed() const  {return xs_weighter_constructed_;};
+    bool CheckFluxWeighterConstructed() const          {return flux_weighter_constructed_;};
+    bool CheckLeptonWeighterConstructed() const        {return lepton_weighter_constructed;};
+    bool CheckDataHistogramConstructed() const         {return data_histogram_constructed;};
+    bool CheckSimulationHistogramConstructed() const   {return simulation_histogram_constructed_;};
+    bool CheckLikelihoodProblemConstruction() const    {return likelihood_problem_constructed_;};
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;

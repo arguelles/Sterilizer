@@ -26,10 +26,17 @@ void Sterilizer::LoadData(){
 
 void Sterilizer::LoadMC(){
     bool loadTargeted=true;
+
+    std::map<int,double> livetime;
+    if(!steeringParams_.useBurnSample)
+      livetime=steeringParams_.fullLivetime;
+    else
+      livetime=steeringParams_.burnSampleLivetime;
+
     std::vector<std::string> simSetsToLoad;
     simSetsToLoad.push_back(steeringParams_.simToLoad);
     try{
-      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime_,simInfo,simSetsToLoad,loadTargeted);
+      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
     } catch(std::exception& ex){
       std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
     }
@@ -76,7 +83,8 @@ void Sterilizer::ClearSimulation(){
  * Functions to load to load DOM efficiency splines
  * **********************************************************************************************************/
 
-void Sterilizer::LoadDOMEfficiencySplines(std::vector<unsigned int> years){
+void Sterilizer::LoadDOMEfficiencySplines(){
+  years=steeringParams_.years;
   for(size_t year_index=0; year_index<years.size(); year_index++){
     domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
