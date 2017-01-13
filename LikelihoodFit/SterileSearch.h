@@ -139,9 +139,9 @@ class Sterilizer {
 
     // weighter object
     DiffuseFitWeighterMaker DFWM;
-    LW::LeptonWeighter pionFluxWeighter_;
-    LW::LeptonWeighter kaonFluxWeighter_;
-    LW::LeptonWeighter promptFluxWeighter_;
+    LW::LeptonWeighter PionFluxWeighter_;
+    LW::LeptonWeighter KaonFluxWeighter_;
+    LW::LeptonWeighter PromptFluxWeighter_;
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
@@ -149,14 +149,17 @@ class Sterilizer {
 
     // Status flags
     bool cross_section_weighter_constructed_ = (false);
-    bool flux_section_weighter_constructed_ = (false);
+    bool flux_weighter_constructed_ = (false);
     bool lepton_weighter_constructed_ = (false);
     bool oversize_weighter_constructed_ = (false);
     bool dom_efficiency_splines_loaded_ = (false);
     bool data_histogram_constructed_ = (false);
+    bool simulation_histogram_constructed_ = (false);
     bool simulation_loaded_ = (false);
     bool mc_generation_weighter_constructed_ = (false);
     bool data_loaded_ = (false);
+    bool likelihood_problem_constructed_ = (false);
+    bool simulation_initialized_ = (false);
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
@@ -202,7 +205,6 @@ class Sterilizer {
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns);
     std::vector<double> ConvertVecToNuisance(std::vector<double> vecns);
 
-
   public:
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
@@ -214,6 +216,7 @@ class Sterilizer {
     bool CheckDataHistogramConstructed() const         {return data_histogram_constructed;};
     bool CheckSimulationHistogramConstructed() const   {return simulation_histogram_constructed_;};
     bool CheckLikelihoodProblemConstruction() const    {return likelihood_problem_constructed_;};
+
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;

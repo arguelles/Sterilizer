@@ -40,7 +40,7 @@ void Sterilizer::LoadMC(){
     } catch(std::exception& ex){
       std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
     }
-    if(!quiet)
+    if(!steeringParams_.quiet)
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
     simulation_loaded_=true;
 }
@@ -48,7 +48,7 @@ void Sterilizer::LoadMC(){
 void Sterilizer::LoadCompact(){
   try{
     unsplatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
-    if(!quiet){
+    if(!steeringParams_.quiet){
       std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
     }
@@ -98,10 +98,9 @@ void Sterilizer::LoadDOMEfficiencySplines(){
  * **********************************************************************************************************/
 
 void Sterilizer::ConstructCrossSectionWeighter(){
-  xsw_ = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(dataPaths.xs_spline_path),steeringParams_.xs_model_name);
+  xsw_ = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(dataPaths_.xs_spline_path),steeringParams_.xs_model_name);
   cross_section_weighter_constructed_=true;
 }
-
 
 void Sterilizer::ConstructFluxWeighter(){
   std::string sterile_neutrino_model_identifier = GetSterileNeutrinoModelIdentifier(sterileNuParams_);
@@ -141,7 +140,6 @@ void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   mc_generation_weighter_constructed_=true;
 }
 
-
 void Sterilizer::ConstructLeptonWeighter(){
   if(not mc_generation_weighter_constructed_)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
@@ -173,7 +171,7 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
   if(not oversize_weighter_constructed_)
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
-  if(not simulation_loaded)
+  if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
   initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
   simulation_initialized_=true;
@@ -190,10 +188,10 @@ void Sterilizer::ConstructDataHistogram(){
 
   dataHist_ = HistType(LogarithmicAxis(0, 0.1), LinearAxis(0, 0.1), LinearAxis(2010, 1));
 
-  dataHist_.getAxis(0)->setLowerLimit(minFitEnergy_);
-  dataHist_.getAxis(0)->setUpperLimit(maxFitEnergy_);
-  dataHist_.getAxis(1)->setLowerLimit(minCosth_);
-  dataHist_.getAxis(1)->setUpperLimit(maxCosth_);
+  dataHist_.getAxis(0)->setLowerLimit(steeringParams_.minFitEnergy);
+  dataHist_.getAxis(0)->setUpperLimit(steeringParams_.maxFitEnergy);
+  dataHist_.getAxis(1)->setLowerLimit(steeringParams_.minCosth);
+  dataHist_.getAxis(1)->setUpperLimit(steeringParams_.maxCosth);
 
   // fill in the histogram with the data
   bin(sample_, dataHist_, binner);
@@ -224,9 +222,9 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
                             static_cast<size_t>(dataHist_.getBinCount(1)),
                             static_cast<size_t>(dataHist_.getBinCount(0))};
 
-    for(size_t iy=0; iy<data_hist.getBinCount(2); iy++){ // year
-      for(size_t ic=0; ic<data_hist.getBinCount(1); ic++){ // zenith
-        for(size_t ie=0; ie<data_hist.getBinCount(0); ie++){ // energy
+    for(size_t iy=0; iy<dataHist_.getBinCount(2); iy++){ // year
+      for(size_t ic=0; ic<dataHist_.getBinCount(1); ic++){ // zenith
+        for(size_t ie=0; ie<dataHist_.getBinCount(0); ie++){ // energy
           auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(dataHist_(ie,ic,iy));
           array[iy][ic][ie] = itc.size();
         }
@@ -244,9 +242,9 @@ marray<double,3> Sterilizer::GetExpectation(std::vector<double> nuisance) const 
                           static_cast<size_t>(simHist_.getBinCount(0))};
 
   auto weighter = DFWM(nuisance);
-  for(size_t iy=0; iy<sim_hist.getBinCount(2); iy++){ // year
-    for(size_t ic=0; ic<sim_hist.getBinCount(1); ic++){ // zenith
-      for(size_t ie=0; ie<sim_hist.getBinCount(0); ie++){ // energy
+  for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<simHist_.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<simHist_.getBinCount(0); ie++){ // energy
         auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
         double expectation=0;
         for(auto event : itc.entries()){
