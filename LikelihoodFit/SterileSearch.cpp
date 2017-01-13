@@ -5,8 +5,8 @@
  * Implementation auxiliary functions
  * **********************************************************************************************************/
 
-std::string GetSterileNeutrinoModelIdentifier(SterileNeutrinoParameters snp){
-  return snp.modelId+"_"+std::to_string(snp.dm41sq)+"_"+std::to_string(snp.th14)+"_"+std::to_string(snp.th24)+"_"+std::to_string(snp.th34)+"_"+std::to_string(snp.del14)+"_"+std::to_string(snp.del24);
+std::string GetSterileNeutrinoModelIdentifier(SterileNuParams snp){
+  return std::to_string(snp.modelId)+"_"+std::to_string(snp.dm41sq)+"_"+std::to_string(snp.th14)+"_"+std::to_string(snp.th24)+"_"+std::to_string(snp.th34)+"_"+std::to_string(snp.del14)+"_"+std::to_string(snp.del24);
 }
 
 /*************************************************************************************************************
@@ -15,7 +15,7 @@ std::string GetSterileNeutrinoModelIdentifier(SterileNeutrinoParameters snp){
 
 void Sterilizer::LoadData(){
   try{
-    sample_=loadExperimentalData(dataPaths.data_path,steeringParams_.useBurnsample);
+    sample_=loadExperimentalData(dataPaths_.data_path,steeringParams_.useBurnSample);
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
     return(1);
@@ -30,7 +30,7 @@ void Sterilizer::LoadMC(){
     std::vector<std::string> simSetsToLoad;
     simSetsToLoad.push_back(steeringParams_.simToLoad_);
     try{
-      loadSimulatedData(mainSimulation_,dataPaths.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
+      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
     } catch(std::exception& ex){
       std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
       return(1);
@@ -489,7 +489,7 @@ fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& see
   result.likelihood=minimizer.minimumValue();
   result.params=minimizer.minimumPosition();
   result.nEval=minimizer.numberOfEvaluations();
-  result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function                                            
+  result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
 
   return(result);
 }
