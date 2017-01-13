@@ -22,7 +22,7 @@
 
 
 struct Nuisance {
-  float normaliztion;
+  float normalization;
   float astroFlux;
   float promptFlux;
   float crSlope;
@@ -33,7 +33,7 @@ struct Nuisance {
 };
 
 struct NuisanceFlag {
-  bool normaliztion=0;
+  bool normalization=0;
   bool astroFlux=1;
   bool promptFlux=1;
   bool crSlope=0;

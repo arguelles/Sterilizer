@@ -47,7 +47,7 @@ void Sterilizer::LoadMC(){
 
 void Sterilizer::LoadCompact(){
   try{
-    unsplatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
+    unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
     if(!steeringParams_.quiet){
       std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
@@ -62,7 +62,7 @@ void Sterilizer::LoadCompact(){
 
 void Sterilizer::WriteCompact() const {
   try{
-    splatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
+    splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(argv[0]),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
@@ -404,7 +404,7 @@ template<typename... PriorTypes>
   // construct continuous nuisance priors      
   UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
   GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
-  GaussianPrior crSlopeCenter(pr.crSlopePrior,pr.crSlopeWidth);
+  GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
   UniformPrior  simple_domEffPrior(pr.domEffCenter,pr.domEffWidth);
   GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
   GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
@@ -439,16 +439,16 @@ template<typename... PriorTypes>
 
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {
-  return std::vector<double> nuis{
-    ns.normalization,
-      ns.astroFlux,
-      ns.promptFlux,
-      ns.crSlope,
-      ns.domEfficiency,
-      ns.piKRatio,
-      ns.nuNubarRatio,
-      ns.zenithCorrection
-      }
+  std::vector<double> nuis;
+  nuis.append(ns.normalization);
+  nuis.append(ns.astroFlux);
+  nuis.append(ns.promptFlux);
+  nuis.append(ns.crSlope);
+  nuis.append(ns.domEfficiency);
+  nuis.append(ns.piKRatio);
+  nuis.append(ns.nuNubarRatio);
+  nuis.append(ns.zenithCorrection);
+  return nuis;
 }
 
 // Given a human readable flag set, make a bool vector
