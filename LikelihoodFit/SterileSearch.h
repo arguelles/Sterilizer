@@ -42,6 +42,7 @@ struct SteeringParams {
   std::string oversizeFunction="NullCorrection";
   bool reuseBestFit=true;
   bool ReadCompact=true;
+  std::string xs_model_name="";
 }
 
 struct SterileNuParams {
@@ -55,15 +56,10 @@ struct SterileNuParams {
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24)
 };
 
+
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
-
-auto binner = [](HistType& h, const Event& e){
-  h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
-};
-
-
 
 class Sterilizer {
   private:
@@ -73,7 +69,7 @@ class Sterilizer {
 
     //hypothesis point we fit to
     SterileNuParams sterileNuParams_;
-    
+
     // To store best fit point, fit seed, and data challenge
     std::vector<double> existingBest_;
     std::vector<double> fitSeed_{1.02,0,0,0.05,.0985,1.1,1,0};
@@ -101,40 +97,45 @@ class Sterilizer {
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
+    bool cross_section_weighter_constructed_=false;
 
     // DOM efficiency splines
-    std::vectior<std::unique_ptr<Splinetable>> domEffConv_;
-    std::vectior<std::unique_ptr<Splinetable>> domEffPrompt_;
+    std::vector<std::unique_ptr<Splinetable>> domEffConv_;
+    std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
   public:
     // Constructor
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
 
     // Check that the directories where files are mean to be exist
-    bool CheckDataPaths(DataPaths dp);
+    bool CheckDataPaths(DataPaths dp) const;
 
     // Check a directory exists and throw a relevant error otherwise.
-    bool CheckDataPath(std::string p);
-      
+    bool CheckDataPath(std::string p) const;
+
   protected:
     // Functions to load and unload data
     void LoadData(std::string filepath);
     void LoadMC(std::string filepath) {}
     void LoadCompact(std::string filepath);
-    void WriteCompact(std::string filepath);
+    void WriteCompact(std::string filepath) const;
     // Functions to load and unload data
     void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
 
-    bool CheckDataPaths(DataPaths dp);
-    bool CheckDataPath(std::string p);
+    bool CheckDataPaths(DataPaths dp) const;
+    bool CheckDataPath(std::string p) const;
 
     void SetRandomNumberGeneratorSeed(unsigned int seed);
 
+ private:
+    // Test if two particles are in the same generation (e.g., mu / numu)
+    bool SameGeneration(particleType p1, particleType p2) const;
 
-
+    // Make the fit
+    template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
 
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
 
@@ -146,7 +147,6 @@ class Sterilizer {
     fitResult llh(SterileNeutrinoParameters snp) const;
     // set functions
 
-
     SteeringParams       GetSteeringParams()  { return steeringParams_; };
     DataPaths            GetDataPaths()       { return dataPaths_; };
     SterileNuParams      GetSterileNuParams() { return sterileNuParams_;};
@@ -157,63 +157,7 @@ class Sterilizer {
 };
 
 
-Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp){
-      // Set the parameter sets of this object
-      steeringParams_=steeringParams;
-      dataPaths_=dataPaths;
-    
-      // Set up the RNG
-      SetRandomNumberGeneratorSeed(steeringParams.rngSeed);
-
-      if(readCompact_){
-        LoadCompactData(dataPaths_.compact_file_path);
-        LoadCompactMC(dataPaths_.compact_file_path);
-      } else {
-        LoadData(dataPaths_.data_path);
-        LoadMC(dataPaths_.mc_path);
-      }
-      LoadFluxes(dataPaths_.flux_splines_path,snp)
-    }
 
 
-void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
-{ 
-  steeringParams_.rngSeed=seed;
-  rng_.seed(seed);
-  if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
-}
-
-// Check that the directories where files are mean to be exist
-bool Sterilizer::CheckDataPaths(DataPaths dp)
-{
-  CheckDataPath(dp.compact_file_path);
-  CheckDataPath(dp.squids_files_path);
-  CheckDataPath(dp.prompt_squids_files_path);
-  CheckDataPath(dp.xs_spline_path);
-  CheckDataPath(dp.data_path);
-  CheckDataPath(dp.mc_path);
-  CheckDataPath(dp.oversize_function_path);
-  CheckDataPath(dp.domeff_spline_path);
-  CheckDataPath(dp.flux_splines_path);
-}
-
-// Check a directory exists and throw a relevant error otherwise.
-bool Sterilizer::CheckDataPath(std::string p)
-{
-  struct stat info;
-  if(p!="")
-    {
-      if( stat( p, &info ) != 0 )
-	{
-	  throw std::runtime_error("cannot access "+ p);
-	}
-      else if( !(info.st_mode & S_IFDIR) ) 
-	{
-	  throw std::runtime_error("is not a directory: " +p);
-	}
-    }
-  else
-    std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
-}  
 
 #endif

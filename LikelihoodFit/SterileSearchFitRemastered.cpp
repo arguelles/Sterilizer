@@ -41,57 +41,46 @@ using boost::math::constants::pi;
 size_t evalThreads=1;
 bool quiet=false;
 
-bool sameGeneration(particleType p1, particleType p2){
-	switch(p1){
-		case particleType::NuE:
-		case particleType::NuEBar:
-			return(p2==particleType::NuE || p2==particleType::NuEBar);
-		case particleType::NuMu:
-		case particleType::NuMuBar:
-			return(p2==particleType::NuMu || p2==particleType::NuMuBar);
-		case particleType::NuTau:
-		case particleType::NuTauBar:
-			return(p2==particleType::NuTau || p2==particleType::NuTauBar);
-		default:
-			return(false);
-	}
+// Constructor
+Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp){
+
+  // Set the parameter sets of this object                               
+  steeringParams_=steeringParams;
+  dataPaths_=dataPaths;
+  sterileNuParams=snp;
+
+  // Set up the RNG                                                      
+  SetRandomNumberGeneratorSeed(steeringParams.rngSeed);
+
+  // Load the data
+  if(readCompact_){
+    LoadCompactData(dataPaths_.compact_file_path);
+    LoadCompactMC(dataPaths_.compact_file_path);
+  } else {
+    LoadData(dataPaths_.data_path);
+    LoadMC(dataPaths_.mc_path);
+  }
+  LoadFluxes(dataPaths_.flux_splines_path,snp);
 }
 
-//Find the median of a weighted set the stupid way: trial and error
-template<typename Container, typename Weighter>
-double findMedianEnergy(const Container& data, Weighter w, float Event::* energy){
-	double min=std::numeric_limits<double>::max(), max=-std::numeric_limits<double>::max();
-	double totalWeight=0;
-	for(auto& e : data){
-		if(e.*energy<min)
-			min=e.*energy;
-		if(e.*energy>max)
-			max=e.*energy;
-		totalWeight+=w(e);
-	}
-	//std::cout << "total weight/rate is " << totalWeight << std::endl;
-	while((max-min)>.0001*min){
-		double guess=(min+max)/2, weight=0;
-		//std::cout << " trying " << guess;
-		for(auto& e : data){
-			if(e.*energy<guess)
-				weight+=w(e);
-		}
-		//std::cout << ": rate is " << weight << std::endl;
-		if(weight>totalWeight/2)
-			max=guess;
-		else
-			min=guess;
-	}
-	return((min+max)/2);
-}
+
+
+
+
+// Some Weaver ugliness
+
+struct fitResult{
+  std::vector<double> params;
+  double likelihood;
+  unsigned int nEval, nGrad;
+  bool succeeded;
+};
 
 template<typename ContainerType, typename HistType, typename BinnerType>
 void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){
 	for(const Event& event : data)
 		binner(hist,event);
 }
-
 
 struct fitResult{
 	std::vector<double> params;
@@ -101,48 +90,7 @@ struct fitResult{
 };
 
 
-///Maximize a likelihood using the LBFGSB minimization algorithm
-///\param likelihood The likelihood to maximize
-///\param seed The seed values for all likelihood parameters
-///\param indicesToFix The indices of likelihood parameters to hold constant at their seed values
-template<typename LikelihoodType>
-fitResult doFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
-					  std::vector<unsigned int> indicesToFix={}){
-	using namespace likelihood;
-	
-	LBFGSB_Driver minimizer;
-	minimizer.addParameter(seed[0],.001,0.0);
-	minimizer.addParameter(seed[1],.001,0.0);
-	minimizer.addParameter(seed[2],.01,0.0);
-	minimizer.addParameter(seed[3],.005);
-	minimizer.addParameter(seed[4],.005,-.1,.3/*,.039,.159*/);
-	minimizer.addParameter(seed[5],.01,0.0);
-	minimizer.addParameter(seed[6],.001,0.0,2.0);
-	minimizer.addParameter(seed[7],.001,-1.0,1.0);
-	
-	for(auto idx : indicesToFix)
-		minimizer.fixParameter(idx);
-	
-	minimizer.setChangeTolerance(1e-5);
-	minimizer.setHistorySize(20);
-	
-	fitResult result;
-	result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
-	result.likelihood=minimizer.minimumValue();
-	result.params=minimizer.minimumPosition();
-	result.nEval=minimizer.numberOfEvaluations();
-	result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
-		
-	return(result);
-}
 
-
-
-template<typename ProblemType>
-double saturatedPoisson(const ProblemType& prob, const std::vector<double>& params){
-	auto spProb=prob.makeAlternateLikelihood(likelihood::saturatedPoissonLikelihood());
-	return(-spProb.evaluateLikelihood(params));
-}
 
 
 //precompute weights as much as possible
@@ -195,141 +143,7 @@ void initializeSimulationWeights(ContainerType& simulation, const WeighterType& 
 
 
 int main(int argc, char* argv[]){
-  std::string compact_data_path =        "../compact_data/";
-  std::string plot_path =                "../plots/";
-  std::string output_path =              "/home/carguelles/work/TheSterileSearch/output/the_new_output/";
-  std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
-  std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
-  std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
-  std::string data_path =                "/data/ana/NuFSGenMC/Data/";
-  std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
-  std::string oversize_function_main =   "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
-  std::string oversize_function_dc =     "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
-  std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
-  std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
 
-  std::string model_name = "HondaGaisser";
-  
-  std::string delta_model_name = "Honda+Gaisser";
-  uint32_t rngSeed=0;
-  double minFitEnergy=4e2;
-  double maxFitEnergy=2.e4;
-  double minCosth = -1.;
-  double maxCosth = 0.2;
-  double minAstroEnergy=0.0;
-  double maxAstroEnergy=1e10;
-  std::string outputFile;
-  bool drawPlots=true;
-  std::pair<unsigned int, double> fixedParams;
-  std::vector<double> existingBest;
-  std::vector<double> fitSeed{1.02,0,0,0.05,.0985,1.1,1,0};
-  std::vector<double> dataChallenge_nuisance_parameters{1,0,0,0,.1,1,1,0};
-  std::vector<double> data{1,0,0,0,.1,1,1,0};
-  std::vector<double> existingBest_(existingBest);
-  std::vector<double> fitSeed_(fitSeed);
-  std::vector<double> dataChallenge_nuisance_parameters_(dataChallenge_nuisance_parameters);
-  unsigned int number_of_data_challenges = 1;
-  std::vector<double> dataChallenge_seeds {1234};
-  std::vector<double> dataChallenge_seeds_(dataChallenge_seeds);
-  bool use_factorization_technique=false;
-  bool use_datachallenge_histogram=false;
-	bool writeCompact=false;
-	bool readCompact=false;
-	bool doDataChallenge=false;
-	bool exitAfterLoading=false;
-	int yearsIC86=1;
-  bool UseBurnsample=true;
-  double th14 = 0;
-  double th24 = 0;
-  double th34 = 0;
-  double del14 = 0;
-  double del24 = 0;
-  double dm41sq = 0;
-  double th24_null = 0;
-  double dm41sq_null = 0;
-  bool use_gsl_minimizer = false;
-  bool dump_data = false;
-  bool dump_mc_data = false;
-  bool dump_real_data = false;
-  bool dump_fit = false;
-  bool save_flux = false;
-  bool save_dc_sample = false;
-  bool do_asimov_sensitivity = false;
-
-  std::string simulation_to_load = "nufsgen_mie_0_99";
-  std::string dcsimulation_to_load = "nufsgen_mie_0_99";
-  std::string xs_model_name = "";
-  std::string data_challenge_histogram_filepath = "";
-  std::string modelId = "";
-
-	OptionParser op;
-	op.addOption({"j","numEvalThreads"},evalThreads,"Number of threads to use when computing likelihoods. Must be >0.");
-	op.addOption({"s","rngSeed"},rngSeed,"Seed value for the RNG, if 0 system clock time is used.");
-	op.addOption({"q","quiet"},[&](){quiet=true;},"Reduce chatter to stdout.");
-	op.addOption("minFitEnergy",minFitEnergy,"Minimum reconstructed energy in GeV for events to participate in the likelihood fit.");
-	op.addOption("maxFitEnergy",maxFitEnergy,"Maximum reconstructed energy in GeV for events to participate in the likelihood fit.");
-	op.addOption("minCosth",minCosth,"Minimum reconstructed cos(th) for events to participate in the likelihood fit.");
-	op.addOption("maxCosth",maxCosth,"Maximum reconstructed cos(th) for events to participate in the likelihood fit.");
-	op.addOption("minAstroEnergy",minAstroEnergy,"Minimum true energy in GeV for the astrophysical flux to be non-zero.");
-	op.addOption("maxAstroEnergy",maxAstroEnergy,"Maximum true energy in GeV for the astrophysical flux to be non-zero.");
-	op.addOption("sampleTestStatistics",sampleTestStatistics,"Whether to sample likelihood ratio test statistics using MC trials.");
-	op.addOption({"o","output"},outputFile,"If specified as non-empty the file into which to direct standard output.");
-	op.addOption({"p","drawPlots"},drawPlots,"Whether to generate plots directly.");
-	op.addOption({"f","fix"},fixedParams,"Parameters to hold fixed to particular values in the fit.");
-	op.addOption("bestFit",existingBest_,"Specifiy a best fit computed in a previous run so that it need not be recomputed.");
-	op.addOption("fitSeed",fitSeed_,"Specifiy the set of parameters to use when seeding the fitter.");
-	op.addOption("dataChallenge_nuisance_parameters",dataChallenge_nuisance_parameters_,"Specifiy the set of nuisance parameters to use when performing a data challenge.");
-	op.addOption("writeCompact",[&](){writeCompact=true;},"Write all input data back out in the compact format.");
-	op.addOption("readCompact",[&](){readCompact=true;},"Read all input data in the compact format\n    "
-				 "(requires that the same version of the program has been run previously with --writeCompact).");
-	op.addOption("exitAfterLoading",[&](){exitAfterLoading=true;},"Exit immediately after writing compact data.");
-  op.addOption("UseBurnsample",[&](){UseBurnsample = true;},"If True burn sample will be use, else full sample.");
-  op.addOption("UseFullsample",[&](){UseBurnsample = false;},"If True full sample will be use.");
-  op.addOption("DumpDCFit",[&](){dump_fit = true;},"If True data challenge fit for the H1 hypohteiss will be dump.");
-  op.addOption("DumpDCData",[&](){dump_data = true;},"If True data challenge realization will be dump.");
-  op.addOption("DumpData",[&](){dump_real_data = true;},"If True data realization will be dump.");
-  op.addOption("DumpMC",[&](){dump_mc_data = true;},"If True the MC will be dump.");
-	op.addOption("dataChallenge",[&](){doDataChallenge=true;},"Run fit trials on MC realizations.");
-	op.addOption("UseFactorization",[&](){use_factorization_technique=true;},"Will use factorized oscillations and propagation.");
-	op.addOption("save_flux",[&](){save_flux=true;},"Save flux..");
-	op.addOption("yearsIC86",yearsIC86,"Number of years of IC86 equivalent livetime.");
-  op.addOption("th24_null",th24_null,"th24 sterile neutrino mixing paramater null hypothesis [rad].");
-  op.addOption("th14",th14,"th14 sterile neutrino mixing paramater [rad].");
-  op.addOption("th24",th24,"th24 sterile neutrino mixing paramater [rad].");
-  op.addOption("th34",th34,"th34 sterile neutrino mixing paramater [rad].");
-  op.addOption("del14",del14,"del14 sterile neutrino mixing paramater [rad].");
-  op.addOption("del24",del24,"del24 sterile neutrino mixing paramater [rad].");
-  op.addOption("dm41sq_null",dm41sq_null,"dm41sq sterile neutrino mass paramater null hypothesis[ev^2].");
-  op.addOption("dm41sq",dm41sq,"dm41sq sterile neutrino mass paramater [ev^2].");
-  op.addOption("simulation_to_load",simulation_to_load, "String that specifies the simulation to load");
-  op.addOption("dataChallenge_simulation_to_load",dcsimulation_to_load, "String that specifies the data challenge null hypothesis simulation to load");
-  op.addOption("plot_path",plot_path, "String that specifies the plot data path");
-  op.addOption("compact_data_path",compact_data_path, "String that specifies the compact data path");
-  op.addOption("data_path",data_path, "String that specifies the data path");
-  op.addOption("mc_path",mc_path, "String that specifies the mc path");
-  op.addOption("squids_files_path",squids_files_path, "String that specifies the path to the squids files");
-  op.addOption("prompt_squids_files_path",prompt_squids_files_path, "String that specifies the path to the prompt squids files");
-  op.addOption("xs_spline_path",xs_spline_path, "String that specifies the path to the cross section splines");
-  op.addOption("xs_model_name",xs_model_name,"Name of the cross section model to use");
-  op.addOption("domeff_spline_path",domeff_spline_path,"Path to the DOM efficiencies splines");
-  op.addOption("flux_splines_path",flux_splines_path,"Path to the propaged flux splines");
-  op.addOption("model_name",model_name, "Hadronic model name, if empty will use Honda+Gaisser");
-  op.addOption("delta_model_name",delta_model_name, "Hadronic model name, if empty will use Honda+Gaisser");
-  op.addOption("output_path",output_path, "String that specifies the output data path");
-  op.addOption("oversize_function_main",oversize_function_main,"Main oversize correction function to use");
-  op.addOption("oversize_function_dc",oversize_function_dc,"Data challenge oversize correction function to use");
-  op.addOption("number_of_data_challenges",number_of_data_challenges,"Integer specifying the number of data challenges to perform.");
-  op.addOption("dataChallenge_seeds",dataChallenge_seeds_,"Seeds used for each the data challenges.");
-  op.addOption("modelId",modelId,"Sterile model id based on scan_values file.");
-  op.addOption("use_datachallenge_histogram",[&](){use_datachallenge_histogram = true;},"If use_datachallenge_histogram is set to true then the DC MC would not be loaded and the histogram will be loaded instead.");
-  op.addOption("data_challenge_histogram_filepath",data_challenge_histogram_filepath,"Path to the histogram use for data challenge when use_datachallenge_histogram is set to true.");
-  op.addOption("save_datachallenge_histogram",[&](){save_dc_sample = true;},"If save_dc_sample is set to true then the DC MC will be saved with filename data_challenge_histogram_filepath.");
-  op.addOption("do_asimov_sensitivity",[&](){do_asimov_sensitivity = true;},"if do_asimov_sensitivity is set to true then asimov sensitivity will be calculated.");
-
-	auto args=op.parseArgs(argc,argv);
-	if(op.didPrintUsage())
-		return(0);
-	
 	if(evalThreads==0){
 		std::cerr << "Requesting likelihood evaluation with 0 threads of execution makes no sense" << std::endl;
 		return(1);
@@ -354,17 +168,6 @@ int main(int argc, char* argv[]){
 		return(1);
 	}
 	
-	std::ofstream altOutput;
-	std::streambuf* stdoutBackup;
-	if(!outputFile.empty()){
-		altOutput.open(outputFile.c_str());
-		if(!altOutput.good()){
-			std::cerr << "Failed to open log file " << outputFile << " for writing" << std::endl;
-			return(1);
-		}
-		stdoutBackup=std::cout.rdbuf();
-		std::cout.rdbuf(altOutput.rdbuf());
-	}
 
   // read dom efficincies splines
   if(!quiet)
@@ -636,7 +439,7 @@ int main(int argc, char* argv[]){
     std::cout << "Begin constructing priors" << std::endl;
 
   std::map<std::string,double> delta_alpha {
-                                            {"Honda+Gaisser",8./7.},
+                                            {"HondaGaisser",8./7.},
                                             {"CombinedGHandHG_H3a_QGSJET",4./7.},
                                             {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
                                             {"PolyGonato_QGSJET-II-04",0.5},
@@ -905,3 +708,113 @@ const std::string sterile_params_str = "_"+modelId+"_"+std::to_string(dm41sq)+"_
  exit(0);
 
 }
+
+
+
+	
+//Set the RNG seed
+void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
+{
+  steeringParams_.rngSeed=seed;
+  rng_.seed(seed);
+  if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
+}
+ 
+
+// Check that the directories where files are mean to be exist               
+ bool Sterilizer::CheckDataPaths(DataPaths dp)
+ {
+   CheckDataPath(dp.compact_file_path);
+   CheckDataPath(dp.squids_files_path);
+   CheckDataPath(dp.prompt_squids_files_path);
+   CheckDataPath(dp.xs_spline_path);
+   CheckDataPath(dp.data_path);
+   CheckDataPath(dp.mc_path);
+   CheckDataPath(dp.oversize_function_path);
+   CheckDataPath(dp.domeff_spline_path);
+   CheckDataPath(dp.flux_splines_path);
+ }
+
+ // Check a directory exists and throw a relevant error otherwise.            
+ bool Sterilizer::CheckDataPath(std::string p)
+ {
+   struct stat info;
+   if(p!="")
+     {
+       if( stat( p, &info ) != 0 )
+	 {
+	   throw std::runtime_error("cannot access "+ p);
+	 }
+       else if( !(info.st_mode & S_IFDIR) )
+	 {
+	   throw std::runtime_error("is not a directory: " +p);
+	 }
+     }
+   else
+     std::cout<<"Warning, there are unset paths in DataPaths. Check you want \
+this."<<std::endl;
+ }
+
+
+
+ bool Sterilizier::SameGeneration(particleType p1, particleType p2){
+	switch(p1){
+		case particleType::NuE:
+		case particleType::NuEBar:
+			return(p2==particleType::NuE || p2==particleType::NuEBar);
+		case particleType::NuMu:
+		case particleType::NuMuBar:
+			return(p2==particleType::NuMu || p2==particleType::NuMuBar);
+		case particleType::NuTau:
+		case particleType::NuTauBar:
+			return(p2==particleType::NuTau || p2==particleType::NuTauBar);
+		default:
+			return(false);
+	}
+}
+
+
+
+ 
+///Maximize a likelihood using the LBFGSB minimization algorithm
+///\param likelihood The likelihood to maximize
+///\param seed The seed values for all likelihood parameters
+///\param indicesToFix The indices of likelihood parameters to hold constant at their seed values
+ template<typename LikelihoodType>
+   fitResult Sterilizer::DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
+				     std::vector<unsigned int> indicesToFix={}){
+   using namespace likelihood;
+   
+   LBFGSB_Driver minimizer;
+   minimizer.addParameter(seed[0],.001,0.0);
+   minimizer.addParameter(seed[1],.001,0.0);
+   minimizer.addParameter(seed[2],.01,0.0);
+   minimizer.addParameter(seed[3],.005);
+   minimizer.addParameter(seed[4],.005,-.1,.3/*,.039,.159*/);
+   minimizer.addParameter(seed[5],.01,0.0);
+   minimizer.addParameter(seed[6],.001,0.0,2.0);
+   minimizer.addParameter(seed[7],.001,-1.0,1.0);
+   
+   for(auto idx : indicesToFix)
+     minimizer.fixParameter(idx);
+   
+   minimizer.setChangeTolerance(1e-5);
+   minimizer.setHistorySize(20);
+   
+   fitResult result;
+   result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
+   result.likelihood=minimizer.minimumValue();
+   result.params=minimizer.minimumPosition();
+   result.nEval=minimizer.numberOfEvaluations();
+   result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
+		
+   return(result);
+ }
+ 
+ 
+ // Return the saturated poisson likelihood
+ template<typename ProblemType>
+   double Sterilizer::SaturatedPoisson(const ProblemType& prob, const std::vector<double>& params){
+   auto spProb=prob.makeAlternateLikelihood(likelihood::saturatedPoissonLikelihood());
+   return(-spProb.evaluateLikelihood(params));
+ }
