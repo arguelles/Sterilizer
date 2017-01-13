@@ -1,4 +1,5 @@
 #include "SterileSearch.h"
+#include "GenerationSpecifications.h"
 
 /*************************************************************************************************************
  * Implementation auxiliary functions
@@ -37,7 +38,8 @@ void Sterilizer::LoadMC(){
       livetime=steeringParams_.burnSampleLivetime;
 
     std::vector<std::string> simSetsToLoad;
-    simSetsToLoad.push_back(steeringParams_.simToLoad);
+    simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
+    std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
     try{
       loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
     } catch(std::exception& ex){
@@ -49,6 +51,7 @@ void Sterilizer::LoadMC(){
 }
 
 void Sterilizer::LoadCompact(){
+  std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
     std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
     std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
@@ -67,6 +70,7 @@ void Sterilizer::LoadCompact(){
 }
 
 void Sterilizer::WriteCompact() const {
+  std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
     std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
     std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
@@ -139,6 +143,7 @@ void Sterilizer::ConstructFluxWeighter(){
 
 
 void Sterilizer::ConstructMonteCarloGenerationWeighter(){
+  std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   std::vector<std::string> simSetsToLoad;
   simSetsToLoad.push_back(steeringParams_.simToLoad);
   for( std::string sim_name : simSetsToLoad )
