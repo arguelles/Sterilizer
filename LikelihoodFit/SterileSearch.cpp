@@ -356,13 +356,6 @@ void Sterilizer::SetSterileNuParams(SterileNuParams snp){
 /*************************************************************************************************************
  * Functions to set options in the class
  * **********************************************************************************************************/
-//Set the RNG seed
-void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
-{
- steeringParams_.rngSeed=seed;
- rng_.seed(seed);
- if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
-}
 
 // Check that the directories where files are mean to be exist
 bool Sterilizer::CheckDataPaths(DataPaths dp) const
