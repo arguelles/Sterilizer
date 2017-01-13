@@ -116,13 +116,11 @@ void Sterilizer::ConstructFluxWeighter(){
     fluxKaon_ = std::make_shared<LW::FactorizedSQUIDSFlux>(dataPaths_.squids_files_path+oscillation_model,
                                                            dataPaths_.flux_splines_path+atmospheric_model_kaon+"_neutrino_spline.fits",
                                                            dataPaths_.flux_splines_path+atmospheric_model_kaon+"_antineutrino_spline.fits");
-  } else{
+  } else {
       std::string flux_pion_filename = "pion_atmospheric_"+sterile_neutrino_model_identifier;
       std::string flux_kaon_filename = "kaon_atmospheric_"+sterile_neutrino_model_identifier;
-      if(model_name != ""){
-        flux_pion_filename+="_"+model_name;
-        flux_kaon_filename+="_"+model_name;
-      }
+      flux_pion_filename+="_"+steeringParams_.modelName;
+      flux_kaon_filename+="_"+steeringParams_.modelName;
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5");
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5");
   }
@@ -159,9 +157,6 @@ void Sterilizer::ConstructOversizeWeighter(){
   oversize_weighter_constructed_=true;
 }
 
-
-
-
 /*************************************************************************************************************
  * Functions to initialize the MC weights
  * **********************************************************************************************************/
@@ -176,7 +171,6 @@ void Sterilizer::WeightMC(){
   initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
   simulation_initialized_=true;
 }
-
 
 /*************************************************************************************************************
  * Functions to construct histograms
@@ -197,8 +191,6 @@ void Sterilizer::ConstructDataHistogram(){
   bin(sample_, dataHist_, binner);
   data_histogram_constructed_=true;
 }
-
-
 
 void Sterilizer::ConstructSimulationHistogram(){
   if(not simulation_loaded_)
@@ -343,7 +335,6 @@ void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
  if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
 }
 
-
 // Check that the directories where files are mean to be exist
 bool Sterilizer::CheckDataPaths(DataPaths dp) const
 {
@@ -417,7 +408,6 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
                              ZCPrior);
 }
 
-
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {
   return std::vector<double> nuis{
@@ -446,9 +436,6 @@ std::vector<bool> Sterilizer::ConvertNuisanceFlag(NuisanceFlag ns) const {
       }
 }
 
-
-
-
 // And go back to human readable
 std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   Nuisance ns;
@@ -462,7 +449,6 @@ std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) 
   ns.zenithCorrection = vecns[7];
   return ns;
 }
-
 
 // Do the fit business
 template<typename LikelihoodType>
