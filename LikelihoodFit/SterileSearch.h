@@ -98,10 +98,17 @@ class Sterilizer {
     LW::LeptonWeighter pionFluxWeighter_;
     LW::LeptonWeighter kaonFluxWeighter_;
     LW::LeptonWeighter promptFluxWeighter_;
-  public:
-    /// \brief Constructor
-    Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
+    std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
+    std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
+    LW::mcgenWeighter mcw_;
 
+    // DOM efficiency splines
+    std::vectior<std::unique_ptr<Splinetable>> domEffConv_;
+    std::vectior<std::unique_ptr<Splinetable>> domEffPrompt_;
+
+  public:
+    // Constructor
+    Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
 
     // Check that the directories where files are mean to be exist
     bool CheckDataPaths(DataPaths dp);
@@ -110,11 +117,13 @@ class Sterilizer {
     bool CheckDataPath(std::string p);
       
   protected:
+    // Functions to load and unload data
     void LoadData(std::string filepath);
-    void LoadCompactData(std::string filepath);
     void LoadMC(std::string filepath) {}
+    void LoadCompact(std::string filepath);
+    void WriteCompact(std::string filepath);
+    // Functions to load and unload data
     void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
-    void LoadCompactMC(std::string filepath) {}
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
@@ -126,6 +135,8 @@ class Sterilizer {
 
 
 
+
+    void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
 
   public:
     marray<double,3> GetDataDistribution();
