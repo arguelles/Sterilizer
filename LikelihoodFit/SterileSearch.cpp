@@ -188,7 +188,7 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
   if(not oversize_weighter_constructed_)
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
-  if(not simulation_loaded))
+  if(not simulation_loaded)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
   initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
   simulation_initialized_=true;
@@ -203,7 +203,7 @@ bool Sterilizer::CheckSimulationInitialized() const {
  * **********************************************************************************************************/
 
 void Sterilizer::ConstructDataHistogram(){
-  if(not data_loaded_))
+  if(not data_loaded_)
     throw std::runtime_error("No data has been loaded. Cannot construct data histogram.");
 
   dataHist_ = HistType(LogarithmicAxis(0, 0.1), LinearAxis(0, 0.1), LinearAxis(2010, 1));
@@ -223,9 +223,9 @@ bool Sterilizer::CheckDataHistogramConstructed() const {
 }
 
 void Sterilizer::ConstructSimulationHistogram(){
-  if(not simulation_loaded_))
+  if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  if(not data_histogram_constructed_))
+  if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before simulation histogram.");
   simHist_ = makeEmptyHistogramCopy(dataHist_);
   bin(mainSimulation_, simHist_, binner);
@@ -241,6 +241,8 @@ bool Sterilizer::CheckSimulationHistogramConstructed() const {
  * **********************************************************************************************************/
 
 marray<double,3> Sterilizer::GetDataDistribution() const {
+    if(not data_histogram_constructed_)
+      throw std::runtime_error("Data histogram needs to be constructed before asking for it.");
     marray<double,3> array {static_cast<size_t>(dataHist_.getBinCount(2)),
                             static_cast<size_t>(dataHist_.getBinCount(1)),
                             static_cast<size_t>(dataHist_.getBinCount(0))};
@@ -256,50 +258,42 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
     return array;
 }
 
+marray<double,3> Sterilizer::GetExpectation(std::vector<double> nuisance) const {
+  if(not simulation_histogram_constructed_)
+    throw std::runtime_error("Simulation histogram needs to be constructed before asking for distributions.");
 
-marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
-    MakeSimulationHistogram(snp,nuisance);
-    marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
-                            static_cast<size_t>(simHist_.getBinCount(1)),
-                            static_cast<size_t>(simHist_.getBinCount(0))};
+  marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
+                          static_cast<size_t>(simHist_.getBinCount(1)),
+                          static_cast<size_t>(simHist_.getBinCount(0))};
 
-    auto weighter = DFWM(nuisance);
-    for(size_t iy=0; iy<sim_hist.getBinCount(2); iy++){ // year
-      for(size_t ic=0; ic<sim_hist.getBinCount(1); ic++){ // zenith
-        for(size_t ie=0; ie<sim_hist.getBinCount(0); ie++){ // energy
-          auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
-          double expectation=0;
-          for(auto event : itc.entries()){
-            expectation+=weighter(event);
-          }
-          array[iy][ic][ie] = expectation;
+  auto weighter = DFWM(nuisance);
+  for(size_t iy=0; iy<sim_hist.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<sim_hist.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<sim_hist.getBinCount(0); ie++){ // energy
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
+        double expectation=0;
+        for(auto event : itc.entries()){
+          expectation+=weighter(event);
         }
+        array[iy][ic][ie] = expectation;
       }
     }
-    return array;
+  }
+  return array;
 }
-
 
 marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
 
 }
 
-
 // human interfaces
-marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, Nuisance nuisance)
-{
-  return GetExpectation(snp, ConvertNuisance(nuisance));
+marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance){
+  return GetExpectation(ConvertNuisance(nuisance));
 }
 
-marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, Nuisance nuisance) const{
-  return GetRealization(snp, ConvertNuisance(nuisance));
+marray<double,3> Sterilizer::GetRealization(Nuisance nuisance) const{
+  return GetRealization(ConvertNuisance(nuisance));
 }
-
-double Sterilizer::llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) const {
-  return llhFull(snp,ConvertNuisance(nuisance));
-}
-
-
 
 
 /*************************************************************************************************************
@@ -311,7 +305,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
   if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
-  
+
   llhpriors = ConvertPriors(priors);
   fitseed   = ConvertNuisance(nuisanceSeed);
 
@@ -333,21 +327,20 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
-<<<<<<< HEAD
-fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const {
-=======
+double Sterilizer::EvalLL(Nuisance nuisance) const {
+  return EvalLLH(ConvertNuisance(nuisance));
+}
+
 fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
->>>>>>> ed946e0c7263c123b5e64e7b572e6a46e02b1a00
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
-  
+
   std::vector<double> seed=prob.getSeed();
   std::vector<unsigned int> fixedIndices;
-  
+
   std::vector<double> FixVec=ConvertNuisance(fixedParams);
   for(size_t i; i!=FixVec.size(); ++i)
       if(FixVec[i]>0.1) fixedIndices.push_back(i);
-  
 
   return doFitLBFGSB(prob_, seed, fixedIndices);
 }
@@ -357,7 +350,7 @@ fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
  * **********************************************************************************************************/
 
 void Sterilizer::SetSterileNuParams(SterileNuParams snp){
-  if(not simulation_loaded))
+  if(not simulation_loaded)
     throw std::runtime_error("No simulation has been loaded. Cannot weight to sterile hypothesis without simulation.");
   if(not mc_generation_weighter_constructed_)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");

@@ -27,11 +27,6 @@ struct fitResult {
   bool succeeded;
 };
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "oversizeWeight.h"
-
-
 struct Nuisance {
   float normaliztion;
   float astroFlux;
@@ -56,7 +51,6 @@ struct Priors {
   float nuNubarRatioWidth=0.1;
   float zenithCorrectionMultiplier=0.038;
 };
-
 
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
@@ -98,6 +92,7 @@ struct SterileNuParams {
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24){}
 };
 
+using namespace nusquids;
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
@@ -192,7 +187,6 @@ class Sterilizer {
     bool CheckSimulationLoaded() const;
     bool CheckDOMEfficiencySplinesLoaded() const;
     bool CheckCrossSectionWeighterConstructed() const;
-    bool CheckFluxWeighterConstructed() const;
     bool CheckFluxWeighterConstructed() const;
     bool CheckLeptonWeighterConstructed() const;
     bool CheckSimulationInitialized() const;
