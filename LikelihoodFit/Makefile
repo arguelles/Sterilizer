@@ -56,11 +56,11 @@ Event.o : Event.cpp Event.h
 plottingExtras.o : plottingExtras.cpp plottingExtras.h
 	$(CXX) $(CXXFLAGS) plottingExtras.cpp -c -o plottingExtras.o
 
-SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
+SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h oversizeWeight.h
 	$(CXX) $(CXXFLAGS) SterileSearch.cpp -c -o SterileSearch.o
 
-SterileSearchDoFit.o : SterileSearchDoFit.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
-	$(CXX) $(CXXFLAGS) SterileSearchFit.cpp -c -o SterileSearchFit.o
+SterileSearchDoFit.o : SterileSearchDoFit.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h oversizeWeight.h
+	$(CXX) $(CXXFLAGS) SterileSearchDoFit.cpp -c -o SterileSearchDoFit.o
 
 SterileSearchDoFit : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchDoFit

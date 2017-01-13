@@ -53,8 +53,11 @@ void Sterilizer::LoadMC(){
 void Sterilizer::LoadCompact(){
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
-    std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
-    std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
+    auto simulation_information=simInfo.find(steeringParams_.simToLoad);
+    if(simulation_information==simInfo.end())
+      throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
+    std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
     unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
         getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
     if(!steeringParams_.quiet){
@@ -72,8 +75,11 @@ void Sterilizer::LoadCompact(){
 void Sterilizer::WriteCompact() const {
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
-    std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
-    std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
+    auto simulation_information=simInfo.find(steeringParams_.simToLoad);
+    if(simulation_information==simInfo.end())
+      throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
+    std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
@@ -90,7 +96,6 @@ void Sterilizer::ClearSimulation(){
   mainSimulation_.clear();
 }
 
-
 /*************************************************************************************************************
  * Functions to load to load DOM efficiency splines
  * **********************************************************************************************************/
@@ -103,7 +108,6 @@ void Sterilizer::LoadDOMEfficiencySplines(){
   }
   dom_efficiency_splines_constructed_=true;
 }
-
 
 /*************************************************************************************************************
  * Functions to construct weighters
@@ -140,7 +144,6 @@ void Sterilizer::ConstructFluxWeighter(){
   fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0.000000_0.000000.hdf5");
   flux_weighter_constructed_=true;
 }
-
 
 void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
@@ -312,6 +315,7 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
+/*
 void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
@@ -352,6 +356,7 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
 
   return DoFitLBFGSB(prob_, seed, fixedIndices);
 }
+*/
 
 /*************************************************************************************************************
  * Functions to change the sterile neutrino hypothesis
@@ -387,25 +392,32 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
  CheckDataPath(dp.oversize_path);
  CheckDataPath(dp.domeff_spline_path);
  CheckDataPath(dp.flux_splines_path);
+ return true;
 }
 
  // Check a directory exists and throw a relevant error otherwise. 
  bool Sterilizer::CheckDataPath(std::string p) const
  {
    struct stat info;
+   bool status=true;
    if(p!="")
      {
        if( stat(p.c_str(), &info) != 0 )
          {
+           status=false;
            throw std::runtime_error("cannot access "+ p);
          }
        else if( !(info.st_mode & S_IFDIR) )
          {
+           status=false;
            throw std::runtime_error("is not a directory: " +p);
          }
      }
-   else
+   else{
      std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
+     return false;
+   }
+   return status;
  }
 
 
