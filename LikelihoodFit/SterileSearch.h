@@ -239,8 +239,78 @@ class Sterilizer {
     FitResult MinLLH(NuisanceFlag fixedParams) const;
     void SetSterileNuParams(SterileNuParams snp);
   private:
-    // Make the fit
-    template<typename LikelihoodType> FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
+    // Do the fit business
+    template<typename LikelihoodType>
+    FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
+              std::vector<unsigned int> indicesToFix){
+      using namespace likelihood;
+
+      LBFGSB_Driver minimizer;
+      minimizer.addParameter(seed[0],.001,0.0);
+      minimizer.addParameter(seed[1],.001,0.0);
+      minimizer.addParameter(seed[2],.01,0.0);
+      minimizer.addParameter(seed[3],.005);
+      minimizer.addParameter(seed[4],.005,-.1,.3);
+      minimizer.addParameter(seed[5],.01,0.0);
+      minimizer.addParameter(seed[6],.001,0.0,2.0);
+      minimizer.addParameter(seed[7],.001,-1.0,1.0);
+
+      for(auto idx : indicesToFix)
+        minimizer.fixParameter(idx);
+
+      minimizer.setChangeTolerance(1e-5);
+      minimizer.setHistorySize(20);
+      FitResult result;
+      result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
+      result.likelihood=minimizer.minimumValue();
+      result.params=ConvertVecToNuisance(minimizer.minimumPosition());
+      result.nEval=minimizer.numberOfEvaluations();
+      result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
+
+      return(result);
+    }
+    // Initialize Simulation Weights
+    template<typename ContainerType, typename WeighterType>
+    void initializeSimulationWeights(ContainerType& simulation, const WeighterType& convPionWeighter, const WeighterType& convKaonWeighter, const WeighterType& promptWeighter, const OversizeWeighter& osw){
+      using iterator=typename ContainerType::iterator;
+      auto cache=[&](iterator it, iterator end){
+        for(; it!=end; it++){
+          auto& e=*it;
+          LW::Event lw_e {e.leptonEnergyFraction,
+                    e.injectedEnergy,
+                    e.totalColumnDepth,
+                    e.inelasticityProbability,
+                    e.intX,
+                    e.intY,
+                    e.injectedMuonEnergy,
+                    e.injectedMuonZenith,
+                    e.injectedMuonAzimuth,
+                    static_cast<particleType>(e.primaryType),
+                    e.year};
+
+          double osweight = osw.EvaluateOversizeCorrection(e.energy, e.zenith);
+          e.cachedConvPionWeight=convPionWeighter(lw_e)*e.cachedLivetime*osweight;
+          e.cachedConvKaonWeight=convKaonWeighter(lw_e)*e.cachedLivetime*osweight;
+          e.cachedPromptWeight=promptWeighter(lw_e)*e.cachedLivetime*osweight;
+          // we will set this to zero. Love. CA.
+          e.cachedAstroWeight=0.;
+        }
+      };
+
+      ThreadPool pool(steeringParams_.evalThreads);
+      iterator it=simulation.begin(), end=simulation.end();
+      while(true){
+        unsigned long dist=std::distance(it,end);
+        if(dist>=1000UL){
+          pool.enqueue(cache,it,it+1000);
+          it+=1000;
+        }
+        else{
+          pool.enqueue(cache,it,end);
+          break;
+        }
+      }
+    }
   public:
     // set functions
 
