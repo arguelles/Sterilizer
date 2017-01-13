@@ -132,7 +132,17 @@ void SterileSearch::ConstructLeptonWeighter(){
   PionFluxWeighter = LW::LeptonWeighter(flux_pion,xsw,mcw);
   KaonFluxWeighter = LW::LeptonWeighter(flux_kaon,xsw,mcw);
   PromptFluxWeighter = LW::LeptonWeighter(flux_prompt,xsw,mcw);
-  mc_generation_weighter_constructed=true;
+  lepton_weighter_constructed=true;
+}
+
+/*************************************************************************************************************
+ * Functions to obtain distributions
+ * **********************************************************************************************************/
+
+void SterileSearch::WeightMC(){
+  if(not lepton_weighter_constructed)
+    throw std::runtime_error("LeptonWeighter has to be constructed first.");
+
 }
 
 /*************************************************************************************************************

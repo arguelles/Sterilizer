@@ -117,7 +117,7 @@ class SterileHunter {
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
-    void SterileSearch::ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
+    void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
   public:
     marray<double,3> GetDataDistribution();
     marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
