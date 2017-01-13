@@ -12,6 +12,30 @@ struct fitResult {
   bool succeeded;
 };
 
+struct NuisanceParams {
+  float normaliztion;
+  float crSlope;
+  float domEfficiency;
+  float piKRatio;
+  float nuNubarRatio;
+  float zenithCorrection;
+};
+
+struct Priors {
+  float normCenter=1.;
+  float normWidth=0.4;
+  float crSlopeCenter=0.0;
+  float crSlopeWidth=0.05;
+  float domEffCenter=-0.1;
+  float domEffWidth=0.3;
+  float piKRatioCenter=1.0;
+  float piKRatioWidth=0.1;
+  float nuNubarRatioCenter=1.0;
+  float nuNubarRatioWidth=0.1;
+  float zenithCorrectionMultiplier=0.038;
+};
+
+
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
   std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
@@ -33,11 +57,9 @@ struct SteeringParams {
   bool useFactorization=false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
-  std::string secondarySimToLoad="";
   bool quiet=false;
   size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
-  std::string deltaModelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;
   std::string xs_model_name="";
@@ -97,10 +119,16 @@ class Sterilizer {
     LW::mcgenWeighter mcw_;
     OversizeWeighter osw_;
 
+    // Status flags
     bool cross_section_weighter_constructed_(false);
     bool flux_section_weighter_constructed_(false);
     bool lepton_weighter_constructed_(false);
     bool oversize_weighter_constructed_(false);
+    bool dom_efficiency_splines_loaded_(false);
+    bool data_histogram_constructed_(false);
+    bool simulation_loaded_(false);
+    bool mc_generation_weighter_constructed_(false);
+    bool data_loaded_(false);
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
