@@ -13,7 +13,7 @@ struct fitResult {
 #include "oversizeWeight.h"
 
 
-struct NuisanceParams {
+struct Nuisance {
   float normaliztion;
   float crSlope;
   float domEfficiency;
@@ -160,6 +160,15 @@ class Sterilizer {
     bool CheckDataPath(std::string p) const;
 
     void SetRandomNumberGeneratorSeed(unsigned int seed);
+    
+    // Given human readable priors, weaverize
+    CPrior              ConvertPriorSet(Priors pr);
+    // Given human readable nuisance parameters, vectorize
+    std::vector<double> ConvertNuisance(Nuisance ns);
+
+    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
 
  private:
     // Test if two particles are in the same generation (e.g., mu / numu)
@@ -172,9 +181,10 @@ class Sterilizer {
 
   public:
     marray<double,3> GetDataDistribution() const;
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, Nuisance nuisance) const;
+    marray<double,3> GetRealization(SterileNeutrinoParameters snp, Nuisance nuisance) const;
+    double llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) const;
+
     fitResult llh(SterileNeutrinoParameters snp) const;
     // set functions
 

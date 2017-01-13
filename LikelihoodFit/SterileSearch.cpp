@@ -260,7 +260,6 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
 }
 
 
-
 marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
     MakeSimulationHistogram(snp,nuisance);
     marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
@@ -283,8 +282,24 @@ marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::
     return array;
 }
 
+
 marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
 
+}
+
+
+// human interfaces
+marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, Nuisance nuisance)
+{
+  return GetExpectation(snp, ConvertNuisance(nuisance));
+}
+
+marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, Nuisance nuisance) const{
+  return GetRealization(snp, ConvertNuisance(nuisance));
+}
+
+double Sterilizer::llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) const {
+  return llhFull(snp,ConvertNuisance(nuisance));
 }
 
 /*************************************************************************************************************
@@ -343,8 +358,7 @@ fitResult Sterilizer::llh(SterileNeutrinoParameters snp) const {
  }
 
 
-
-
+// Given a human readable prior set, make a weaverized version
 CPrior Sterilizer::ConvertPriorSet(Priors pr)
 {
   // construct continuous nuisance priors      
@@ -381,4 +395,20 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
                              kaonPrior,
                              nanPrior,
                              ZCPrior);
+}
+
+
+// Given a human readable nuisance parameter set, make a nuisance vector
+std::vector<double> ConvertNuisance(Nuisance ns)
+{
+  return std::vector<double> Nuisance{
+    ns.normalization,
+      0, //astro flux set to zero
+      0, //prompt flux set to zero
+      ns.crSlope,
+      ns.domEfficiency,
+      ns.piKRatio,
+      ns.nuNubarRatio,
+      ns.zenithCorrection
+      }
 }
