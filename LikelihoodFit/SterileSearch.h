@@ -21,11 +21,6 @@
 #include "oversizeWeight.h"
 
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "oversizeWeight.h"
-
-
 struct Nuisance {
   float normaliztion;
   float astroFlux;
@@ -110,6 +105,7 @@ struct SterileNuParams {
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24){}
 };
 
+using namespace nusquids;
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
@@ -213,7 +209,6 @@ class Sterilizer {
     bool CheckDOMEfficiencySplinesLoaded() const;
     bool CheckCrossSectionWeighterConstructed() const;
     bool CheckFluxWeighterConstructed() const;
-    bool CheckFluxWeighterConstructed() const;
     bool CheckLeptonWeighterConstructed() const;
     bool CheckSimulationInitialized() const;
     bool CheckDataHistogramConstructed() const;
@@ -221,8 +216,10 @@ class Sterilizer {
     bool CheckLikelihoodProblemConstruction() const;
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetExpectation(std::vector<double> nuisance) const;
+    marray<double,3> GetExpectation(Nuisance nuisance) const;
+    marray<double,3> GetRealization(std::vector<double> nuisance) const;
+    marray<double,3> GetRealization(Nuisance nuisance) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
     fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
