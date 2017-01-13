@@ -222,11 +222,12 @@ class Sterilizer {
     marray<double,3> GetRealization(Nuisance nuisance) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
-    fitResult MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
+    double EvalLL(Nuisance nuisance) const;
+    FitResult MinLLH(NuisanceFlag fixedParams) const;
     void SetSterileNuParams(SterileNuParams snp);
   private:
     // Make the fit
-    template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
+    template<typename LikelihoodType> FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
   public:
     // set functions
 
