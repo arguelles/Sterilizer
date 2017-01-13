@@ -23,7 +23,7 @@ LDFLAGS+=-lNewNuFlux
 LDFLAGS+=-lPhysTools
 LDFLAGS+=-lSQuIDS -lnuSQuIDS
 LDFLAGS+=-lLeptonWeighter
-#LDFLAGS+=-lsupc++
+LDFLAGS+=-lsupc++
 
 CXXFLAGS+=-I../Likelihood
 LIKELIHOOD_HEADERS=../Likelihood/autodiff.h ../Likelihood/likelihood.h ../Likelihood/nugenWeighting.h ../Likelihood/particleType.h ../Likelihood/tableio.h ../Likelihood/weighting.h ../Likelihood/lbfgsb/lbfgsb.h ../Likelihood/lbfgsb/interface.h

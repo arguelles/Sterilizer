@@ -7,6 +7,7 @@
 
 Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp):
   steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
+  CheckDataPaths(dataPaths_);
   if(steeringParams_.ReadCompact){
     LoadCompact();
   } else {

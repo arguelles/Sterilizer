@@ -44,11 +44,15 @@ int main(int argc, char* argv[]){
 
   ns.normalization=1.0;
   std::cout<< " Normalization : " <<ns.normalization<<std::endl;
+  
+  std::cout<<"Writing compact data"<<std::endl;
+  ster->WriteCompact();
+
   std::cout<<"Destructing the Sterilizer"<<std::endl;
   delete ster;
   
 
-
+ 
   std::cout<<std::endl<<"==Making an object with compact data=="<<std::endl<<std::endl;
   sp.ReadCompact=true;
 
@@ -59,6 +63,7 @@ int main(int argc, char* argv[]){
   DataDist=ster->GetDataDistribution();
   std::cout<<"   Bin 1,1" << DataDist[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5" << DataDist[0][5][5] << std::endl;
+ 
 
   std::cout<<"Adjusting the sterile params to (1.0, 0.2)"<<std::endl;
   snp.th24=0.2;

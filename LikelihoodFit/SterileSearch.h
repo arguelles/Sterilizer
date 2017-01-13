@@ -69,7 +69,7 @@ struct FitResult {
 
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
-  std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
+  std::string squids_files_path =        "/data/user/twatson/fluxes/flux_0/";
   std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
   std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
   std::string data_path =                "/data/ana/NuFSGenMC/Data/";
@@ -186,12 +186,14 @@ class Sterilizer {
     // Check a directory exists and throw a relevant error otherwise.
     bool CheckDataPath(std::string p) const;
 
+    void WriteCompact() const;
+
+
   protected:
     // Functions to load and unload data
     void LoadData();
     void LoadMC();
     void LoadCompact();
-    void WriteCompact() const;
     void ClearData();
     void ClearSimulation();
     // loading DOM efficiency splines
@@ -213,6 +215,10 @@ class Sterilizer {
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
     Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
+    marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
+    marray<double,3> GetExpectation(std::vector<double> nuisance) const;
+
+
   public:
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
@@ -229,9 +235,7 @@ class Sterilizer {
 
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
-    marray<double,3> GetExpectation(std::vector<double> nuisance) const;
     marray<double,3> GetExpectation(Nuisance nuisance) const;
-    marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
     marray<double,3> GetRealization(Nuisance nuisance, int seed) const;
     // functions to evaluate the likelihood
     //double EvalLLH(std::vector<double> nuisance) const;
