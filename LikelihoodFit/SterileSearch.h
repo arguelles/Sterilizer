@@ -171,7 +171,7 @@ class Sterilizer {
     // Given human readable nuisance parameters, vectorize
     std::vector<double> ConvertNuisance(Nuisance ns);
 
-    void Sterilizer::ConstructLikelihoodProblem(Priors priors)
+    void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed)
     marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
     marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
     double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
