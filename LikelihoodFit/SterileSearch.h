@@ -29,6 +29,7 @@ auto binner = [](HistType& h, const Event& e){
 
 class SterileHunter {
   private:
+    std::vector<unsigned int> years;
     /// Parameters used in the fit
     double maxFitEnergy_ = 2.e4;
     double minCosth_ = -1.;
@@ -83,9 +84,16 @@ class SterileHunter {
 
     // weighter object
     DiffuseFitWeighterMaker DFWM;
+    std::shared_ptr<LW::Flux> flux_kaon,flux_pion,flux_prompt;
+    std::shared_ptr<LW::CrossSectionFromSpline> xsw;
+    LW::mcgenWeighter mcw;
     LW::LeptonWeighter PionFluxWeighter;
     LW::LeptonWeighter KaonFluxWeighter;
     LW::LeptonWeighter PromptFluxWeighter;
+
+    // DOM efficiency splines
+    std::vectior<std::unique_ptr<Splinetable>> domEffConv;
+    std::vectior<std::unique_ptr<Splinetable>> domEffPrompt;
   public:
     /// \brief Constructor
     SterileHunter(){
@@ -99,14 +107,17 @@ class SterileHunter {
       LoadFluxes(flux_path,snp)
     }
   protected:
+    // Functions to load and unload data
     void LoadData(std::string filepath);
-    void LoadCompactData(std::string filepath);
     void LoadMC(std::string filepath) {}
+    void LoadCompact(std::string filepath);
+    void WriteCompact(std::string filepath);
+    // Functions to load and unload data
     void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
-    void LoadCompactMC(std::string filepath) {}
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
+    void SterileSearch::ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
   public:
     marray<double,3> GetDataDistribution();
     marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
