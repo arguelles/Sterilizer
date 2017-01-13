@@ -21,7 +21,6 @@
 #include "runspec.h"
 #include "oversizeWeight.h"
 
-
 struct Nuisance {
   float normalization=1.0;
   float astroFlux=0.0;
