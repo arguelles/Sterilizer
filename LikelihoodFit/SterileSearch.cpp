@@ -248,8 +248,6 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
     return array;
 }
 
-
-
 marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
     MakeSimulationHistogram(snp,nuisance);
     marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
@@ -277,40 +275,106 @@ marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::
 }
 
 /*************************************************************************************************************
- * Functions to construct histograms
+ * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-double Sterilizer::llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
+void Sterilizer::ConstructLikelihoodProblem(){
+  if(not data_histogram_constructed_))
+    throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
+  if(not simulation_histogram_constructed_))
+    throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
 
+  double alpha = delta_alpha[steeringParams_.modelName];
+
+	UniformPrior positivePrior(0.0,std::numeric_limits<double>::infinity());
+	GaussianPrior normalizationPrior(1.,0.4);
+	UniformPrior noPrior;
+	GaussianPrior crSlopePrior(0.0,0.05);
+	UniformPrior simple_domEffPrior(-.1,.3);
+	GaussianPrior kaonPrior(1.0,0.1);
+	GaussianPrior ZCPrior(0.0,0.038*alpha);
+	GaussianPrior nanPrior(1.0,0.1);
+
+	auto priors=makePriorSet(normalizationPrior,positivePrior,positivePrior,
+							 crSlopePrior,simple_domEffPrior,kaonPrior,nanPrior,ZCPrior);
+
+  prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
+      dataHist_, {simHist_}, priors_, {1.0}, likelihood::simpleDataWeighter(), DFWM,
+      likelihood::poissonLikelihood(),fitSeed_ );
+  prob_.setEvaluationThreadCount(SteeringParams_.evalThreads);
+
+  likelihood_problem_constructed_=true;
 }
 
-fitResult Sterilizer::llh(SterileNeutrinoParameters snp) const {
-
+bool Sterilizer::CheckLikelihoodProblemConstruction() const {
+return(likelihood_problem_constructed_);
 }
 
+double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
+  if(not likelihood_problem_constructed_)
+    throw std::runtime_error("Likelihood problem has not been constructed..");
+  return -prob_.evaluateLikelihood(nuisance);
+}
 
+fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedParams) const {
+  if(not likelihood_problem_constructed_)
+    throw std::runtime_error("Likelihood problem has not been constructed..");
+
+  std::vector<double> seed=prob.getSeed();
+  std::vector<unsigned int> fixedIndices;
+  for(const auto pf : fixedParams.params){
+    if(!steeringParams_.quiet)
+      std::cout << "Fitting with parameter " << pf.first << " fixed to " << pf.second << std::endl;
+    seed[pf.first]=pf.second;
+    fixedIndices.push_back(pf.first);
+  }
+
+  return doFitLBFGSB(prob_, seed, fixedIndices);
+}
+
+/*************************************************************************************************************
+ * Functions to change the sterile neutrino hypothesis
+ * **********************************************************************************************************/
+
+void Sterilizer::SetSterileNeutrinoHypothesis(SterileNuParams snp){
+  if(not simulation_loaded))
+    throw std::runtime_error("No simulation has been loaded. Cannot weight to sterile hypothesis without simulation.");
+  if(not mc_generation_weighter_constructed_)
+    throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
+  if(not cross_section_weighter_constructed_)
+    throw std::runtime_error("Cross section weighter has to be constructed first.");
+
+  sterileNuParams_=snp;
+  ConstructFluxWeighter();
+  ConstructLeptonWeighter();
+  WeightMC();
+}
+
+/*************************************************************************************************************
+ * Functions to set options in the class
+ * **********************************************************************************************************/
 //Set the RNG seed
- void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
- {
-   steeringParams_.rngSeed=seed;
-   rng_.seed(seed);
-   if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
- }
+void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
+{
+ steeringParams_.rngSeed=seed;
+ rng_.seed(seed);
+ if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
+}
 
 
- // Check that the directories where files are mean to be exist
- bool Sterilizer::CheckDataPaths(DataPaths dp) const
- {
-   CheckDataPath(dp.compact_file_path);
-   CheckDataPath(dp.squids_files_path);
-   CheckDataPath(dp.prompt_squids_files_path);
-   CheckDataPath(dp.xs_spline_path);
-   CheckDataPath(dp.data_path);
-   CheckDataPath(dp.mc_path);
-   CheckDataPath(dp.oversize_function_path);
-   CheckDataPath(dp.domeff_spline_path);
-   CheckDataPath(dp.flux_splines_path);
- }
+// Check that the directories where files are mean to be exist
+bool Sterilizer::CheckDataPaths(DataPaths dp) const
+{
+ CheckDataPath(dp.compact_file_path);
+ CheckDataPath(dp.squids_files_path);
+ CheckDataPath(dp.prompt_squids_files_path);
+ CheckDataPath(dp.xs_spline_path);
+ CheckDataPath(dp.data_path);
+ CheckDataPath(dp.mc_path);
+ CheckDataPath(dp.oversize_function_path);
+ CheckDataPath(dp.domeff_spline_path);
+ CheckDataPath(dp.flux_splines_path);
+}
 
  // Check a directory exists and throw a relevant error otherwise. 
  bool Sterilizer::CheckDataPath(std::string p) const

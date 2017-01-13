@@ -37,6 +37,7 @@ struct SteeringParams {
   std::string simToLoad="nufsgen_mie_0_99";
   std::string secondarySimToLoad="";
   bool quiet=false;
+  size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
   std::string deltaModelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
