@@ -20,12 +20,6 @@
 #include "runspec.h"
 #include "oversizeWeight.h"
 
-struct fitResult {
-  std::vector<double> params;
-  double likelihood;
-  unsigned int nEval, nGrad;
-  bool succeeded;
-};
 
 struct Nuisance {
   float normaliztion;
@@ -36,6 +30,17 @@ struct Nuisance {
   float piKRatio;
   float nuNubarRatio;
   float zenithCorrection;
+};
+
+struct NuisanceFlag {
+  bool normaliztion=0;
+  bool astroFlux=1;
+  bool promptFlux=1;
+  bool crSlope=0;
+  bool domEfficiency=0;
+  bool piKRatio=0;
+  bool nuNubarRatio=0;
+  bool zenithCorrection=0;
 };
 
 struct Priors {
@@ -51,6 +56,14 @@ struct Priors {
   float nuNubarRatioWidth=0.1;
   float zenithCorrectionMultiplier=0.038;
 };
+
+struct FitResult {
+  Nuisance params;
+  double likelihood;
+  unsigned int nEval, nGrad;
+  bool succeeded;
+};
+
 
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
@@ -182,6 +195,14 @@ class Sterilizer {
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
     void ConstructLikelihoodProblem();
+
+    // Converters between human and vector forms
+    CPrior ConvertPriorSet(Priors pr);
+    std::vector<double> ConvertNuisance(Nuisance ns);
+    std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns);
+    std::vector<double> ConvertVecToNuisance(std::vector<double> vecns);
+
+
   public:
     // functions to check the status of the object
     bool CheckDataLoaded() const;
