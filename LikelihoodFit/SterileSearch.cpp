@@ -491,33 +491,3 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   return ns;
 }
 
-// Do the fit business
-template<typename LikelihoodType>
-FitResult Sterilizer::DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
-		      std::vector<unsigned int> indicesToFix){
-  using namespace likelihood;
-
-  LBFGSB_Driver minimizer;
-  minimizer.addParameter(seed[0],.001,0.0);
-  minimizer.addParameter(seed[1],.001,0.0);
-  minimizer.addParameter(seed[2],.01,0.0);
-  minimizer.addParameter(seed[3],.005);
-  minimizer.addParameter(seed[4],.005,-.1,.3);
-  minimizer.addParameter(seed[5],.01,0.0);
-  minimizer.addParameter(seed[6],.001,0.0,2.0);
-  minimizer.addParameter(seed[7],.001,-1.0,1.0);
-
-  for(auto idx : indicesToFix)
-    minimizer.fixParameter(idx);
-
-  minimizer.setChangeTolerance(1e-5);
-  minimizer.setHistorySize(20);
-  FitResult result;
-  result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
-  result.likelihood=minimizer.minimumValue();
-  result.params=ConvertVecToNuisance(minimizer.minimumPosition());
-  result.nEval=minimizer.numberOfEvaluations();
-  result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
-
-  return(result);
-}
