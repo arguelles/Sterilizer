@@ -1,5 +1,6 @@
 #include "SterileSearch.h"
 
+
 /*************************************************************************************************************
  * Implementation auxiliary functions
  * **********************************************************************************************************/
@@ -169,9 +170,17 @@ void Sterilizer::ConstructLeptonWeighter(){
   lepton_weighter_constructed_=true;
 }
 
+
+ void Sterilizer::ConstructOversizeWeighter()
+ {
+   osw_=OversizeWeighter(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat");
+   oversize_weighter_constructed_=true;
+ }
+
 bool SterileSearch::CheckLeptonWeighterConstructed() const {
   return(lepton_weighter_constructed_);
 }
+
 
 /*************************************************************************************************************
  * Functions to initialize the MC weights
@@ -394,3 +403,5 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
    else
      std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
  }
+
+
