@@ -335,7 +335,7 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
-fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedParams) const {
+fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
 
@@ -344,11 +344,18 @@ fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedPa
   for(const auto pf : fixedParams.params){
     if(!steeringParams_.quiet)
       std::cout << "Fitting with parameter " << pf.first << " fixed to " << pf.second << std::endl;
-    seed[pf.first]=pf.second;
-    fixedIndices.push_back(pf.first);
+ 
+    if(fixedParams.normalization>0.5)     fixedIndices.push_back(0);
+    if(fixedParams.astroFlux>0.5)         fixedIndices.push_back(1);
+    if(fixedParams.promptFlux>0.5)        fixedIndices.push_back(2);
+    if(fixedParams.crSlope>0.5)           fixedIndices.push_back(3);
+    if(fixedParams.domEfficiency>0.5)     fixedIndices.push_back(4);
+    if(fixedParams.piKRatio>0.5)          fixedIndices.push_back(5);
+    if(fixedParams.nuNubarRatio>0.5)      fixedIndices.push_back(6);
+    if(fixedParams.zenithCorrection>0.5)  fixedIndices.push_back(7);
   }
 
-  return doFitLBFGSB(prob_, seed, fixedIndices);
+  return doFitLBFGSB(prob_, fitSeed_, fixedIndices);
 }
 
 /*************************************************************************************************************
@@ -445,7 +452,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 
   // make and return priorset  
   return priors=makePriorSet(normalizationPrior,
-                             positivePrior,
+                             positivePrior, 
                              positivePrior,
                              crSlopePrior,
                              simple_domEffPrior,
@@ -460,8 +467,8 @@ std::vector<double> ConvertNuisance(Nuisance ns)
 {
   return std::vector<double> Nuisance{
     ns.normalization,
-      0, //astro flux set to zero
-      0, //prompt flux set to zero
+      ns.astroFlux,
+      ns.promptFlux,
       ns.crSlope,
       ns.domEfficiency,
       ns.piKRatio,

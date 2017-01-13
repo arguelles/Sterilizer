@@ -19,6 +19,8 @@ struct fitResult {
 
 struct Nuisance {
   float normaliztion;
+  float astroFlux;
+  float promptFlux;
   float crSlope;
   float domEfficiency;
   float piKRatio;
