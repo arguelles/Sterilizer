@@ -193,7 +193,7 @@ class Sterilizer {
     void ClearData();
     void ClearSimulation();
     // loading DOM efficiency splines
-    void LoadDOMEfficiencySplines(std::vector<unsigned int> years);
+    void LoadDOMEfficiencySplines();
     // functions to construct the weighters
     void ConstructCrossSectionWeighter();
     void ConstructFluxWeighter();
