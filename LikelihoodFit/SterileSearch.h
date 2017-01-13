@@ -172,13 +172,9 @@ class Sterilizer {
     // likehood problem object
 /*
     template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
-             typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>,
-             typename LikelihoodType=LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension>>
-    LikelihoodType prob_;
-*/
-    template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
              typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>>
     LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension> prob_;
+*/
   public:
     // Constructor
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp);
@@ -316,11 +312,12 @@ class Sterilizer {
       }
     }
 
-    // Given a human readable prior set, make a weaverized version                                                                              
+/*
+    // Given a human readable prior set, make a weaverized version
 template<typename... PriorTypes>
   FixedSizePriorSet<PriorTypes...> Sterilizer::ConvertPriorSet(Priors pr) const
   {
-    // construct continuous nuisance priors                                                                                                   
+    // construct continuous nuisance priors
     UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
     GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
     GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
@@ -328,7 +325,7 @@ template<typename... PriorTypes>
     GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
     GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
 
-    // construct zenith correction prior                                                                                                      
+    // construct zenith correction prior
     std::map<std::string,double> delta_alpha {
       {"HondaGaisser",8./7.},
 	{"CombinedGHandHG_H3a_QGSJET",4. /7.},
@@ -345,7 +342,7 @@ template<typename... PriorTypes>
 
     GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
 
-    // make and return priorset                                                                                                               
+    // make and return priorset
     return makePriorSet(normalizationPrior,
 			positivePrior,
 			positivePrior,
@@ -354,8 +351,8 @@ template<typename... PriorTypes>
 			kaonPrior,
 			nanPrior,
 			ZCPrior);
-  };
-
+  }
+*/
 
 
   public:

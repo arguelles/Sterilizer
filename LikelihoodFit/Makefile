@@ -56,7 +56,7 @@ Event.o : Event.cpp Event.h
 plottingExtras.o : plottingExtras.cpp plottingExtras.h
 	$(CXX) $(CXXFLAGS) plottingExtras.cpp -c -o plottingExtras.o
 
-SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
+SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h oversizeWeight.h
 	$(CXX) $(CXXFLAGS) SterileSearch.cpp -c -o SterileSearch.o
 
 SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
