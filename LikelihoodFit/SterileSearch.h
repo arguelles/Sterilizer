@@ -205,16 +205,15 @@ class Sterilizer {
 
   public:
     // functions to check the status of the object
-    bool CheckDataLoaded() const;
-    bool CheckSimulationLoaded() const;
-    bool CheckDOMEfficiencySplinesLoaded() const;
-    bool CheckCrossSectionWeighterConstructed() const;
-    bool CheckFluxWeighterConstructed() const;
-    bool CheckLeptonWeighterConstructed() const;
-    bool CheckSimulationInitialized() const;
-    bool CheckDataHistogramConstructed() const;
-    bool CheckSimulationHistogramConstructed() const;
-    bool CheckLikelihoodProblemConstruction() const;
+    bool CheckDataLoaded() const {return data_loaded_;};
+    bool CheckSimulationLoaded() const {return simulation_loaded_;};
+    bool CheckDOMEfficiencySplinesLoaded() const {return dom_efficiency_splines_constructed_;};
+    bool CheckCrossSectionWeighterConstructed() const {return xs_weighter_constructed_;};
+    bool CheckFluxWeighterConstructed() const {return flux_weighter_constructed_;};
+    bool CheckLeptonWeighterConstructed() const {return lepton_weighter_constructed;};
+    bool CheckDataHistogramConstructed() const {return data_histogram_constructed;};
+    bool CheckSimulationHistogramConstructed() const {return simulation_histogram_constructed_;};
+    bool CheckLikelihoodProblemConstruction() const {return likelihood_problem_constructed_;};
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;

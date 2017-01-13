@@ -75,13 +75,6 @@ void Sterilizer::ClearSimulation(){
   mainSimulation_.clear();
 }
 
-bool Sterilizer::CheckDataLoaded() const {
-  return(data_loaded);
-}
-
-bool Sterilizer:;CheckSimulationLoaded() const {
-  return(simulation_to_loaded);
-}
 
 /*************************************************************************************************************
  * Functions to load to load DOM efficiency splines
@@ -95,9 +88,6 @@ void Sterilizer::LoadDOMEfficiencySplines(std::vector<unsigned int> years){
   dom_efficiency_splines_loaded_=true;
 }
 
-bool Sterilizer::CheckDOMEfficiencySplinesLoaded() const {
-  return(dom_efficiency_splines_loaded_);
-}
 
 /*************************************************************************************************************
  * Functions to construct weighters
@@ -108,9 +98,7 @@ void Sterilizer::ConstructCrossSectionWeighter(){
   cross_section_weighter_constructed_=true;
 }
 
-bool SterileSearch::CheckCrossSectionWeighterConstructed() const {
-  return(cross_section_weighter_constructed_);
-}
+
 void Sterilizer::ConstructFluxWeighter(){
   std::string sterile_neutrino_model_identifier = GetSterileNeutrinoModelIdentifier(sterileNuParams_);
 
@@ -140,9 +128,6 @@ void Sterilizer::ConstructFluxWeighter(){
   flux_weighter_constructed_=true;
 }
 
-bool Sterilizer::CheckFluxWeighterConstructed() const {
-  return(flux_weighter_constructed_);
-}
 
 void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   std::vector<std::string> simSetsToLoad;
@@ -152,9 +137,6 @@ void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   mc_generation_weighter_constructed_=true;
 }
 
-bool Sterilizer::CheckFluxWeighterConstructed() const {
-  return(flux_weighter_constructed_);
-}
 
 void Sterilizer::ConstructLeptonWeighter(){
   if(not mc_generation_weighter_constructed_)
@@ -175,9 +157,8 @@ void Sterilizer::ConstructOversizeWeighter(){
   oversize_weighter_constructed_=true;
 }
 
-bool SterileSearch::CheckLeptonWeighterConstructed() const {
-  return(lepton_weighter_constructed_);
-}
+
+
 
 /*************************************************************************************************************
  * Functions to initialize the MC weights
@@ -194,9 +175,6 @@ void Sterilizer::WeightMC(){
   simulation_initialized_=true;
 }
 
-bool Sterilizer::CheckSimulationInitialized() const {
-  return(simulation_initialized_);
-}
 
 /*************************************************************************************************************
  * Functions to construct histograms
@@ -218,9 +196,7 @@ void Sterilizer::ConstructDataHistogram(){
   data_histogram_constructed_=true;
 }
 
-bool Sterilizer::CheckDataHistogramConstructed() const {
-  return(data_histogram_constructed_);
-}
+
 
 void Sterilizer::ConstructSimulationHistogram(){
   if(not simulation_loaded_)
@@ -232,9 +208,6 @@ void Sterilizer::ConstructSimulationHistogram(){
   simulation_histogram_constructed_=true;
 }
 
-bool Sterilizer::CheckSimulationHistogramConstructed() const {
-  return(simulation_histogram_constructed_);
-}
 
 /*************************************************************************************************************
  * Functions to obtain distributions
@@ -315,9 +288,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
   likelihood_problem_constructed_=true;
 }
 
-bool Sterilizer::CheckLikelihoodProblemConstruction() const {
-return(likelihood_problem_constructed_);
-}
+
 
 double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   if(not likelihood_problem_constructed_)
