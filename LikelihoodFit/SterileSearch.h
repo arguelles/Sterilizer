@@ -162,6 +162,14 @@ class Sterilizer {
     std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
     // likehood problem object
+/*
+    template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
+             typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>,
+             typename LikelihoodType=LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension>>
+    LikelihoodType prob_;
+*/
+    template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
+             typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>>
     LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension> prob_;
   public:
     // Constructor
