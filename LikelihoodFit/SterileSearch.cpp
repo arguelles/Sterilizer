@@ -256,6 +256,7 @@ marray<double,3> Sterilizer::GetDataDistribution() const {
     return array;
 }
 
+
 marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
     MakeSimulationHistogram(snp,nuisance);
     marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
@@ -278,37 +279,45 @@ marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::
     return array;
 }
 
+
 marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
 
 }
+
+
+// human interfaces
+marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, Nuisance nuisance)
+{
+  return GetExpectation(snp, ConvertNuisance(nuisance));
+}
+
+marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, Nuisance nuisance) const{
+  return GetRealization(snp, ConvertNuisance(nuisance));
+}
+
+double Sterilizer::llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) const {
+  return llhFull(snp,ConvertNuisance(nuisance));
+}
+
+
+
 
 /*************************************************************************************************************
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-void Sterilizer::ConstructLikelihoodProblem(){
-  if(not data_histogram_constructed_))
+void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
+  if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
-  if(not simulation_histogram_constructed_))
+  if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
-
-  double alpha = delta_alpha[steeringParams_.modelName];
-
-	UniformPrior positivePrior(0.0,std::numeric_limits<double>::infinity());
-	GaussianPrior normalizationPrior(1.,0.4);
-	UniformPrior noPrior;
-	GaussianPrior crSlopePrior(0.0,0.05);
-	UniformPrior simple_domEffPrior(-.1,.3);
-	GaussianPrior kaonPrior(1.0,0.1);
-	GaussianPrior ZCPrior(0.0,0.038*alpha);
-	GaussianPrior nanPrior(1.0,0.1);
-
-	auto priors=makePriorSet(normalizationPrior,positivePrior,positivePrior,
-							 crSlopePrior,simple_domEffPrior,kaonPrior,nanPrior,ZCPrior);
+  
+  llhpriors = ConvertPriors(priors);
+  fitseed   = ConvertNuisance(nuisanceSeed);
 
   prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
-      dataHist_, {simHist_}, priors_, {1.0}, likelihood::simpleDataWeighter(), DFWM,
-      likelihood::poissonLikelihood(),fitSeed_ );
+      dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
+      likelihood::poissonLikelihood(), fitseed );
   prob_.setEvaluationThreadCount(SteeringParams_.evalThreads);
 
   likelihood_problem_constructed_=true;
@@ -324,18 +333,21 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
+<<<<<<< HEAD
 fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const {
+=======
+fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
+>>>>>>> ed946e0c7263c123b5e64e7b572e6a46e02b1a00
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
-
+  
   std::vector<double> seed=prob.getSeed();
   std::vector<unsigned int> fixedIndices;
-  for(const auto pf : fixedParams.params){
-    if(!steeringParams_.quiet)
-      std::cout << "Fitting with parameter " << pf.first << " fixed to " << pf.second << std::endl;
-    seed[pf.first]=pf.second;
-    fixedIndices.push_back(pf.first);
-  }
+  
+  std::vector<double> FixVec=ConvertNuisance(fixedParams);
+  for(size_t i; i!=FixVec.size(); ++i)
+      if(FixVec[i]>0.1) fixedIndices.push_back(i);
+  
 
   return doFitLBFGSB(prob_, seed, fixedIndices);
 }
@@ -404,8 +416,7 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
  }
 
 
-
-
+// Given a human readable prior set, make a weaverized version
 CPrior Sterilizer::ConvertPriorSet(Priors pr)
 {
   // construct continuous nuisance priors      
@@ -435,11 +446,27 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 
   // make and return priorset  
   return priors=makePriorSet(normalizationPrior,
-                             positivePrior,
+                             positivePrior, 
                              positivePrior,
                              crSlopePrior,
                              simple_domEffPrior,
                              kaonPrior,
                              nanPrior,
                              ZCPrior);
+}
+
+
+// Given a human readable nuisance parameter set, make a nuisance vector
+std::vector<double> ConvertNuisance(Nuisance ns)
+{
+  return std::vector<double> Nuisance{
+    ns.normalization,
+      ns.astroFlux,
+      ns.promptFlux,
+      ns.crSlope,
+      ns.domEfficiency,
+      ns.piKRatio,
+      ns.nuNubarRatio,
+      ns.zenithCorrection
+      }
 }
