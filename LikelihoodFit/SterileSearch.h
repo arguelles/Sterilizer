@@ -195,8 +195,10 @@ class Sterilizer {
     bool CheckLikelihoodProblemConstruction() const;
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetExpectation(std::vector<double> nuisance) const;
+    marray<double,3> GetExpectation(Nuisance nuisance) const;
+    marray<double,3> GetRealization(std::vector<double> nuisance) const;
+    marray<double,3> GetRealization(Nuisance nuisance) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
     fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;

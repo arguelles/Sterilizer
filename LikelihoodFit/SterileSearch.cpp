@@ -282,19 +282,17 @@ marray<double,3> Sterilizer::GetExpectation(std::vector<double> nuisance) const 
   return array;
 }
 
-marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
-
+marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
+  return GetExpectation(ConvertNuisance(nuisance));
 }
 
-// human interfaces
-marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance){
-  return GetExpectation(ConvertNuisance(nuisance));
+marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance) const{
+
 }
 
 marray<double,3> Sterilizer::GetRealization(Nuisance nuisance) const{
   return GetRealization(ConvertNuisance(nuisance));
 }
-
 
 /*************************************************************************************************************
  * Functions to construct likelihood problem and evaluate it
