@@ -1,6 +1,5 @@
 #include "SterileSearch.h"
 
-
 /*************************************************************************************************************
  * Implementation auxiliary functions
  * **********************************************************************************************************/
@@ -51,7 +50,10 @@ void Sterilizer::LoadMC(){
 
 void Sterilizer::LoadCompact(){
   try{
-    unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
+    std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
+    std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
+    unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
+        getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
     if(!steeringParams_.quiet){
       std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
@@ -66,8 +68,10 @@ void Sterilizer::LoadCompact(){
 
 void Sterilizer::WriteCompact() const {
   try{
+    std::string original_data_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
+    std::string original_simulation_file = dataPaths_.data_path+simInfo[steeringParams_.simToLoad].filename;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
-	      getFileChecksum(argv[0]),sample_,mainSimulation_);
+	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
     std::cerr << "Failed to save compact data" << std::endl;
