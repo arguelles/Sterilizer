@@ -1,8 +1,9 @@
 #ifndef _H_STERILE_SEARCH_
 #define _H_STERILE_SEARCH_
-
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <iterator>
 #include <algorithm>
 #include <iterator>
@@ -212,7 +213,7 @@ class Sterilizer {
     FixedSizePriorSet<PriorTypes...> ConvertPriorSet(Priors pr) const;
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
-    std::vector<double> ConvertVecToNuisance(std::vector<double> vecns) const;
+    Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
 
   public:
     // functions to check the status of the object

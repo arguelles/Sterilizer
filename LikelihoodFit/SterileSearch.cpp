@@ -390,7 +390,7 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
    struct stat info;
    if(p!="")
      {
-       if( stat( p, &info ) != 0 )
+       if( stat(p.c_str(), &info) != 0 )
          {
            throw std::runtime_error("cannot access "+ p);
          }
@@ -447,33 +447,33 @@ template<typename... PriorTypes>
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {
   std::vector<double> nuis;
-  nuis.append(ns.normalization);
-  nuis.append(ns.astroFlux);
-  nuis.append(ns.promptFlux);
-  nuis.append(ns.crSlope);
-  nuis.append(ns.domEfficiency);
-  nuis.append(ns.piKRatio);
-  nuis.append(ns.nuNubarRatio);
-  nuis.append(ns.zenithCorrection);
+  nuis.push_back(ns.normalization);
+  nuis.push_back(ns.astroFlux);
+  nuis.push_back(ns.promptFlux);
+  nuis.push_back(ns.crSlope);
+  nuis.push_back(ns.domEfficiency);
+  nuis.push_back(ns.piKRatio);
+  nuis.push_back(ns.nuNubarRatio);
+  nuis.push_back(ns.zenithCorrection);
   return nuis;
 }
 
 // Given a human readable flag set, make a bool vector
 std::vector<bool> Sterilizer::ConvertNuisanceFlag(NuisanceFlag ns) const {
-  return std::vector<bool> nuis{
-    ns.normalization,
-      ns.astroFlux,
-      ns.promptFlux,
-      ns.crSlope,
-      ns.domEfficiency,
-      ns.piKRatio,
-      ns.nuNubarRatio,
-      ns.zenithCorrection
-      }
+  std::vector<bool> nuis;
+  nuis.push_back(ns.normalization);
+  nuis.push_back(ns.astroFlux);
+  nuis.push_back(ns.promptFlux);
+  nuis.push_back(ns.crSlope);
+  nuis.push_back(ns.domEfficiency);
+  nuis.push_back(ns.piKRatio);
+  nuis.push_back(ns.nuNubarRatio);
+  nuis.push_back(ns.zenithCorrection);
+  return nuis;
 }
 
 // And go back to human readable
-std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
+Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   Nuisance ns;
   ns.normalization = vecns[0];
   ns.astroFlux = vecns[1];
