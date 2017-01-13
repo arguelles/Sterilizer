@@ -13,6 +13,30 @@ struct fitResult {
 #include "oversizeWeight.h"
 
 
+struct NuisanceParams {
+  float normaliztion;
+  float crSlope;
+  float domEfficiency;
+  float piKRatio;
+  float nuNubarRatio;
+  float zenithCorrection;
+};
+  
+struct Priors {
+  float normCenter=1.;
+  float normWidth=0.4;
+  float crSlopeCenter=0.0;
+  float crSlopeWidth=0.05;
+  float domEffCenter=-0.1;
+  float domEffWidth=0.3;
+  float piKRatioCenter=1.0;
+  float piKRatioWidth=0.1;
+  float nuNubarRatioCenter=1.0;
+  float nuNubarRatioWidth=0.1;
+  float zenithCorrectionMultiplier=0.038;
+};
+
+
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";
   std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
@@ -34,10 +58,8 @@ struct SteeringParams {
   bool useFactorization=false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
-  std::string secondarySimToLoad="";
   bool quiet=false;
   std::string modelName = "HondaGaisser";
-  std::string deltaModelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;
   std::string xs_model_name="";
