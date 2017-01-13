@@ -119,7 +119,6 @@ template<typename ContainerType, typename HistType, typename BinnerType>
     binner(hist,event);
 }
 
-
 class Sterilizer {
   private:
   // All the local configuration variables
