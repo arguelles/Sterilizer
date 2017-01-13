@@ -59,9 +59,6 @@ using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 
-
-
-
 class Sterilizer {
   private:
   // All the local configuration variables
@@ -70,7 +67,7 @@ class Sterilizer {
 
     //hypothesis point we fit to
     SterileNuParams sterileNuParams_;
-    
+
     // To store best fit point, fit seed, and data challenge
     std::vector<double> existingBest_;
     std::vector<double> fitSeed_{1.02,0,0,0.05,.0985,1.1,1,0};
@@ -114,31 +111,31 @@ class Sterilizer {
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
 
     // Check that the directories where files are mean to be exist
-    bool CheckDataPaths(DataPaths dp);
+    bool CheckDataPaths(DataPaths dp) const;
 
     // Check a directory exists and throw a relevant error otherwise.
-    bool CheckDataPath(std::string p);
-      
+    bool CheckDataPath(std::string p) const;
+
   protected:
     // Functions to load and unload data
     void LoadData(std::string filepath);
     void LoadMC(std::string filepath) {}
     void LoadCompact(std::string filepath);
-    void WriteCompact(std::string filepath);
+    void WriteCompact(std::string filepath) const;
     // Functions to load and unload data
     void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
 
-    bool CheckDataPaths(DataPaths dp);
-    bool CheckDataPath(std::string p);
+    bool CheckDataPaths(DataPaths dp) const;
+    bool CheckDataPath(std::string p) const;
 
     void SetRandomNumberGeneratorSeed(unsigned int seed);
 
  private:
     // Test if two particles are in the same generation (e.g., mu / numu)
-    bool SameGeneration(particleType p1, particleType p2);
+    bool SameGeneration(particleType p1, particleType p2) const;
 
     // Make the fit
     template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
@@ -146,13 +143,12 @@ class Sterilizer {
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
 
   public:
-    marray<double,3> GetDataDistribution();
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance);
-    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
-    fitResult llh(SterileNeutrinoParameters snp) {}
+    marray<double,3> GetDataDistribution() const;
+    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    fitResult llh(SterileNeutrinoParameters snp) const;
     // set functions
-
 
     SteeringParams       GetSteeringParams()  { return steeringParams_; };
     DataPaths            GetDataPaths()       { return dataPaths_; };

@@ -15,15 +15,15 @@ std::string GetSterileNeutrinoModelIdentifier(SterileNeutrinoParameters snp){
 
 void Sterilizer::LoadData(){
   try{
-    sample=loadExperimentalData(dataPaths.data_path,steeringParams_.useBurnsample);
+    sample_=loadExperimentalData(dataPaths.data_path,steeringParams_.useBurnsample);
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
     return(1);
   }
   if(!quiet)
-    std::cout << "Loaded " << sample.size() << " experimental events" << std::endl;
+    std::cout << "Loaded " << sample_.size() << " experimental events" << std::endl;
+  data_loaded=true;
 }
-
 
 void Sterilizer::LoadMC(){
     bool loadTargeted=true;
@@ -37,9 +37,10 @@ void Sterilizer::LoadMC(){
     }
     if(!quiet)
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
+    simulation_loaded=true;
 }
 
-void Sterilizer::LoadCompact() {
+void Sterilizer::LoadCompact(){
   try{
     unsplatData(dataPaths_.compact_data_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",getFileChecksum(argv[0]),sample_,mainSimulation_);
     if(!quiet){
@@ -51,6 +52,8 @@ void Sterilizer::LoadCompact() {
     std::cerr << "Failed to load compact data" << std::endl;
     return(1);
   }
+  data_loaded=true;
+  simulation_loaded=true;
 }
 
 void Sterilizer::WriteCompact() const {
@@ -64,11 +67,20 @@ void Sterilizer::WriteCompact() const {
   }
 }
 
-/*************************************************************************************************************
- * Functions to load nusquids fluxes
- * **********************************************************************************************************/
+void Sterilizer::ClearData(){
+  sample_.clear();
+}
 
-void Sterilizer::LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {
+void Sterilizer::ClearSimulation(){
+  mainSimulation_.clear();
+}
+
+bool Sterilizer::CheckDataLoaded() const {
+  return(data_loaded);
+}
+
+bool Sterilizer:;CheckSimulationLoaded() const {
+  return(simulation_to_loaded);
 }
 
 /*************************************************************************************************************
@@ -80,6 +92,11 @@ void Sterilizer::LoadDOMEfficiencySplines(std::vector<int> years){
     domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
+  dom_efficiency_splines_loaded_=true;
+}
+
+bool Sterilizer::CheckDOMEfficiencySplinesLoaded() const {
+  return(dom_efficiency_splines_loaded_);
 }
 
 /*************************************************************************************************************
@@ -91,6 +108,9 @@ void Sterilizer::ConstructCrossSectionWeighter(){
   cross_section_weighter_constructed_=true;
 }
 
+bool SterileSearch::CheckCrossSectionWeighterConstructed() const {
+  return(cross_section_weighter_constructed_);
+}
 void Sterilizer::ConstructFluxWeighter(){
   std::string sterile_neutrino_model_identifier = GetSterileNeutrinoModelIdentifier(sterileNuParams_);
 
@@ -115,8 +135,13 @@ void Sterilizer::ConstructFluxWeighter(){
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5");
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5");
   }
+
   fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0.000000_0.000000.hdf5");
   flux_weighter_constructed_=true;
+}
+
+bool Sterilizer::CheckFluxWeighterConstructed() const {
+  return(flux_weighter_constructed_);
 }
 
 void Sterilizer::ConstructMonteCarloGenerationWeighter(){
@@ -125,6 +150,10 @@ void Sterilizer::ConstructMonteCarloGenerationWeighter(){
   for( std::string sim_name : simSetsToLoad )
     mcw_.addGenerationSpectrum(simInfo.find(sim_name)->second.details);
   mc_generation_weighter_constructed_=true;
+}
+
+bool Sterilizer::CheckFluxWeighterConstructed() const {
+  return(flux_weighter_constructed_);
 }
 
 void Sterilizer::ConstructLeptonWeighter(){
@@ -148,14 +177,64 @@ void Sterilizer::ConstructLeptonWeighter(){
    oversize_weighter_constructed_=true;
  }
 
+bool SterileSearch::CheckLeptonWeighterConstructed() const {
+  return(lepton_weighter_constructed_);
+}
+
+
 /*************************************************************************************************************
- * Functions to obtain distributions
+ * Functions to initialize the MC weights
  * **********************************************************************************************************/
 
 void Sterilizer::WeightMC(){
   if(not lepton_weighter_constructed_)
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
+  if(not simulation_loaded))
+    throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
+  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_dc_);
+  simulation_initialized_=true;
+}
 
+bool Sterilizer::CheckSimulationInitialized() const {
+  return(simulation_initialized_);
+}
+
+/*************************************************************************************************************
+ * Functions to construct histograms
+ * **********************************************************************************************************/
+
+void Sterilizer::ConstructDataHistogram(){
+  if(not data_loaded_))
+    throw std::runtime_error("No data has been loaded. Cannot construct data histogram.");
+
+  dataHist_ = HistType(LogarithmicAxis(0, 0.1), LinearAxis(0, 0.1), LinearAxis(2010, 1));
+
+  dataHist_.getAxis(0)->setLowerLimit(minFitEnergy_);
+  dataHist_.getAxis(0)->setUpperLimit(maxFitEnergy_);
+  dataHist_.getAxis(1)->setLowerLimit(minCosth_);
+  dataHist_.getAxis(1)->setUpperLimit(maxCosth_);
+
+  // fill in the histogram with the data
+  bin(sample_, dataHist_, binner);
+  data_histogram_constructed_=true;
+}
+
+bool Sterilizer::CheckDataHistogramConstructed() const {
+  return(data_histogram_constructed_);
+}
+
+void Sterilizer::ConstructSimulationHistogram(){
+  if(not simulation_loaded_))
+    throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
+  if(not data_histogram_constructed_))
+    throw std::runtime_error("Data histogram needs to be constructed before simulation histogram.");
+  simHist_ = makeEmptyHistogramCopy(dataHist_);
+  bin(mainSimulation_, simHist_, binner);
+  simulation_histogram_constructed_=true;
+}
+
+bool Sterilizer::CheckSimulationHistogramConstructed() const {
+  return(simulation_histogram_constructed_);
 }
 
 /*************************************************************************************************************
@@ -206,9 +285,20 @@ marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::
 
 }
 
+/*************************************************************************************************************
+ * Functions to construct histograms
+ * **********************************************************************************************************/
+
+double Sterilizer::llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
+
+}
+
+fitResult Sterilizer::llh(SterileNeutrinoParameters snp) const {
+
+}
 
 
-//Set the RNG seed                                                           
+//Set the RNG seed
  void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
  {
    steeringParams_.rngSeed=seed;
@@ -217,8 +307,8 @@ marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::
  }
 
 
- // Check that the directories where files are mean to be exist           
- bool Sterilizer::CheckDataPaths(DataPaths dp)
+ // Check that the directories where files are mean to be exist
+ bool Sterilizer::CheckDataPaths(DataPaths dp) const
  {
    CheckDataPath(dp.compact_file_path);
    CheckDataPath(dp.squids_files_path);
@@ -232,7 +322,7 @@ marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::
  }
 
  // Check a directory exists and throw a relevant error otherwise. 
- bool Sterilizer::CheckDataPath(std::string p)
+ bool Sterilizer::CheckDataPath(std::string p) const
  {
    struct stat info;
    if(p!="")
