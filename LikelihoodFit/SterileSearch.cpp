@@ -276,7 +276,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
     expected+=w;
   }
 
-  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng);
+  std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng);
   auto realizationHist = makeEmptyHistogramCopy(dataHist_);
   bin(realization,realizationHist,binner);
 
@@ -485,7 +485,7 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
 // Do the fit business
 template<typename LikelihoodType>
 FitResult Sterilizer::DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
-		      std::vector<unsigned int> indicesToFix={}){
+		      std::vector<unsigned int> indicesToFix){
   using namespace likelihood;
 
   LBFGSB_Driver minimizer;
