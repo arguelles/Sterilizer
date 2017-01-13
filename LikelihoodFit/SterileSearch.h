@@ -8,14 +8,50 @@ struct fitResult {
   bool succeeded;
 };
 
-struct SterileNeutrinoParameters {
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
+
+struct DataPaths {
+  std::string compact_file_path =        "../compact_data/";
+  std::string squids_files_path =        "/home/carguelles/work/TheSterileSearch/the_new_fluxes/";
+  std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
+  std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
+  std::string data_path =                "/data/ana/NuFSGenMC/Data/";
+  std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
+  std::string oversize_function_main =   "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
+  std::string oversize_function_dc =     "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
+  std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
+  std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
+};
+
+struct SteeringParams {
+  double minFitEnergy=4e2;
+  double maxFitEnergy=2.e4;
+  double minCosth = -1.;
+  double maxCosth = 0.2;
+  uint32_t rngSeed=0;
+  bool useFactorization=false;
+  bool useBurnSample=false;
+  std::string simToLoad="nufsgen_mie_0_99";
+  std::string secondarySimToLoad="";
+  bool quiet=false;
+  std::string model_name = "HondaGaisser";
+  std::string delta_model_name = "HondaGaisser";
+  std::string oversizeFunction="NullCorrection";
+  bool reuseBestFit=true;
+  bool ReadCompact=true;
+}
+
+struct SterileNuParams {
   double th14 = 0;
   double th24 = 0;
   double th34 = 0;
   double del14 = 0;
   double del24 = 0;
   double dm41sq = 0;
-  SterileNeutrinoParameters(double th14,double th24, double th34, double del14, double del24, double dm41sq):
+  SterileNuParams(double th14,double th24, double th34, double del14, double del24, double dm41sq):
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24)
 };
 
@@ -27,77 +63,52 @@ auto binner = [](HistType& h, const Event& e){
   h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
 };
 
-class SterileHunter {
-  private:
-    /// Parameters used in the fit
-    double maxFitEnergy_ = 2.e4;
-    double minCosth_ = -1.;
-    double maxCosth_ = 0.2;
-    double minAstroEnergy_ =0.0;
-    double maxAstroEnergy_ =1e10;
-    double minAzimuth_ = 0.;
-    double maxAzimuth_ = 2.*pi<double>();
 
+
+class Sterilizer {
+  private:
+  // All the local configuration variables
+    SteeringParams  steeringParams_;
+    DataPaths       dataPaths_;
+
+    //hypothesis point we fit to
+    SterileNuParams sterileNuParams_;
+    
     // To store best fit point, fit seed, and data challenge
     std::vector<double> existingBest_;
     std::vector<double> fitSeed_{1.02,0,0,0.05,.0985,1.1,1,0};
     std::vector<double> dataChallenge_nuisance_parameters_{1,0,0,0,.1,1,1,0};
 
-    unsigned int number_of_data_challenges_ = 1;
-    // options
-    bool use_factorization_technique_=false;
-    bool use_datachallenge_histogram_=false;
-    bool writeCompact_=false;
-    bool readCompact_=false;
-    bool doDataChallenge_=false;
-    bool exitAfterLoading_=false;
-    bool UseBurnsample_=true;
-    bool use_gsl_minimizer_ = false;
-    bool do_asimov_sensitivity_ = false;
-
-    int yearsIC86_=1;
-    // sterile neutrino parameters
-    double th24_null_ = 0;
-    double dm41sq_null_ = 0;
-    bool dump_data_ = false;
-    bool dump_mc_data_ = false;
-    bool dump_real_data_ = false;
-    bool dump_fit_ = false;
-    bool save_flux_ = false;
-    bool save_dc_sample_ = false;
-
     std::vector<double> livetime_;
 
     // to store events
-    std::deque<Event> mainSimulation;
-    std::deque<Event> alternativeSimulation;
-    std::deque<Event> sample;
+    std::deque<Event> mainSimulation_;
+    std::deque<Event> alternativeSimulation_;
+    std::deque<Event> sample_;
 
     // random number generator
-    unsigned int rng_seed;
-    std::mt19937 rng;
+    std::mt19937 rng_;
 
     // histograms
-    HistType data_hist;
-    HistType sim_hist;
+    HistType dataHist_;
+    HistType simHist_;
 
     // weighter object
     DiffuseFitWeighterMaker DFWM;
-    LW::LeptonWeighter PionFluxWeighter;
-    LW::LeptonWeighter KaonFluxWeighter;
-    LW::LeptonWeighter PromptFluxWeighter;
+    LW::LeptonWeighter pionFluxWeighter_;
+    LW::LeptonWeighter kaonFluxWeighter_;
+    LW::LeptonWeighter promptFluxWeighter_;
   public:
     /// \brief Constructor
-    SterileHunter(){
-      if(readCompact_){
-        LoadCompactData(data_filepath);
-        LoadCompactMC(mc_filepath);
-      } else {
-        LoadData(data_filepath);
-        LoadMC(mc_filepath);
-      }
-      LoadFluxes(flux_path,snp)
-    }
+    Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
+
+
+    // Check that the directories where files are mean to be exist
+    bool CheckDataPaths(DataPaths dp);
+
+    // Check a directory exists and throw a relevant error otherwise.
+    bool CheckDataPath(std::string p);
+      
   protected:
     void LoadData(std::string filepath);
     void LoadCompactData(std::string filepath);
@@ -107,6 +118,15 @@ class SterileHunter {
     void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
     void MakeDataHistogram() {}
     void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
+
+    bool CheckDataPaths(DataPaths dp);
+    bool CheckDataPath(std::string p);
+
+    void SetRandomNumberGeneratorSeed(unsigned int seed);
+
+
+
+
   public:
     marray<double,3> GetDataDistribution();
     marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
@@ -114,10 +134,75 @@ class SterileHunter {
     double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
     fitResult llh(SterileNeutrinoParameters snp) {}
     // set functions
-    void SetRandomNumberGeneratorSeed(unsigned int seed) { }
-    unsigned int GetRandomNumberGeneratorSeed(unsigned int seed) { return(rng_seed); }
-    void SetUseBurnSample(bool ubs) { UseBurnsample = ubs; }
-    bool GetUseBurnSample() { return(UseBurnsample); }
+
+
+    SteeringParams       GetSteeringParams()  { return steeringParams_; };
+    DataPaths            GetDataPaths()       { return dataPaths_; };
+    SterileNuParams      GetSterileNuParams() { return sterileNuParams_;};
+
+    void       SetSteeringParams(SteeringParams p)   { steeringParams_=p; SetRandomNumberGeneratorSeed(p.rngSeed);};
+    void       SetDataPaths(DataPaths p)             { dataPaths_=p; CheckDataPaths(p); };
+    void       SetSterileNuParams(SterileNuParams p) { sterileNuParams_=p;};
 };
+
+
+Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp){
+      // Set the parameter sets of this object
+      steeringParams_=steeringParams;
+      dataPaths_=dataPaths;
+    
+      // Set up the RNG
+      SetRandomNumberGeneratorSeed(steeringParams.rngSeed);
+
+      if(readCompact_){
+        LoadCompactData(dataPaths_.compact_file_path);
+        LoadCompactMC(dataPaths_.compact_file_path);
+      } else {
+        LoadData(dataPaths_.data_path);
+        LoadMC(dataPaths_.mc_path);
+      }
+      LoadFluxes(dataPaths_.flux_splines_path,snp)
+    }
+
+
+void Sterilizer::SetRandomNumberGeneratorSeed(unsigned int seed)
+{ 
+  steeringParams_.rngSeed=seed;
+  rng_.seed(seed);
+  if(!steeringParams_.quiet) std::cout<<"setting RNG seed to " << seed<<std::endl;
+}
+
+// Check that the directories where files are mean to be exist
+bool Sterilizer::CheckDataPaths(DataPaths dp)
+{
+  CheckDataPath(dp.compact_file_path);
+  CheckDataPath(dp.squids_files_path);
+  CheckDataPath(dp.prompt_squids_files_path);
+  CheckDataPath(dp.xs_spline_path);
+  CheckDataPath(dp.data_path);
+  CheckDataPath(dp.mc_path);
+  CheckDataPath(dp.oversize_function_path);
+  CheckDataPath(dp.domeff_spline_path);
+  CheckDataPath(dp.flux_splines_path);
+}
+
+// Check a directory exists and throw a relevant error otherwise.
+bool Sterilizer::CheckDataPath(std::string p)
+{
+  struct stat info;
+  if(p!="")
+    {
+      if( stat( p, &info ) != 0 )
+	{
+	  throw std::runtime_error("cannot access "+ p);
+	}
+      else if( !(info.st_mode & S_IFDIR) ) 
+	{
+	  throw std::runtime_error("is not a directory: " +p);
+	}
+    }
+  else
+    std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
+}  
 
 #endif
