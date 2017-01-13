@@ -139,11 +139,11 @@ class Sterilizer {
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
 
   public:
-    marray<double,3> GetDataDistribution();
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance);
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance);
-    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
-    fitResult llh(SterileNeutrinoParameters snp) {}
+    marray<double,3> GetDataDistribution() const;
+    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
+    fitResult llh(SterileNeutrinoParameters snp) const;
     // set functions
 
 

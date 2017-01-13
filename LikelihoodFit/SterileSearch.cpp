@@ -21,6 +21,7 @@ void SterileSearch::LoadData(std::string dataPath){
 		}
 		if(!quiet)
 			std::cout << "Loaded " << sample.size() << " experimental events" << std::endl;
+    data_loaded=true;
 }
 
 void SterileSearch::LoadMC(std::string simulationPath,std::vector<std::string> simSetsToLoad){
@@ -33,6 +34,7 @@ void SterileSearch::LoadMC(std::string simulationPath,std::vector<std::string> s
 		}
 		if(!quiet)
 			std::cout << "Loaded " << mainSimulation.size() << " events in main simulation set" << std::endl;
+    simulation_loaded=true;
 }
 
 void SterileSearch::LoadCompact(std::string compact_data_path, std::string simulation_to_load) {
@@ -47,6 +49,8 @@ void SterileSearch::LoadCompact(std::string compact_data_path, std::string simul
 			std::cerr << "Failed to load compact data" << std::endl;
 			return(1);
 		}
+    data_loaded=true;
+    simulation_loaded=true;
 }
 
 void SterileSearch::WriteCompact(std::string compact_data_path, std::string simulation_to_load) const {
@@ -60,11 +64,20 @@ void SterileSearch::WriteCompact(std::string compact_data_path, std::string simu
 		}
 }
 
-/*************************************************************************************************************
- * Functions to load nusquids fluxes
- * **********************************************************************************************************/
+void SterileSearch::ClearData(){
+  sample.clear();
+}
 
-void SterileSearch::LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {
+void SterileSearch::ClearSimulation(){
+  mainSimulation.clear();
+}
+
+bool SterileSearch::CheckDataLoaded() const {
+  return(data_loaded);
+}
+
+bool SterileSearch:;CheckSimulationLoaded() const {
+  return(simulation_to_loaded);
 }
 
 /*************************************************************************************************************
@@ -76,6 +89,11 @@ void SterileSearch::LoadDOMEfficiencySplines(){
     domEffConv[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
     domEffPrompt[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
+  dom_efficiency_splines_loaded_=true;
+}
+
+bool SterileSearch::CheckDOMEfficiencySplinesLoaded() const {
+  return(dom_efficiency_splines_loaded_);
 }
 
 /*************************************************************************************************************
@@ -84,7 +102,11 @@ void SterileSearch::LoadDOMEfficiencySplines(){
 
 void SterileSearch::ConstructCrossSectionWeighter(std::string xs_spline_path, std::string xs_model_name){
   xsw = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(xs_spline_path),xs_model_name);
-  cross_section_weighter_constructed=true;
+  cross_section_weighter_constructed_=true;
+}
+
+bool SterileSearch::CheckCrossSectionWeighterConstructed() const{
+  return(cross_section_weighter_constructed_);
 }
 
 void SterileSearch::ConstructFluxWeighter(std::string conv_squids_files_path,std::string prompt_squids_files_path,std::string splines_path,SterileNeutrinoParameters snp){
@@ -115,10 +137,18 @@ void SterileSearch::ConstructFluxWeighter(std::string conv_squids_files_path,std
   flux_weighter_constructed=true;
 }
 
+bool SterileSearch::CheckFluxWeighterConstructed() const {
+  return(flux_weighter_constructed);
+}
+
 void SterileSearch::ConstructMonteCarloGenerationWeighter(std::vector<std::string> simSetsToLoad){
   for( std::string sim_name : simSetsToLoad )
     mcw.addGenerationSpectrum(simInfo.find(sim_name)->second.details);
   mc_generation_weighter_constructed=true;
+}
+
+bool SterileSearch::CheckFluxWeighterConstructed() const {
+  return(flux_weighter_constructed);
 }
 
 void SterileSearch::ConstructLeptonWeighter(){
@@ -135,14 +165,63 @@ void SterileSearch::ConstructLeptonWeighter(){
   lepton_weighter_constructed=true;
 }
 
+bool SterileSearch::CheckLeptonWeighterConstructed() const {
+  return(lepton_weighter_constructed);
+}
+
 /*************************************************************************************************************
- * Functions to obtain distributions
+ * Functions to initialize the MC weights
  * **********************************************************************************************************/
 
 void SterileSearch::WeightMC(){
   if(not lepton_weighter_constructed)
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
+  if(not simulation_loaded))
+    throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
+  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_dc_);
+  simulation_initialized_=true;
+}
 
+bool SterileSearch::CheckSimulationInitialized() const {
+  return(simulation_initialized_);
+}
+
+/*************************************************************************************************************
+ * Functions to construct histograms
+ * **********************************************************************************************************/
+
+void SterileSearch::ConstructDataHistogram(){
+  if(not data_loaded))
+    throw std::runtime_error("No data has been loaded. Cannot construct data histogram.");
+
+  dataHist_ = HistType(LogarithmicAxis(0, 0.1), LinearAxis(0, 0.1), LinearAxis(2010, 1));
+
+  dataHist_.getAxis(0)->setLowerLimit(minFitEnergy_);
+  dataHist_.getAxis(0)->setUpperLimit(maxFitEnergy_);
+  dataHist_.getAxis(1)->setLowerLimit(minCosth_);
+  dataHist_.getAxis(1)->setUpperLimit(maxCosth_);
+
+  // fill in the histogram with the data
+  bin(sample_, dataHist_, binner);
+  data_histogram_constructed_=true;
+}
+
+bool SterileSearch::CheckDataHistogramConstructed() const {
+  return(data_histogram_constructed_);
+}
+
+void SterileSearch::ConstructSimulationHistogram(){
+  if(not simulation_loaded_))
+    throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
+  if(not data_histogram_constructed_))
+    throw std::runtime_error("Data histogram needs to be constructed before simulation histogram.");
+  simHist_ = makeEmptyHistogramCopy(dataHist_);
+  bin(mainSimulation_, simHist_, binner);
+  simulation_histogram_constructed_=true;
+}
+
+bool SterileSearch::CheckSimulationHistogramConstructed() const {
+  return(simulation_histogram_constructed_);
 }
 
 /*************************************************************************************************************
@@ -187,6 +266,22 @@ marray<double,3> SterileSearch::GetExpectation(SterileNeutrinoParameters snp, st
     return array;
 }
 
-marray<double,3> SterileSearch::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
+marray<double,3> SterileSearch::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
 
 }
+
+/*************************************************************************************************************
+ * Functions to construct histograms
+ * **********************************************************************************************************/
+
+double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
+
+}
+
+fitResult llh(SterileNeutrinoParameters snp) const {
+
+}
+
+
+
+
