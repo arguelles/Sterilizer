@@ -85,7 +85,7 @@ void Sterilizer::ClearSimulation(){
 
 void Sterilizer::LoadDOMEfficiencySplines(){
   years=steeringParams_.years;
-  for(size_t year_index=0; year_index<years.size(); year_index++){
+  for(size_t year_index=0; year_index<steeringParams_.years.size(); year_index++){
     domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
@@ -254,11 +254,9 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 }
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
-  
-  
   rng_.seed(seed);
   std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation,expected,rng);
-  
+
   for(const Event& e : mainSimulation){
     auto w=weighter(e);
     if(std::isnan(w) || std::isinf(w) || w<0){
@@ -269,26 +267,24 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
     weights.push_back(w);
     expected+=w;
   }
-  
+
   std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng_);
-  realizationHist = makeEmptyHistogramCopy(dataHist_);
+  auto realizationHist = makeEmptyHistogramCopy(dataHist_);
   bin(realization,realizationHist,binner);
-  
+
   marray<double,3> array {static_cast<size_t>(realizationHist.getBinCount(2)),
       static_cast<size_t>(realizationHist.getBinCount(1)),
       static_cast<size_t>(realizationHist.getBinCount(0))};
-  
-  for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year                                                            
-    for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith                                                        
-      for(size_t ie=0; ie<realizationHist.getBinCount(0); ie++){ // energy                                                      
-	auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(realizationHist_(ie,ic,iy));
-      array[iy][ic][ie] = itc.size();
+
+  for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<realizationHist.getBinCount(0); ie++){ // energy
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(realizationHist_(ie,ic,iy));
+        array[iy][ic][ie] = itc.size();
     }
   }
   return array;
 }
-
-
 
 marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const{
   return GetRealization(ConvertNuisance(nuisance));
@@ -403,7 +399,8 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
 
 
 // Given a human readable prior set, make a weaverized version
-CPrior Sterilizer::ConvertPriorSet(Priors pr)
+template<typename... PriorTypes>
+    FixedSizePriorSet<PriorTypes...> Sterilizer::ConvertPriorSet(Priors pr) const
 {
   // construct continuous nuisance priors      
   UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
@@ -431,7 +428,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
   GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
 
   // make and return priorset  
-  return priors=makePriorSet(normalizationPrior,
+  return makePriorSet(normalizationPrior,
                              positivePrior, 
                              positivePrior,
                              crSlopePrior,

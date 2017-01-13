@@ -198,7 +198,8 @@ class Sterilizer {
     // functions to construct the likelihood problem
     void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
     // Converters between human and vector forms
-    CPrior ConvertPriorSet(Priors pr) const;
+    template<typename... PriorTypes>
+    FixedSizePriorSet<PriorTypes...> ConvertPriorSet(Priors pr) const;
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
     std::vector<double> ConvertVecToNuisance(std::vector<double> vecns) const;
