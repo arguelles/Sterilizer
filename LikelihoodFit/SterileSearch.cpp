@@ -12,7 +12,7 @@ std::string GetSterileNeutrinoModelIdentifier(SterileNeutrinoParameters snp){
  * Functions to read and write data
  * **********************************************************************************************************/
 
-void SterileSearch::LoadData(std::string dataPath){
+void Sterilizer::LoadData(std::string dataPath){
 		try{
 			sample=loadExperimentalData(dataPath,UseBurnsample);
 		} catch(std::exception& ex){
@@ -23,7 +23,7 @@ void SterileSearch::LoadData(std::string dataPath){
 			std::cout << "Loaded " << sample.size() << " experimental events" << std::endl;
 }
 
-void SterileSearch::LoadMC(std::string simulationPath,std::vector<std::string> simSetsToLoad){
+void Sterilizer::LoadMC(std::string simulationPath,std::vector<std::string> simSetsToLoad){
     bool loadTargeted=true;
 		try{
       loadSimulatedData(mainSimulation,simulationPath,livetime,simInfo,simSetsToLoad,loadTargeted);
@@ -35,7 +35,7 @@ void SterileSearch::LoadMC(std::string simulationPath,std::vector<std::string> s
 			std::cout << "Loaded " << mainSimulation.size() << " events in main simulation set" << std::endl;
 }
 
-void SterileSearch::LoadCompact(std::string compact_data_path, std::string simulation_to_load) {
+void Sterilizer::LoadCompact(std::string compact_data_path, std::string simulation_to_load) {
 		try{
 			unsplatData(compact_data_path+"/"+simulation_to_load+"_compact_data.dat",getFileChecksum(argv[0]),sample,mainSimulation);
 			if(!quiet){
@@ -49,7 +49,7 @@ void SterileSearch::LoadCompact(std::string compact_data_path, std::string simul
 		}
 }
 
-void SterileSearch::WriteCompact(std::string compact_data_path, std::string simulation_to_load) const {
+void Sterilizer::WriteCompact(std::string compact_data_path, std::string simulation_to_load) const {
 		try{
 			splatData(compact_data_path+"/"+simulation_to_load+"_compact_data.dat",
                 getFileChecksum(argv[0]),sample,mainSimulation);
@@ -64,14 +64,14 @@ void SterileSearch::WriteCompact(std::string compact_data_path, std::string simu
  * Functions to load nusquids fluxes
  * **********************************************************************************************************/
 
-void SterileSearch::LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {
+void Sterilizer::LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {
 }
 
 /*************************************************************************************************************
  * Functions to load to load DOM efficiency splines
  * **********************************************************************************************************/
 
-void SterileSearch::LoadDOMEfficiencySplines(){
+void Sterilizer::LoadDOMEfficiencySplines(){
   for(size_t year_index=0; year_index<years.size(); year_index++){
     domEffConv[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
     domEffPrompt[year_index] = std::unique_ptr<Splinetable>(new Splinetable(domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
@@ -82,12 +82,12 @@ void SterileSearch::LoadDOMEfficiencySplines(){
  * Functions to construct weighters
  * **********************************************************************************************************/
 
-void SterileSearch::ConstructCrossSectionWeighter(std::string xs_spline_path, std::string xs_model_name){
+void Sterilizer::ConstructCrossSectionWeighter(std::string xs_spline_path, std::string xs_model_name){
   xsw = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(xs_spline_path),xs_model_name);
   cross_section_weighter_constructed=true;
 }
 
-void SterileSearch::ConstructFluxWeighter(std::string conv_squids_files_path,std::string prompt_squids_files_path,std::string splines_path,SterileNeutrinoParameters snp){
+void Sterilizer::ConstructFluxWeighter(std::string conv_squids_files_path,std::string prompt_squids_files_path,std::string splines_path,SterileNeutrinoParameters snp){
   std::string sterile_neutrino_model_identifier = GetSterileNeutrinoModelIdentifier(snp);
 
   if(use_factorization_technique){
@@ -115,13 +115,13 @@ void SterileSearch::ConstructFluxWeighter(std::string conv_squids_files_path,std
   flux_weighter_constructed=true;
 }
 
-void SterileSearch::ConstructMonteCarloGenerationWeighter(std::vector<std::string> simSetsToLoad){
+void Sterilizer::ConstructMonteCarloGenerationWeighter(std::vector<std::string> simSetsToLoad){
   for( std::string sim_name : simSetsToLoad )
     mcw.addGenerationSpectrum(simInfo.find(sim_name)->second.details);
   mc_generation_weighter_constructed=true;
 }
 
-void SterileSearch::ConstructLeptonWeighter(){
+void Sterilizer::ConstructLeptonWeighter(){
   if(not mc_generation_weighter_constructed)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
   if(not flux_weighter_constructed)
@@ -139,7 +139,7 @@ void SterileSearch::ConstructLeptonWeighter(){
  * Functions to obtain distributions
  * **********************************************************************************************************/
 
-void SterileSearch::WeightMC(){
+void Sterilizer::WeightMC(){
   if(not lepton_weighter_constructed)
     throw std::runtime_error("LeptonWeighter has to be constructed first.");
 
@@ -149,7 +149,7 @@ void SterileSearch::WeightMC(){
  * Functions to obtain distributions
  * **********************************************************************************************************/
 
-marray<double,3> SterileSearch::GetDataDistribution() const {
+marray<double,3> Sterilizer::GetDataDistribution() const {
     marray<double,3> array {static_cast<size_t>(data_hist.getBinCount(2)),
                             static_cast<size_t>(data_hist.getBinCount(1)),
                             static_cast<size_t>(data_hist.getBinCount(0))};
@@ -165,7 +165,7 @@ marray<double,3> SterileSearch::GetDataDistribution() const {
     return array;
 }
 
-marray<double,3> SterileSearch::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
+marray<double,3> Sterilizer::GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const {
     MakeSimulationHistogram(snp,nuisance);
     marray<double,3> array {static_cast<size_t>(sim_hist.getBinCount(2)),
                             static_cast<size_t>(sim_hist.getBinCount(1)),
@@ -187,6 +187,6 @@ marray<double,3> SterileSearch::GetExpectation(SterileNeutrinoParameters snp, st
     return array;
 }
 
-marray<double,3> SterileSearch::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
+marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const{
 
 }
