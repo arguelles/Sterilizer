@@ -18,26 +18,24 @@ void Sterilizer::LoadData(){
     sample_=loadExperimentalData(dataPaths_.data_path,steeringParams_.useBurnSample);
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
-    return(1);
   }
-  if(!quiet)
+  if(!steeringParams_.quiet)
     std::cout << "Loaded " << sample_.size() << " experimental events" << std::endl;
-  data_loaded=true;
+  data_loaded_=true;
 }
 
 void Sterilizer::LoadMC(){
     bool loadTargeted=true;
     std::vector<std::string> simSetsToLoad;
-    simSetsToLoad.push_back(steeringParams_.simToLoad_);
+    simSetsToLoad.push_back(steeringParams_.simToLoad);
     try{
-      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
+      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime_,simInfo,simSetsToLoad,loadTargeted);
     } catch(std::exception& ex){
       std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
-      return(1);
     }
     if(!quiet)
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
-    simulation_loaded=true;
+    simulation_loaded_=true;
 }
 
 void Sterilizer::LoadCompact(){
@@ -50,10 +48,9 @@ void Sterilizer::LoadCompact(){
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
     std::cerr << "Failed to load compact data" << std::endl;
-    return(1);
   }
-  data_loaded=true;
-  simulation_loaded=true;
+  data_loaded_=true;
+  simulation_loaded_=true;
 }
 
 void Sterilizer::WriteCompact() const {
@@ -63,7 +60,6 @@ void Sterilizer::WriteCompact() const {
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
     std::cerr << "Failed to save compact data" << std::endl;
-    return(1);
   }
 }
 
@@ -76,11 +72,11 @@ void Sterilizer::ClearSimulation(){
 }
 
 bool Sterilizer::CheckDataLoaded() const {
-  return(data_loaded);
+  return(data_loaded_);
 }
 
 bool Sterilizer:;CheckSimulationLoaded() const {
-  return(simulation_to_loaded);
+  return(simulation_to_loaded_);
 }
 
 /*************************************************************************************************************
@@ -89,7 +85,7 @@ bool Sterilizer:;CheckSimulationLoaded() const {
 
 void Sterilizer::LoadDOMEfficiencySplines(std::vector<unsigned int> years){
   for(size_t year_index=0; year_index<years.size(); year_index++){
-    domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
+    domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
   }
   dom_efficiency_splines_loaded_=true;
@@ -325,7 +321,6 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
-
 double Sterilizer::EvalLL(Nuisance nuisance) const {
   return EvalLLH(ConvertNuisance(nuisance));
 }
@@ -333,10 +328,10 @@ double Sterilizer::EvalLL(Nuisance nuisance) const {
 FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
-  
+
   std::vector<double> seed=prob.getSeed();
   std::vector<unsigned int> fixedIndices;
-  
+
   std::vector<double> FixVec=ConvertNuisanceFlag(fixedParams);
   for(size_t i; i!=FixVec.size(); ++i)
       if(FixVec[i]==1) fixedIndices.push_back(i);
