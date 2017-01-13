@@ -23,14 +23,14 @@
 
 
 struct Nuisance {
-  float normalization;
-  float astroFlux;
-  float promptFlux;
-  float crSlope;
-  float domEfficiency;
-  float piKRatio;
-  float nuNubarRatio;
-  float zenithCorrection;
+  float normalization=1.0;
+  float astroFlux=0.0;
+  float promptFlux=0.0;
+  float crSlope=0.0;
+  float domEfficiency=-0.1;
+  float piKRatio=1.0;
+  float nuNubarRatio=1.0;
+  float zenithCorrection=0..0;
 };
 
 struct NuisanceFlag {
@@ -224,6 +224,8 @@ class Sterilizer {
     bool CheckDataHistogramConstructed() const         {return data_histogram_constructed_;};
     bool CheckSimulationHistogramConstructed() const   {return simulation_histogram_constructed_;};
     bool CheckLikelihoodProblemConstruction() const    {return likelihood_problem_constructed_;};
+    void ReportStatus() const;
+
 
     // functions to obtain distributions
     marray<double,3> GetDataDistribution() const;
