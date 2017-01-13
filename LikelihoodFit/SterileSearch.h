@@ -1,17 +1,16 @@
 #ifndef _H_STERILE_SEARCH_
 #define _H_STERILE_SEARCH_
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "oversizeWeight.h"
+
 struct fitResult {
   std::vector<double> params;
   double likelihood;
   unsigned int nEval, nGrad;
   bool succeeded;
 };
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "oversizeWeight.h"
-
 
 struct DataPaths {
   std::string compact_file_path =        "../compact_data/";

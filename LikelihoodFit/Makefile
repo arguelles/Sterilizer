@@ -28,13 +28,12 @@ LDFLAGS+=-lLeptonWeighter
 CXXFLAGS+=-I../Likelihood
 LIKELIHOOD_HEADERS=../Likelihood/autodiff.h ../Likelihood/likelihood.h ../Likelihood/nugenWeighting.h ../Likelihood/particleType.h ../Likelihood/tableio.h ../Likelihood/weighting.h ../Likelihood/lbfgsb/lbfgsb.h ../Likelihood/lbfgsb/interface.h
 
-ICSterile_HELPER_OBJECTS = lbfgsb.o linpack.o analysisWeighting.o dataIO.o Event.o plottingExtras.o
-ICSterile_OBJECT = SterileSearchFit.o
-ICSterileRemastered_OBJECT = SterileSearchFitRemastered.o
+ICSterile_HELPER_OBJECTS = lbfgsb.o linpack.o analysisWeighting.o dataIO.o Event.o SterileSearch.o
+ICSterile_OBJECT = SterileSearchDoFit.o
 
 .PHONY: all clean
 
-all: SterileSearchFit SterileSearchFitRemastered
+all: SterileSearchDoFit
 
 clean:
 	rm -rf SterileSearchFit $(ICSterileRemastered_OBJECT) $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
@@ -48,7 +47,7 @@ linpack.o : ../Likelihood/lbfgsb/linpack.c
 analysisWeighting.o : analysisWeighting.cpp analysisWeighting.h splinetable.h
 	$(CXX) $(CXXFLAGS) analysisWeighting.cpp -c -o analysisWeighting.o
 
-dataIO.o : dataIO.h dataIO.cpp Event.h analysisWeighting.h plottingExtras.h $(LIKELIHOOD_HEADERS)
+dataIO.o : dataIO.h dataIO.cpp Event.h analysisWeighting.h $(LIKELIHOOD_HEADERS)
 	$(CXX) $(CXXFLAGS) dataIO.cpp -c -o dataIO.o
 
 Event.o : Event.cpp Event.h
@@ -57,15 +56,12 @@ Event.o : Event.cpp Event.h
 plottingExtras.o : plottingExtras.cpp plottingExtras.h
 	$(CXX) $(CXXFLAGS) plottingExtras.cpp -c -o plottingExtras.o
 
-SterileSearchFit.o : SterileSearchFit.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h  plottingExtras.h cl_options.h splinetable.h
+SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
+	$(CXX) $(CXXFLAGS) SterileSearch.cpp -c -o SterileSearch.o
+
+SterileSearchDoFit.o : SterileSearchDoFit.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
 	$(CXX) $(CXXFLAGS) SterileSearchFit.cpp -c -o SterileSearchFit.o
 
-SterileSearchFitRemastered.o : SterileSearchFitRemastered.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h  plottingExtras.h cl_options.h splinetable.h
-	$(CXX) $(CXXFLAGS) SterileSearchFitRemastered.cpp -c -o SterileSearchFitRemastered.o
-
-SterileSearchFit : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchFit
-
-SterileSearchFitRemastered : $(ICSterile_HELPER_OBJECTS) $(ICSterileRemastered_OBJECT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterileRemastered_OBJECT) -o SterileSearchFitRemastered
+SterileSearchDoFit : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchDoFit
 
