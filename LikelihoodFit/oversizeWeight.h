@@ -18,6 +18,7 @@ class OversizeWeighter
  public:
   // Constructor
   OversizeWeighter(std::string Filename);
+  OversizeWeighter() {};
   // Evaluator
   double EvaluateOversizeCorrection(double energy, double zenith) const;
 

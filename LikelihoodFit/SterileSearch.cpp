@@ -1,24 +1,28 @@
 #include "SterileSearch.h"
 #include "GenerationSpecifications.h"
 
-
 /*************************************************************************************************************
  * Constructor
  * **********************************************************************************************************/
 
-Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp){};
-/*
-{
-  if(readCompact_){
-    LoadCompactData(data_filepath);
-    LoadCompactMC(mc_filepath);
+Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp):
+  steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
+  if(steeringParams_.ReadCompact){
+    LoadCompact();
   } else {
-    LoadData(data_filepath);
-    LoadMC(mc_filepath);
+    LoadData();
+    LoadMC();
   }
-  LoadFluxes(flux_path,snp);
+  LoadDOMEfficiencySplines();
+  ConstructCrossSectionWeighter();
+  ConstructFluxWeighter();
+  ConstructMonteCarloGenerationWeighter();
+  ConstructLeptonWeighter();
+  ConstructOversizeWeighter();
+  WeightMC();
+  ConstructDataHistogram();
+  ConstructSimulationHistogram();
 }
-*/
 
 /*************************************************************************************************************
  * Implementation auxiliary functions
@@ -181,9 +185,9 @@ void Sterilizer::ConstructLeptonWeighter(){
   if(not xs_weighter_constructed_)
     throw std::runtime_error("Cross section weighter has to be constructed first.");
 
-  PionFluxWeighter_ = LW::LeptonWeighter(fluxPion_,xsw_,mcw_);
-  KaonFluxWeighter_ = LW::LeptonWeighter(fluxKaon_,xsw_,mcw_);
-  PromptFluxWeighter_ = LW::LeptonWeighter(fluxPrompt_,xsw_,mcw_);
+  pionFluxWeighter_ = std::make_shared<LW::LeptonWeighter>(fluxPion_,xsw_,mcw_);
+  kaonFluxWeighter_ = std::make_shared<LW::LeptonWeighter>(fluxKaon_,xsw_,mcw_);
+  promptFluxWeighter_ = std::make_shared<LW::LeptonWeighter>(fluxPrompt_,xsw_,mcw_);
   lepton_weighter_constructed_=true;
 }
 
@@ -203,7 +207,7 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
+  initializeSimulationWeights(mainSimulation_,*pionFluxWeighter_,*kaonFluxWeighter_,*promptFluxWeighter_,osw_);
   simulation_initialized_=true;
 }
 
@@ -235,7 +239,6 @@ void Sterilizer::ConstructSimulationHistogram(){
   bin(mainSimulation_, simHist_, binner);
   simulation_histogram_constructed_=true;
 }
-
 
 /*************************************************************************************************************
  * Functions to obtain distributions
@@ -288,7 +291,7 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 }
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
-  
+
   std::mt19937 rng;
   rng.seed(seed);
  
@@ -325,7 +328,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
   }
   return array;
 }
-  
+
 marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
   return GetRealization(ConvertNuisance(nuisance),seed);
 }
@@ -334,6 +337,7 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
+/*
 void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
@@ -343,7 +347,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
   auto llhpriors = ConvertPriorSet(priors);
   auto fitseed   = ConvertNuisance(nuisanceSeed);
 
-  prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
+  prob_ = std::make_shared<likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
       likelihood::poissonLikelihood(), fitseed );
   prob_.setEvaluationThreadCount(steeringParams_.evalThreads);
@@ -374,6 +378,8 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
 
   return DoFitLBFGSB(prob_, seed, fixedIndices);
 }
+
+*/
 
 /*************************************************************************************************************
  * Functions to change the sterile neutrino hypothesis

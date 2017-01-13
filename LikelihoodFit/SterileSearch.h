@@ -12,6 +12,7 @@
 #include <chrono>
 #include <queue>
 #include <vector>
+#include <memory>
 
 #include "likelihood.h"
 #include "Event.h"
@@ -148,9 +149,9 @@ class Sterilizer {
 
     // weighter object
     DiffuseFitWeighterMaker DFWM;
-    LW::LeptonWeighter PionFluxWeighter_;
-    LW::LeptonWeighter KaonFluxWeighter_;
-    LW::LeptonWeighter PromptFluxWeighter_;
+    std::shared_ptr<LW::LeptonWeighter> pionFluxWeighter_;
+    std::shared_ptr<LW::LeptonWeighter> kaonFluxWeighter_;
+    std::shared_ptr<LW::LeptonWeighter> promptFluxWeighter_;
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
@@ -175,17 +176,7 @@ class Sterilizer {
     std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
     // likehood problem object
-/*
-    template<typename Event, int DataDimension, int MaxDerivativeDimension=-1, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc,
-             typename HistogramType = phys_tools::histograms::histogram<DataDimension,entryStoringBin<Event>>>
-    LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension> prob_;
-*/
-    LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6> prob_;
-/*
-  prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
-      dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
-      likelihood::poissonLikelihood(), fitseed );
-*/
+    std::shared_ptr<LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>> prob_;
   public:
     // Constructor
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp);
@@ -218,12 +209,11 @@ class Sterilizer {
     void ConstructDataHistogram();
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
-    void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
+    //void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
     // Converters between human and vector forms
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
     Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
-
   public:
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
@@ -245,9 +235,9 @@ class Sterilizer {
     marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
     marray<double,3> GetRealization(Nuisance nuisance, int seed) const;
     // functions to evaluate the likelihood
-    double EvalLLH(std::vector<double> nuisance) const;
-    double EvalLL(Nuisance nuisance) const;
-    FitResult MinLLH(NuisanceFlag fixedParams) const;
+    //double EvalLLH(std::vector<double> nuisance) const;
+    //double EvalLL(Nuisance nuisance) const;
+    //FitResult MinLLH(NuisanceFlag fixedParams) const;
     void SetSterileNuParams(SterileNuParams snp);
   private:
     // Do the fit business
