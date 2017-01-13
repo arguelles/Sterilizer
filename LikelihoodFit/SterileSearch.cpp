@@ -1,6 +1,22 @@
 #include "SterileSearch.h"
 #include "GenerationSpecifications.h"
 
+
+/*************************************************************************************************************
+ * Constructor
+ * **********************************************************************************************************/
+
+Sterilizer::Sterilizer(){
+  if(readCompact_){
+    LoadCompactData(data_filepath);
+    LoadCompactMC(mc_filepath);
+  } else {
+    LoadData(data_filepath);
+    LoadMC(mc_filepath);
+  }
+  LoadFluxes(flux_path,snp);
+}
+
 /*************************************************************************************************************
  * Implementation auxiliary functions
  * **********************************************************************************************************/

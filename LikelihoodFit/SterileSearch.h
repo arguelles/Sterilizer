@@ -13,7 +13,6 @@
 #include <queue>
 #include <vector>
 
-#include "oversizeWeight.h"
 #include "likelihood.h"
 #include "Event.h"
 #include "analysisWeighting.h"
@@ -30,7 +29,8 @@ struct Nuisance {
   float domEfficiency=-0.1;
   float piKRatio=1.0;
   float nuNubarRatio=1.0;
-  float zenithCorrection=0..0;
+  float zenithCorrection=0.0;
+  Nuisance(){};
 };
 
 struct NuisanceFlag {
@@ -42,6 +42,7 @@ struct NuisanceFlag {
   bool piKRatio=0;
   bool nuNubarRatio=0;
   bool zenithCorrection=0;
+  NuisanceFlag(){};
 };
 
 struct Priors {
@@ -56,6 +57,7 @@ struct Priors {
   float nuNubarRatioCenter=1.0;
   float nuNubarRatioWidth=0.1;
   float zenithCorrectionMultiplier=0.038;
+  Priors(){};
 };
 
 struct FitResult {
@@ -76,6 +78,7 @@ struct DataPaths {
   std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
   std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
   std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
+  DataPaths(){};
 };
 
 struct SteeringParams {
@@ -99,6 +102,7 @@ struct SteeringParams {
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> fullLivetime      = std::map<unsigned int,double>{{2011,758.59*60*60}};
   std::map<unsigned int, double> burnSampleLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
+  SteeringParams(){};
 };
 
 struct SterileNuParams {
@@ -111,6 +115,7 @@ struct SterileNuParams {
   double dm41sq = 0;
   SterileNuParams(unsigned int modelId, double th14,double th24, double th34, double del14, double del24, double dm41sq):
     th14(th14),th24(th24),th34(th34),del14(del14),del24(del24){}
+  SterileNuParams(){};
 };
 
 using namespace nusquids;
