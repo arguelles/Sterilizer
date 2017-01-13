@@ -165,6 +165,8 @@ class Sterilizer {
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
     std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
 
+    // likehood problem object
+    LikelihoodProblem<Event,DataWeighter,SimulationWeighterConstructor,CPrior,LFunc,DataDimension,MaxDerivativeDimension> prob_;
   public:
     // Constructor
     Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp);
@@ -197,13 +199,12 @@ class Sterilizer {
     void ConstructDataHistogram();
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
-    void ConstructLikelihoodProblem();
-
+    void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
     // Converters between human and vector forms
-    CPrior ConvertPriorSet(Priors pr);
-    std::vector<double> ConvertNuisance(Nuisance ns);
-    std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns);
-    std::vector<double> ConvertVecToNuisance(std::vector<double> vecns);
+    CPrior ConvertPriorSet(Priors pr) const;
+    std::vector<double> ConvertNuisance(Nuisance ns) const;
+    std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
+    std::vector<double> ConvertVecToNuisance(std::vector<double> vecns) const;
 
   public:
     // functions to check the status of the object
