@@ -309,17 +309,18 @@ double Sterilizer::llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) con
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-void Sterilizer::ConstructLikelihoodProblem(Priors priors){
+void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance NuisanceSeed){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
   if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
   
   llhpriors=ConvertPriors(priors);
+  fitseed  =ConvertNuisance(NuisanceSeed);
 
   prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
-      likelihood::poissonLikelihood(),fitSeed_ );
+      likelihood::poissonLikelihood(), fitseed );
   prob_.setEvaluationThreadCount(SteeringParams_.evalThreads);
 
   likelihood_problem_constructed_=true;
@@ -347,7 +348,7 @@ fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
       if(FixVec[i]>0.1) fixedIndices.push_back(i);
   
 
-  return doFitLBFGSB(prob_, fitSeed_, fixedIndices);
+  return doFitLBFGSB(prob_, seed, fixedIndices);
 }
 
 /*************************************************************************************************************

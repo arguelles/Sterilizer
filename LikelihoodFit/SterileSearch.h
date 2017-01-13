@@ -99,8 +99,6 @@ class Sterilizer {
 
     // To store best fit point, fit seed, and data challenge
     std::vector<double> existingBest_;
-    std::vector<double> fitSeed_{1.02,0,0,0.05,.0985,1.1,1,0};
-    std::vector<double> dataChallenge_nuisance_parameters_{1,0,0,0,.1,1,1,0};
 
     std::vector<double> livetime_;
 
