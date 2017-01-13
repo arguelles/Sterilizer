@@ -254,8 +254,14 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 }
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
-  rng_.seed(seed);
+  
+  std::mt19937 rng;
+  rng.seed(seed);
+ 
+  auto weighter=DFWM(nuisance);
+
   double expected=0;
+  std::vector<double> weights;
   for(const Event& e : mainSimulation_){
     auto w=weighter(e);
     if(std::isnan(w) || std::isinf(w) || w<0){
@@ -267,7 +273,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
     expected+=w;
   }
 
-  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng_);
+  std::deque<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng);
   auto realizationHist = makeEmptyHistogramCopy(dataHist_);
   bin(realization,realizationHist,binner);
 
@@ -278,15 +284,16 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
   for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year
     for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith
       for(size_t ie=0; ie<realizationHist.getBinCount(0); ie++){ // energy
-        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(realizationHist_(ie,ic,iy));
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(realizationHist(ie,ic,iy));
         array[iy][ic][ie] = itc.size();
+      }
     }
   }
   return array;
 }
-
-marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const{
-  return GetRealization(ConvertNuisance(nuisance));
+  
+marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
+  return GetRealization(ConvertNuisance(nuisance),seed);
 }
 
 /*************************************************************************************************************
@@ -365,7 +372,7 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
  CheckDataPath(dp.xs_spline_path);
  CheckDataPath(dp.data_path);
  CheckDataPath(dp.mc_path);
- CheckDataPath(dp.oversize_function_path);
+ CheckDataPath(dp.oversize_path);
  CheckDataPath(dp.domeff_spline_path);
  CheckDataPath(dp.flux_splines_path);
 }
@@ -397,7 +404,7 @@ template<typename... PriorTypes>
   // construct continuous nuisance priors      
   UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
   GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
-  GaussianPrior crSlopePrior(pr.crSlopePrior,pr.crSlopeWidth);
+  GaussianPrior crSlopeCenter(pr.crSlopePrior,pr.crSlopeWidth);
   UniformPrior  simple_domEffPrior(pr.domEffCenter,pr.domEffWidth);
   GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
   GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
@@ -413,9 +420,9 @@ template<typename... PriorTypes>
       {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
 	  };
 
-  if( delta_alpha.find(model_name) == delta_alpha.end() )
+  if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
     throw std::runtime_error("Jordi delta key not found. Aborting.");
-  double alpha = delta_alpha[delta_model_name];
+  double alpha = delta_alpha[steeringParams_.modelName];
 
   GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
 

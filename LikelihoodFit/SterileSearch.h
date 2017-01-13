@@ -113,6 +113,13 @@ using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 
+template<typename ContainerType, typename HistType, typename BinnerType>
+  void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){
+  for(const Event& event : data)
+    binner(hist,event);
+}
+
+
 class Sterilizer {
   private:
   // All the local configuration variables
@@ -125,9 +132,6 @@ class Sterilizer {
     // to store events
     std::deque<Event> mainSimulation_;
     std::deque<Event> sample_;
-
-    // random number generator
-    std::mt19937 rng_;
 
     // histograms
     HistType dataHist_;
