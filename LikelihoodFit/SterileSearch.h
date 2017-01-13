@@ -148,9 +148,9 @@ class Sterilizer {
 
     // weighter object
     DiffuseFitWeighterMaker DFWM;
-    LW::LeptonWeighter PionFluxWeighter_;
-    LW::LeptonWeighter KaonFluxWeighter_;
-    LW::LeptonWeighter PromptFluxWeighter_;
+    LW::LeptonWeighter pionFluxWeighter_;
+    LW::LeptonWeighter kaonFluxWeighter_;
+    LW::LeptonWeighter promptFluxWeighter_;
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;

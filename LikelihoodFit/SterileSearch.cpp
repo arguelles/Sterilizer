@@ -7,14 +7,21 @@
  * **********************************************************************************************************/
 
 Sterilizer::Sterilizer(){
-  if(readCompact_){
-    LoadCompactData(data_filepath);
-    LoadCompactMC(mc_filepath);
+  if(steeringParams_.ReadCompact){
+    LoadCompact();
   } else {
-    LoadData(data_filepath);
-    LoadMC(mc_filepath);
+    LoadData();
+    LoadMC();
   }
-  LoadFluxes(flux_path,snp);
+  LoadDOMEfficiencySplines();
+  ConstructCrossSectionWeighter();
+  ConstructFluxWeighter();
+  ConstructMonteCarloGenerationWeighter();
+  ConstructLeptonWeighter();
+  ConstructOversizeWeighter();
+  WeightMC();
+  ConstructDataHistogram();
+  ConstructSimulationHistogram();
 }
 
 /*************************************************************************************************************
@@ -178,9 +185,9 @@ void Sterilizer::ConstructLeptonWeighter(){
   if(not xs_weighter_constructed_)
     throw std::runtime_error("Cross section weighter has to be constructed first.");
 
-  PionFluxWeighter_ = LW::LeptonWeighter(fluxPion_,xsw_,mcw_);
-  KaonFluxWeighter_ = LW::LeptonWeighter(fluxKaon_,xsw_,mcw_);
-  PromptFluxWeighter_ = LW::LeptonWeighter(fluxPrompt_,xsw_,mcw_);
+  pionFluxWeighter_ = LW::LeptonWeighter(fluxPion_,xsw_,mcw_);
+  kaonFluxWeighter_ = LW::LeptonWeighter(fluxKaon_,xsw_,mcw_);
+  promptFluxWeighter_ = LW::LeptonWeighter(fluxPrompt_,xsw_,mcw_);
   lepton_weighter_constructed_=true;
 }
 
@@ -200,7 +207,7 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  initializeSimulationWeights(mainSimulation_,PionFluxWeighter_,KaonFluxWeighter_,PromptFluxWeighter_,osw_);
+  initializeSimulationWeights(mainSimulation_,pionFluxWeighter_,kaonFluxWeighter_,promptFluxWeighter_,osw_);
   simulation_initialized_=true;
 }
 
