@@ -271,18 +271,16 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
   if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
 
-  llhpriors = ConvertPriors(priors);
-  fitseed   = ConvertNuisance(nuisanceSeed);
+  auto llhpriors = ConvertPriorSet(priors);
+  auto fitseed   = ConvertNuisance(nuisanceSeed);
 
   prob_ = likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
       likelihood::poissonLikelihood(), fitseed );
-  prob_.setEvaluationThreadCount(SteeringParams_.evalThreads);
+  prob_.setEvaluationThreadCount(steeringParams_.evalThreads);
 
   likelihood_problem_constructed_=true;
 }
-
-
 
 double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   if(not likelihood_problem_constructed_)
@@ -298,12 +296,12 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
 
-  std::vector<double> seed=prob.getSeed();
+  std::vector<double> seed=prob_.getSeed();
   std::vector<unsigned int> fixedIndices;
 
-  std::vector<double> FixVec=ConvertNuisanceFlag(fixedParams);
-  for(size_t i; i!=FixVec.size(); ++i)
-      if(FixVec[i]==1) fixedIndices.push_back(i);
+  std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams);
+  for(size_t i=0; i!=FixVec.size(); ++i)
+      if(FixVec[i]) fixedIndices.push_back(i);
 
   return DoFitLBFGSB(prob_, seed, fixedIndices);
 }
@@ -313,7 +311,7 @@ FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
  * **********************************************************************************************************/
 
 void Sterilizer::SetSterileNuParams(SterileNuParams snp){
-  if(not simulation_loaded)
+  if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot weight to sterile hypothesis without simulation.");
   if(not mc_generation_weighter_constructed_)
     throw std::runtime_error("MonteCarlo generation weighter has to be constructed first.");
@@ -413,8 +411,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 
 
 // Given a human readable nuisance parameter set, make a nuisance vector
- std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns)
-{
+std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {
   return std::vector<double> nuis{
     ns.normalization,
       ns.astroFlux,
@@ -428,8 +425,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 }
 
 // Given a human readable flag set, make a bool vector
- std::vector<bool> Sterilizer::ConvertNuisanceFlag(NuisanceFlag ns)
-{
+std::vector<bool> Sterilizer::ConvertNuisanceFlag(NuisanceFlag ns) const {
   return std::vector<bool> nuis{
     ns.normalization,
       ns.astroFlux,
@@ -446,8 +442,7 @@ CPrior Sterilizer::ConvertPriorSet(Priors pr)
 
 
 // And go back to human readable
- std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns)
-{
+std::vector<double> Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   Nuisance ns;
   ns.normalization = vecns[0];
   ns.astroFlux = vecns[1];
