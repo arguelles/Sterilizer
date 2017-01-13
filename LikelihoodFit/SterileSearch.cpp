@@ -7,21 +7,34 @@
 
 Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp):
   steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
+  if(!steeringParams_.quiet) std::cout<<"Sterilizer constructor: checking paths" <<std::endl;
   CheckDataPaths(dataPaths_);
   if(steeringParams_.ReadCompact){
+    if(!steeringParams_.quiet) std::cout<<"Loading compact data" <<std::endl;
     LoadCompact();
   } else {
+    if(!steeringParams_.quiet) std::cout<<"Loading data" <<std::endl;
     LoadData();
+    if(!steeringParams_.quiet) std::cout<<"Loading MC" <<std::endl;  
     LoadMC();
   }
+  if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;  
   LoadDOMEfficiencySplines();
+  if(!steeringParams_.quiet) std::cout<<"Loading  XS" <<std::endl;  
   ConstructCrossSectionWeighter();
+  if(!steeringParams_.quiet) std::cout<<"Loading Flux weighter" <<std::endl;  
   ConstructFluxWeighter();
+  if(!steeringParams_.quiet) std::cout<<"Loading MC weighter" <<std::endl;  
   ConstructMonteCarloGenerationWeighter();
+  if(!steeringParams_.quiet) std::cout<<"Loading Lepton weighter" <<std::endl;  
   ConstructLeptonWeighter();
+  if(!steeringParams_.quiet) std::cout<<"Loading Oversize weighter" <<std::endl;  
   ConstructOversizeWeighter();
+  if(!steeringParams_.quiet) std::cout<<"Weighting MC" <<std::endl;  
   WeightMC();
+  if(!steeringParams_.quiet) std::cout<<"Making data hist" <<std::endl;  
   ConstructDataHistogram();
+  if(!steeringParams_.quiet) std::cout<<"Making sim hist" <<std::endl;  
   ConstructSimulationHistogram();
 }
 
