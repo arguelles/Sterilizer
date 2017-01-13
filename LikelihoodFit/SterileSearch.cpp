@@ -87,7 +87,7 @@ bool Sterilizer:;CheckSimulationLoaded() const {
  * Functions to load to load DOM efficiency splines
  * **********************************************************************************************************/
 
-void Sterilizer::LoadDOMEfficiencySplines(std::vector<int> years){
+void Sterilizer::LoadDOMEfficiencySplines(std::vector<unsigned int> years){
   for(size_t year_index=0; year_index<years.size(); year_index++){
     domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index]+".fits"));
     domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
@@ -170,17 +170,14 @@ void Sterilizer::ConstructLeptonWeighter(){
   lepton_weighter_constructed_=true;
 }
 
-
- void Sterilizer::ConstructOversizeWeighter()
- {
-   osw_=OversizeWeighter(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat");
-   oversize_weighter_constructed_=true;
- }
+void Sterilizer::ConstructOversizeWeighter(){
+  osw_=OversizeWeighter(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat");
+  oversize_weighter_constructed_=true;
+}
 
 bool SterileSearch::CheckLeptonWeighterConstructed() const {
   return(lepton_weighter_constructed_);
 }
-
 
 /*************************************************************************************************************
  * Functions to initialize the MC weights
@@ -336,7 +333,11 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
+<<<<<<< HEAD
+fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const {
+=======
 fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
+>>>>>>> ed946e0c7263c123b5e64e7b572e6a46e02b1a00
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
   
@@ -355,7 +356,7 @@ fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
  * Functions to change the sterile neutrino hypothesis
  * **********************************************************************************************************/
 
-void Sterilizer::SetSterileNeutrinoHypothesis(SterileNuParams snp){
+void Sterilizer::SetSterileNuParams(SterileNuParams snp){
   if(not simulation_loaded))
     throw std::runtime_error("No simulation has been loaded. Cannot weight to sterile hypothesis without simulation.");
   if(not mc_generation_weighter_constructed_)

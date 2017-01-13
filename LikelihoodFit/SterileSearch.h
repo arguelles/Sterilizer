@@ -3,6 +3,21 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <iterator>
+#include <algorithm>
+#include <iterator>
+#include <set>
+#include <string>
+#include <chrono>
+#include <queue>
+#include <vector>
+
+#include "oversizeWeight.h"
+#include "likelihood.h"
+#include "Event.h"
+#include "analysisWeighting.h"
+#include "dataIO.h"
+#include "runspec.h"
 #include "oversizeWeight.h"
 
 struct fitResult {
@@ -70,7 +85,7 @@ struct SteeringParams {
   std::string oversizeFunction="NullCorrection";
   bool ReadCompact=true;
   std::string xs_model_name="";
-}
+};
 
 struct SterileNuParams {
   double th14 = 0;
@@ -80,9 +95,8 @@ struct SterileNuParams {
   double del24 = 0;
   double dm41sq = 0;
   SterileNuParams(double th14,double th24, double th34, double del14, double del24, double dm41sq):
-    th14(th14),th24(th24),th34(th34),del14(del14),del24(del24)
+    th14(th14),th24(th24),th34(th34),del14(del14),del24(del24){}
 };
-
 
 using namespace phys_tools::histograms;
 using namespace likelihood;
@@ -125,15 +139,15 @@ class Sterilizer {
     OversizeWeighter osw_;
 
     // Status flags
-    bool cross_section_weighter_constructed_(false);
-    bool flux_section_weighter_constructed_(false);
-    bool lepton_weighter_constructed_(false);
-    bool oversize_weighter_constructed_(false);
-    bool dom_efficiency_splines_loaded_(false);
-    bool data_histogram_constructed_(false);
-    bool simulation_loaded_(false);
-    bool mc_generation_weighter_constructed_(false);
-    bool data_loaded_(false);
+    bool cross_section_weighter_constructed_ = (false);
+    bool flux_section_weighter_constructed_ = (false);
+    bool lepton_weighter_constructed_ = (false);
+    bool oversize_weighter_constructed_ = (false);
+    bool dom_efficiency_splines_loaded_ = (false);
+    bool data_histogram_constructed_ = (false);
+    bool simulation_loaded_ = (false);
+    bool mc_generation_weighter_constructed_ = (false);
+    bool data_loaded_ = (false);
 
     // DOM efficiency splines
     std::vector<std::unique_ptr<Splinetable>> domEffConv_;
@@ -141,7 +155,7 @@ class Sterilizer {
 
   public:
     // Constructor
-    Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNeutrinoParameters snp);
+    Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp);
 
     // Check that the directories where files are mean to be exist
     bool CheckDataPaths(DataPaths dp) const;
@@ -151,47 +165,55 @@ class Sterilizer {
 
   protected:
     // Functions to load and unload data
-    void LoadData(std::string filepath);
-    void LoadMC(std::string filepath) {}
-    void LoadCompact(std::string filepath);
-    void WriteCompact(std::string filepath) const;
-    // Functions to load and unload data
-    void WeightMC(SterileNeutrinoParameters snp, std::vector<double> nuisance){}
-    void LoadFluxes(std::string filepath,SterileNeutrinoParameters snp) {}
-    void MakeDataHistogram() {}
-    void MakeSimulationHistogram(SterileNeutrinoParameters snp, std::vector<double> nuisance) {}
-
-    bool CheckDataPaths(DataPaths dp) const;
-    bool CheckDataPath(std::string p) const;
-
-    void SetRandomNumberGeneratorSeed(unsigned int seed);
-    
-    // Given human readable priors, weaverize
-    CPrior              ConvertPriorSet(Priors pr);
-    // Given human readable nuisance parameters, vectorize
-    std::vector<double> ConvertNuisance(Nuisance ns);
-
-    void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed)
+    void LoadData();
+    void LoadMC();
+    void LoadCompact();
+    void WriteCompact() const;
+    void ClearData();
+    void ClearSimulation();
+    // loading DOM efficiency splines
+    void LoadDOMEfficiencySplines(std::vector<unsigned int> years);
+    // functions to construct the weighters
+    void ConstructCrossSectionWeighter();
+    void ConstructFluxWeighter();
+    void ConstructMonteCarloGenerationWeighter();
+    void ConstructLeptonWeighter();
+    void ConstructOversizeWeighter();
+    // Function to initialize the MC weights
+    void WeightMC();
+    // functions to construct the histograms of data and simulation
+    void ConstructDataHistogram();
+    void ConstructSimulationHistogram();
+    // functions to construct the likelihood problem
+    void ConstructLikelihoodProblem();
+  public:
+    // functions to check the status of the object
+    bool CheckDataLoaded() const;
+    bool CheckSimulationLoaded() const;
+    bool CheckDOMEfficiencySplinesLoaded() const;
+    bool CheckCrossSectionWeighterConstructed() const;
+    bool CheckFluxWeighterConstructed() const;
+    bool CheckFluxWeighterConstructed() const;
+    bool CheckLeptonWeighterConstructed() const;
+    bool CheckSimulationInitialized() const;
+    bool CheckDataHistogramConstructed() const;
+    bool CheckSimulationHistogramConstructed() const;
+    bool CheckLikelihoodProblemConstruction() const;
+    // functions to obtain distributions
+    marray<double,3> GetDataDistribution() const;
     marray<double,3> GetExpectation(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
     marray<double,3> GetRealization(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-    double llhFull(SterileNeutrinoParameters snp, std::vector<double> nuisance) const;
-
- private:
+    // functions to evaluate the likelihood
+    double EvalLLH(std::vector<double> nuisance) const;
+    fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
+    void Sterilizer::SetSterileNuParams(SterileNuParams snp);
+  private:
     // Test if two particles are in the same generation (e.g., mu / numu)
     bool SameGeneration(particleType p1, particleType p2) const;
-
     // Make the fit
     template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
-
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
-
   public:
-    marray<double,3> GetDataDistribution() const;
-    marray<double,3> GetExpectation(SterileNeutrinoParameters snp, Nuisance nuisance) const;
-    marray<double,3> GetRealization(SterileNeutrinoParameters snp, Nuisance nuisance) const;
-    double llhFull(SterileNeutrinoParameters snp, Nuisance nuisance) const;
-
-    fitResult llh(SterileNeutrinoParameters snp) const;
     // set functions
 
     SteeringParams       GetSteeringParams()  { return steeringParams_; };
@@ -200,11 +222,7 @@ class Sterilizer {
 
     void       SetSteeringParams(SteeringParams p)   { steeringParams_=p; SetRandomNumberGeneratorSeed(p.rngSeed);};
     void       SetDataPaths(DataPaths p)             { dataPaths_=p; CheckDataPaths(p); };
-    void       SetSterileNuParams(SterileNuParams p) { sterileNuParams_=p;};
+    void       SetRandomNumberGeneratorSeed(unsigned int seed);
 };
-
-
-
-
 
 #endif
