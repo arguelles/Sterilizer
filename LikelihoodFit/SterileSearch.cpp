@@ -1,5 +1,6 @@
 #include "SterileSearch.h"
 
+
 /*************************************************************************************************************
  * Implementation auxiliary functions
  * **********************************************************************************************************/
@@ -140,6 +141,13 @@ void Sterilizer::ConstructLeptonWeighter(){
   lepton_weighter_constructed_=true;
 }
 
+
+ void Sterilizer::ConstructOversizeWeighter()
+ {
+   osw_=OversizeWeighter(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat");
+   oversize_weighter_constructed_=true;
+ }
+
 /*************************************************************************************************************
  * Functions to obtain distributions
  * **********************************************************************************************************/
@@ -241,3 +249,5 @@ marray<double,3> Sterilizer::GetRealization(SterileNeutrinoParameters snp, std::
    else
      std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
  }
+
+

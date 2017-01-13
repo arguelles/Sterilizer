@@ -10,7 +10,7 @@ struct fitResult {
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include "oversizeWeight.h"
 
 
 struct DataPaths {
@@ -20,8 +20,7 @@ struct DataPaths {
   std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
   std::string data_path =                "/data/ana/NuFSGenMC/Data/";
   std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
-  std::string oversize_function_main =   "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
-  std::string oversize_function_dc =     "/data/ana/NuFSGenMC/OversizeCorrections/NullCorrection.dat";
+  std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
   std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
   std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
 };
@@ -99,6 +98,8 @@ class Sterilizer {
     std::shared_ptr<LW::Flux> fluxKaon_,fluxPion_,fluxPrompt_;
     std::shared_ptr<LW::CrossSectionFromSpline> xsw_;
     LW::mcgenWeighter mcw_;
+    OversizeWeighter osw_;
+
     bool cross_section_weighter_constructed_=false;
     bool flux_section_weighter_constructed_=false;
     bool lepton_weighter_constructed_=true;
