@@ -317,48 +317,44 @@ class Sterilizer {
       }
     }
 
-/*
     // Given a human readable prior set, make a weaverized version
-template<typename... PriorTypes>
-  FixedSizePriorSet<PriorTypes...> Sterilizer::ConvertPriorSet(Priors pr) const
-  {
-    // construct continuous nuisance priors
-    UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
-    GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
-    GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
-    UniformPrior  simple_domEffPrior(pr.domEffCenter,pr.domEffWidth);
-    GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
-    GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
+    FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>
+    ConvertPriorSet(Priors pr) const {
+      // construct continuous nuisance priors
+      UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
+      GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
+      GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
+      LimitedGaussianPrior simple_domEffPrior(pr.domEffCenter,pr.domEffWidth,0.8,1.2);
+      GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
+      GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
 
-    // construct zenith correction prior
-    std::map<std::string,double> delta_alpha {
-      {"HondaGaisser",8./7.},
-	{"CombinedGHandHG_H3a_QGSJET",4. /7.},
-	  {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
-	    {"PolyGonato_QGSJET-II-04",0.5},
-	      {"PolyGonato_SIBYLL2",1.0},
-		{"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
-		  {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
-		    };
+      // construct zenith correction prior
+      std::map<std::string,double> delta_alpha {
+                        {"HondaGaisser",8./7.},
+                        {"CombinedGHandHG_H3a_QGSJET",4. /7.},
+                        {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
+                        {"PolyGonato_QGSJET-II-04",0.5},
+                        {"PolyGonato_SIBYLL2",1.0},
+                        {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
+                        {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
+          };
 
-    if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
-      throw std::runtime_error("Jordi delta key not found. Aborting.");
-    double alpha = delta_alpha[steeringParams_.modelName];
+      if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
+        throw std::runtime_error("Jordi delta key not found. Aborting.");
+      double alpha = delta_alpha[steeringParams_.modelName];
 
-    GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
+      GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
 
-    // make and return priorset
-    return makePriorSet(normalizationPrior,
-			positivePrior,
-			positivePrior,
-			crSlopePrior,
-			simple_domEffPrior,
-			kaonPrior,
-			nanPrior,
-			ZCPrior);
-  }
-*/
-
+      // make and return priorset
+      return makePriorSet(normalizationPrior,
+                          positivePrior,
+                          positivePrior,
+                          crSlopePrior,
+                          simple_domEffPrior,
+                          kaonPrior,
+                          nanPrior,
+                          ZCPrior);
+    }
 
   public:
     // set functions
