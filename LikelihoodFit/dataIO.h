@@ -7,7 +7,7 @@
 #include "runspec.h"
 
 std::deque<Event> loadExperimentalData(const std::string& dataPath, bool UseBurnsample);
-void loadSimulatedData(std::deque<Event>& buffer, const std::string& dataPath, const std::map<int,double>& livetime, const std::map<std::string,run>& simInfo,
+void loadSimulatedData(std::deque<Event>& buffer, const std::string& dataPath, const std::map<unsigned int,double>& livetime, const std::map<std::string,run>& simInfo,
                        std::vector<std::string> simSetsToLoad, bool loadTargeted);
 
 uint32_t getFileChecksum(const std::string& filename);

@@ -58,7 +58,7 @@ namespace{
 	};
 }
 
-void loadSimulatedData(std::deque<Event>& buffer, const std::string& dataPath, const std::map<int,double>& livetime, const std::map<std::string,run>& simInfo,
+void loadSimulatedData(std::deque<Event>& buffer, const std::string& dataPath, const std::map<unsigned int,double>& livetime, const std::map<std::string,run>& simInfo,
                                     std::vector<std::string> simSetsToLoad, bool loadTargeted){
 	auto simAction=[&](RecordID id, Event& e, int simYear, const domEffSetter& domEff){
 		if(e.check(true,Level::neutrino) && e.energy>1){
