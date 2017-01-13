@@ -208,8 +208,6 @@ class Sterilizer {
     fitResult Sterilizer::MinLLH(std::vector<std::pair<unsigned int,double>> fixedNuisanceParams) const;
     void Sterilizer::SetSterileNuParams(SterileNuParams snp);
   private:
-    // Test if two particles are in the same generation (e.g., mu / numu)
-    bool SameGeneration(particleType p1, particleType p2) const;
     // Make the fit
     template<typename LikelihoodType> fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,std::vector<unsigned int> indicesToFix);
     void ConstructFluxWeighter(std::string squids_files_path,std::string splines_path,SterileNeutrinoParameters snp);
