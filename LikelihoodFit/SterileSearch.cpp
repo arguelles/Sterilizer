@@ -333,17 +333,16 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_.evaluateLikelihood(nuisance);
 }
 
-fitResult Sterilizer::MinLLH(Nuisance fixedParams) const {
+FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
   
   std::vector<double> seed=prob.getSeed();
   std::vector<unsigned int> fixedIndices;
   
-  std::vector<double> FixVec=ConvertNuisance(fixedParams);
+  std::vector<double> FixVec=ConvertNuisanceFlag(fixedParams);
   for(size_t i; i!=FixVec.size(); ++i)
-      if(FixVec[i]>0.1) fixedIndices.push_back(i);
-  
+      if(FixVec[i]==1) fixedIndices.push_back(i);
 
   return DoFitLBFGSB(prob_, seed, fixedIndices);
 }
@@ -467,10 +466,43 @@ std::vector<double> ConvertNuisance(Nuisance ns)
       }
 }
 
+// Given a human readable flag set, make a bool vector
+std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns)
+{
+  return std::vector<bool> nuis{
+    ns.normalization,
+      ns.astroFlux,
+      ns.promptFlux,
+      ns.crSlope,
+      ns.domEfficiency,
+      ns.piKRatio,
+      ns.nuNubarRatio,
+      ns.zenithCorrection
+      }
+}
+
+
+
+
+// And go back to human readable
+std::vector<double> ConvertVecToNuisance(std::vector<double> vecns)
+{
+  Nuisance ns;
+  ns.normalization = vecns[0];
+  ns.astroFlux = vecns[1];
+  ns.promptFlux = vecns[2];
+  ns.crSlope = vecns[3];
+  ns.domEfficiency = vecns[4];
+  ns.piKRatio = vecns[5];
+  ns.nuNubarRatio = vecns[6];
+  ns.zenithCorrection = vecns[7];
+  return ns;
+}
+
 
 // Do the fit business
 template<typename LikelihoodType>
-fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
+FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
 		      std::vector<unsigned int> indicesToFix={}){
   using namespace likelihood;
 
@@ -489,10 +521,10 @@ fitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& see
 
   minimizer.setChangeTolerance(1e-5);
   minimizer.setHistorySize(20);
-  fitResult result;
+  FitResult result;
   result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
   result.likelihood=minimizer.minimumValue();
-  result.params=minimizer.minimumPosition();
+  result.params=ConvertVecToNuisance(minimizer.minimumPosition());
   result.nEval=minimizer.numberOfEvaluations();
   result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function                                            
 
