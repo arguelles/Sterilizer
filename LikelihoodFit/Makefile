@@ -28,7 +28,7 @@ LDFLAGS+=-lsupc++
 CXXFLAGS+=-I../Likelihood
 LIKELIHOOD_HEADERS=../Likelihood/autodiff.h ../Likelihood/likelihood.h ../Likelihood/nugenWeighting.h ../Likelihood/particleType.h ../Likelihood/tableio.h ../Likelihood/weighting.h ../Likelihood/lbfgsb/lbfgsb.h ../Likelihood/lbfgsb/interface.h
 
-ICSterile_HELPER_OBJECTS = lbfgsb.o linpack.o analysisWeighting.o dataIO.o Event.o SterileSearch.o oversizeWeight.o
+ICSterile_HELPER_OBJECTS = lbfgsb.o linpack.o analysisWeighting.o compactIO.o Event.o SterileSearch.o oversizeWeight.o
 ICSterile_OBJECT = SterileSearchTest.o
 
 .PHONY: all clean
@@ -47,8 +47,8 @@ linpack.o : ../Likelihood/lbfgsb/linpack.c
 analysisWeighting.o : analysisWeighting.cpp analysisWeighting.h splinetable.h
 	$(CXX) $(CXXFLAGS) analysisWeighting.cpp -c -o analysisWeighting.o
 
-dataIO.o : dataIO.h dataIO.cpp Event.h analysisWeighting.h $(LIKELIHOOD_HEADERS)
-	$(CXX) $(CXXFLAGS) dataIO.cpp -c -o dataIO.o
+compactIO.o : compactIO.h compactIO.cpp Event.h analysisWeighting.h $(LIKELIHOOD_HEADERS)
+	$(CXX) $(CXXFLAGS) compactIO.cpp -c -o compactIO.o
 
 Event.o : Event.cpp Event.h
 	$(CXX) $(CXXFLAGS) Event.cpp -c -o Event.o
@@ -56,10 +56,10 @@ Event.o : Event.cpp Event.h
 oversizeWeight.o : oversizeWeight.cpp oversizeWeight.h
 	$(CXX) $(CXXFLAGS) oversizeWeight.cpp -c -o oversizeWeight.o
 
-SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h oversizeWeight.h
+SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h oversizeWeight.h
 	$(CXX) $(CXXFLAGS) SterileSearch.cpp -c -o SterileSearch.o
 
-SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h dataIO.h splinetable.h SterileSearch.h
+SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h
 	$(CXX) $(CXXFLAGS) SterileSearchTest.cpp -c -o SterileSearchTest.o
 
 SterileSearchTest : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
