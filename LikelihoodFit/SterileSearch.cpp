@@ -9,6 +9,10 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
   if(!steeringParams_.quiet) std::cout<<"Sterilizer constructor: checking paths" <<std::endl;
   CheckDataPaths(dataPaths_);
+
+  if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;  
+  LoadDOMEfficiencySplines();
+
   if(steeringParams_.ReadCompact){
     if(!steeringParams_.quiet) std::cout<<"Loading compact data" <<std::endl;
     LoadCompact();
@@ -18,8 +22,6 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
     if(!steeringParams_.quiet) std::cout<<"Loading MC" <<std::endl;  
     LoadMC();
   }
-  if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;  
-  LoadDOMEfficiencySplines();
   if(!steeringParams_.quiet) std::cout<<"Loading  XS" <<std::endl;  
   ConstructCrossSectionWeighter();
   if(!steeringParams_.quiet) std::cout<<"Loading Flux weighter" <<std::endl;  
@@ -83,6 +85,8 @@ void Sterilizer::LoadData(){
 
 void Sterilizer::LoadMC(){
 
+  if(not dom_efficiency_splines_constructed_)
+    throw std::runtime_error("MC cannot be loaded until dom splines are loaded");
     std::map<unsigned int,double> livetime;
     if(!steeringParams_.useBurnSample)
       livetime=steeringParams_.fullLivetime;
@@ -281,6 +285,10 @@ void Sterilizer::WeightMC(){
 
 void Sterilizer::InitializeSimulationWeights()
 {
+
+
+  if(not dom_efficiency_splines_constructed_)
+    throw std::runtime_error("Simulation cannot be weighted until dom splines are loaded");
   using iterator=std::deque<Event>::iterator;
   auto cache=[&](iterator it, iterator end){
     for(; it!=end; it++){
