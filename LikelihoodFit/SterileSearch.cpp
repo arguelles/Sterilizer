@@ -50,14 +50,6 @@ auto binner = [](HistType& h, const Event& e){
                 h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
 };
 
-struct domEffSetter{
-  simpleEffRate<Event> convDOMEffRate;
-  domEffSetter(double simulatedDOMEfficiency, unsigned int year):
-    convDOMEffRate(domEffConv_[year].get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
-  void setCache(Event& e) const{
-    convDOMEffRate.setCache(e);
-  }
-};
 
 
 
@@ -76,10 +68,10 @@ void Sterilizer::LoadData(){
       }
     };
     auto ic86Action=[&](RecordID id, Event& e){ dataAction(id,e,2011); };
-    if (steeringParams_.UseBurnsample)
-      readFile(dataPath+"burnsample_ic86.h5",ic86Action);
+    if (steeringParams_.useBurnSample)
+      readFile(dataPaths_.data_path+"burnsample_ic86.h5",ic86Action);
     else
-      readFile(dataPath+"IC86.h5",ic86Action);    
+      readFile(dataPaths_.data_path+"IC86.h5",ic86Action);    
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
   }
@@ -100,6 +92,16 @@ void Sterilizer::LoadMC(){
     std::vector<std::string> simSetsToLoad;
     simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
     std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
+    
+    struct domEffSetter{
+      simpleEffRate<Event> convDOMEffRate;
+      domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
+	convDOMEffRate(domEffConv.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
+      void setCache(Event& e) const{
+	convDOMEffRate.setCache(e);
+      }
+    };
+
     try{
       auto simAction=[&](RecordID id, Event& e, int simYear, const domEffSetter& domEff){
 	if(e.check(true,Level::neutrino) && e.energy>1){
@@ -122,13 +124,16 @@ void Sterilizer::LoadMC(){
       for(auto simSet : simSetsToLoad){
 	const auto& setInfo=simInfo.find(simSet)->second;
 	int simYear=setInfo.details.year;
-	domEffSetter domEff(setInfo.unshadowedFraction,simYear);
+	unsigned int yearindex=yearindices_[simYear];
+	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[yearindex]);
 	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
-	auto path=dataPath+setInfo.filename;
+	auto path=dataPaths_.mc_path+setInfo.filename;
 	readFile(path,callback);
       }
-    } catch(std::exception& ex) std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
-
+    } catch(std::exception& ex) 
+      {
+	std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
+      }
     if(!steeringParams_.quiet)
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
     simulation_loaded_=true;
@@ -141,7 +146,7 @@ void Sterilizer::LoadCompact(){
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
     std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
-    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
     unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
         getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
     if(!steeringParams_.quiet){
@@ -163,7 +168,7 @@ void Sterilizer::WriteCompact() const {
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
     std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
-    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
@@ -187,9 +192,10 @@ void Sterilizer::ClearSimulation(){
 void Sterilizer::LoadDOMEfficiencySplines(){
   std::vector<unsigned int> years=steeringParams_.years;
   for(size_t year_index=0; year_index<steeringParams_.years.size(); year_index++){
-    year=years[year_index]
-    domEffConv_[year] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
-    domEffPrompt_[year] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
+    unsigned int year=years[year_index];
+    yearindices_[year]=year_index;
+    domEffConv_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits")));
+    domEffPrompt_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits")));
   }
   dom_efficiency_splines_constructed_=true;
 }
@@ -269,13 +275,13 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  initializeSimulationWeights(mainSimulation_,*pionFluxWeighter_,*kaonFluxWeighter_,*promptFluxWeighter_,osw_);
+  InitializeSimulationWeights();
   simulation_initialized_=true;
 }
 
 void Sterilizer::InitializeSimulationWeights()
 {
-  using iterator=typename ContainerType::iterator;
+  using iterator=std::deque<Event>::iterator;
   auto cache=[&](iterator it, iterator end){
     for(; it!=end; it++){
       auto& e=*it;
@@ -294,26 +300,26 @@ void Sterilizer::InitializeSimulationWeights()
       double osweight = osw_.EvaluateOversizeCorrection(e.energy, e.zenith);
       e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
-      e.cachedPromptWeight=(*promptWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       
       e.cachedAstroWeight=0.;
     }
-  }
-}
+  };
 
-ThreadPool pool(steeringParams_.evalThreads);
-iterator it=mainSimulation_.begin(), end=mainSimulation_.end();
-while(true){
-  unsigned long dist=std::distance(it,end);
-  if(dist>=1000UL){
-    pool.enqueue(cache,it,it+1000);
-    it+=1000;
+  
+  ThreadPool pool(steeringParams_.evalThreads);
+  iterator it=mainSimulation_.begin(), end=mainSimulation_.end();
+  while(true){
+    unsigned long dist=std::distance(it,end);
+    if(dist>=1000UL){
+      pool.enqueue(cache,it,it+1000);
+      it+=1000;
+    }
+    else{
+      pool.enqueue(cache,it,end);
+      break;
+    }
   }
-  else{
-    pool.enqueue(cache,it,end);
-    break;
-  }
- }
 }
 
 
@@ -447,7 +453,7 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
  * **********************************************************************************************************/
 
 
-void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed, NuisanceFlag fixedParams){
+void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, NuisanceFlag fixedParams){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
   if(not simulation_histogram_constructed_)
@@ -486,7 +492,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed
 
 
 // look up zenith correction scale for a particular flux model.
-double Sterilier::GetZenithCorrectionScale() const
+double Sterilizer::GetZenithCorrectionScale() const
 {
   std::map<std::string,double> delta_alpha {
     {"HondaGaisser",8./7.},
@@ -539,11 +545,11 @@ FitResult Sterilizer::MinLLH() const {
   minimizer.setChangeTolerance(1e-5);
   minimizer.setHistorySize(20);
 
-  for(auto idx : indicesToFix)
+  for(auto idx : fixedIndices)
     minimizer.fixParameter(idx);
 
   FitResult result;
-  result.succeeded=DoFitLBFGSB(prob_, minimizer);
+  result.succeeded=DoFitLBFGSB(*prob_, minimizer);
   result.likelihood=minimizer.minimumValue();
   result.params=ConvertVecToNuisance(minimizer.minimumPosition());
   result.nEval=minimizer.numberOfEvaluations();

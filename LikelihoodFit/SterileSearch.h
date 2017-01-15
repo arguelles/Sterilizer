@@ -121,7 +121,7 @@ using namespace nusquids;
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
-
+using CPrior=FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>;
 using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>;
 
 template<typename ContainerType, typename HistType, typename BinnerType>
@@ -176,8 +176,9 @@ class Sterilizer {
     bool simulation_initialized_ = (false);
 
     // DOM efficiency splines
-    std::map<unsigned int, std::unique_ptr<Splinetable>> domEffConv_;
-    std::map<unsigned int, std::unique_ptr<Splinetable>> domEffPrompt_;
+    std::vector<std::shared_ptr<Splinetable>> domEffConv_;
+    std::vector<std::shared_ptr<Splinetable>> domEffPrompt_;
+    std::map<unsigned int, unsigned int> yearindices_;
 
     // likehood problem object
     std::shared_ptr<LType> prob_;
@@ -249,17 +250,19 @@ class Sterilizer {
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
     double EvalLL(Nuisance nuisance) const;
-    FitResult MinLLH(NuisanceFlag fixedParams) const;
+    FitResult MinLLH() const;
     void SetSterileNuParams(SterileNuParams snp);
 
   private:
     
     // Nasty template part of fit function
     template<typename LikelihoodType>
-      FitResult DoFitLBFGSB(LikelihoodType& likelihood, minimizer&) const{
+      bool DoFitLBFGSB(LikelihoodType& likelihood, LBFGSB_Driver& minimizer) const{
       using namespace likelihood;
-      return minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
-    }
+      bool succeeded=
+	minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
+      return succeeded;
+    };
 
  
 
