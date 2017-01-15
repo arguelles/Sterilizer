@@ -1,7 +1,7 @@
 #include <fstream>
 #include <boost/crc.hpp>
 
-#include "dataIO.h"
+#include "compactIO.h"
 //#include "targetedSim.h"
 #include "analysisWeighting.h"
 
@@ -16,91 +16,6 @@ namespace{
 	}
 }
 
-std::deque<Event> loadExperimentalData(const std::string& dataPath, bool UseBurnsample){
-	std::deque<Event> storage;
-	auto dataAction = [&](RecordID id, Event& e, int dataYear){
-		if(e.check(false,Level::neutrino)){
-			e.year=dataYear;
-			storage.push_back(e);
-		}
-	};
-	
-	//auto ic79Action=[&](RecordID id, Event& e){ dataAction(id,e,2010); };
-	//readFile(dataPath+"burnsample_ic79.h5",ic79Action);
-	//readFile(dataPath+"IC79.h5",ic79Action);
-	
-	auto ic86Action=[&](RecordID id, Event& e){ dataAction(id,e,2011); };
-	//readFile(dataPath+"burnsample_ic86_ereco.h5",ic86Action);
-  if (UseBurnsample)
-    readFile(dataPath+"burnsample_ic86.h5",ic86Action);
-  else
-    readFile(dataPath+"IC86.h5",ic86Action);
-	return(storage);
-}
-
-namespace{
-	struct domEffSetter{
-		simpleEffRate<Event> convDOMEffRate;
-		//simpleEffRate<Event> promptDOMEffRate;
-		//simpleEffRate<Event> astroDOMEffRate;
-		
-		domEffSetter(double simulatedDOMEfficiency):
-		convDOMEffRate(domEffConv2011.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff)//,
-		//promptDOMEffRate(domEffPrompt2011.get(),simulatedDOMEfficiency,&Event::cachedPromptDOMEff),
-		//astroDOMEffRate(domEffAstro2011.get(),simulatedDOMEfficiency,&Event::cachedAstroDOMEff)
-		{}
-		
-		void setCache(Event& e) const{
-			convDOMEffRate.setCache(e);
-		//	promptDOMEffRate.setCache(e);
-		//	astroDOMEffRate.setCache(e);
-		}
-	};
-}
-
-void loadSimulatedData(std::deque<Event>& buffer, const std::string& dataPath, const std::map<unsigned int,double>& livetime, const std::map<std::string,run>& simInfo,
-                                    std::vector<std::string> simSetsToLoad, bool loadTargeted){
-	auto simAction=[&](RecordID id, Event& e, int simYear, const domEffSetter& domEff){
-		if(e.check(true,Level::neutrino) && e.energy>1){
-			e.year=simYear;
-			e.cachedLivetime=livetime.find(simYear)->second;
-			e.cachedConvPionWeight=0;
-			e.cachedConvKaonWeight=0;
-			e.cachedPromptWeight=0;
-			e.cachedAstroWeight=0;
-			domEff.setCache(e);
-			if(e.primaryType==particleType::NuTau || e.primaryType==particleType::NuTauBar){
-				assert(e.cachedConvPionWeight==0.0);
-				assert(e.cachedConvKaonWeight==0.0);
-				assert(e.cachedPromptWeight==0.0);
-			}
-
-			buffer.push_back(e);
-		}
-	};
-	
-	for(auto simSet : simSetsToLoad){
-		const auto& setInfo=simInfo.find(simSet)->second;
-		int simYear=setInfo.details.year;
-		domEffSetter domEff(setInfo.unshadowedFraction);
-		auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
-    auto path=dataPath+setInfo.filename;
-    readFile(path,callback);
-	}
-  /*
-	if(loadTargeted){
-		std::map<std::string,unsigned int> sets{{"Delta/IC79/eff0.9900",2010},{"Echo/IC86/eff0.9900",2011}};
-		const double unshadowedFraction=0.99;
-		domEffSetter domEff(unshadowedFraction);
-		for(auto set : sets){
-			int simYear=set.second;
-			auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
-			for(unsigned int i=0; i<1100; i+=100)
-				readFile(dataPath+set.first+"/"+boost::lexical_cast<std::string>(i)+"-"+boost::lexical_cast<std::string>(i+99)+".h5",callback);
-		}
-	}
-  */
-}
 
 uint32_t getFileChecksum(const std::string& filename){
 	const std::streamsize bufferSize=1u<<16; //1MB

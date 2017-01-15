@@ -9,6 +9,10 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
   if(!steeringParams_.quiet) std::cout<<"Sterilizer constructor: checking paths" <<std::endl;
   CheckDataPaths(dataPaths_);
+
+  if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;  
+  LoadDOMEfficiencySplines();
+
   if(steeringParams_.ReadCompact){
     if(!steeringParams_.quiet) std::cout<<"Loading compact data" <<std::endl;
     LoadCompact();
@@ -18,8 +22,6 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
     if(!steeringParams_.quiet) std::cout<<"Loading MC" <<std::endl;  
     LoadMC();
   }
-  if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;  
-  LoadDOMEfficiencySplines();
   if(!steeringParams_.quiet) std::cout<<"Loading  XS" <<std::endl;  
   ConstructCrossSectionWeighter();
   if(!steeringParams_.quiet) std::cout<<"Loading Flux weighter" <<std::endl;  
@@ -50,13 +52,28 @@ auto binner = [](HistType& h, const Event& e){
                 h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
 };
 
+
+
+
 /*************************************************************************************************************
  * Functions to read and write data
  * **********************************************************************************************************/
 
 void Sterilizer::LoadData(){
   try{
-    sample_=loadExperimentalData(dataPaths_.data_path,steeringParams_.useBurnSample);
+    
+    std::deque<Event> storage;
+    auto dataAction = [&](RecordID id, Event& e, int dataYear){
+      if(e.check(false,Level::neutrino)){
+	e.year=dataYear;
+	sample_.push_back(e);
+      }
+    };
+    auto ic86Action=[&](RecordID id, Event& e){ dataAction(id,e,2011); };
+    if (steeringParams_.useBurnSample)
+      readFile(dataPaths_.data_path+"burnsample_ic86.h5",ic86Action);
+    else
+      readFile(dataPaths_.data_path+"IC86.h5",ic86Action);    
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
   }
@@ -65,9 +82,11 @@ void Sterilizer::LoadData(){
   data_loaded_=true;
 }
 
-void Sterilizer::LoadMC(){
-    bool loadTargeted=true;
 
+void Sterilizer::LoadMC(){
+
+  if(not dom_efficiency_splines_constructed_)
+    throw std::runtime_error("MC cannot be loaded until dom splines are loaded");
     std::map<unsigned int,double> livetime;
     if(!steeringParams_.useBurnSample)
       livetime=steeringParams_.fullLivetime;
@@ -77,11 +96,48 @@ void Sterilizer::LoadMC(){
     std::vector<std::string> simSetsToLoad;
     simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
     std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
+    
+    struct domEffSetter{
+      simpleEffRate<Event> convDOMEffRate;
+      domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
+	convDOMEffRate(domEffConv.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
+      void setCache(Event& e) const{
+	convDOMEffRate.setCache(e);
+      }
+    };
+
     try{
-      loadSimulatedData(mainSimulation_,dataPaths_.mc_path,livetime,simInfo,simSetsToLoad,loadTargeted);
-    } catch(std::exception& ex){
-      std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
-    }
+      auto simAction=[&](RecordID id, Event& e, int simYear, const domEffSetter& domEff){
+	if(e.check(true,Level::neutrino) && e.energy>1){
+	  e.year=simYear;
+	  e.cachedLivetime=livetime.find(simYear)->second;
+	  e.cachedConvPionWeight=0;
+	  e.cachedConvKaonWeight=0;
+	  e.cachedPromptWeight=0;
+	  e.cachedAstroWeight=0;
+	  domEff.setCache(e);
+	  if(e.primaryType==particleType::NuTau || e.primaryType==particleType::NuTauBar){
+	    assert(e.cachedConvPionWeight==0.0);
+	    assert(e.cachedConvKaonWeight==0.0);
+	    assert(e.cachedPromptWeight==0.0);
+	  }
+	  mainSimulation_.push_back(e);
+	}
+      };
+
+      for(auto simSet : simSetsToLoad){
+	const auto& setInfo=simInfo.find(simSet)->second;
+	int simYear=setInfo.details.year;
+	unsigned int yearindex=yearindices_[simYear];
+	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[yearindex]);
+	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
+	auto path=dataPaths_.mc_path+setInfo.filename;
+	readFile(path,callback);
+      }
+    } catch(std::exception& ex) 
+      {
+	std::cerr << "Problem loading simulated data: " << ex.what() << std::endl;
+      }
     if(!steeringParams_.quiet)
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
     simulation_loaded_=true;
@@ -94,7 +150,7 @@ void Sterilizer::LoadCompact(){
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
     std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
-    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
     unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
         getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
     if(!steeringParams_.quiet){
@@ -116,7 +172,7 @@ void Sterilizer::WriteCompact() const {
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
     std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
-    std::string original_simulation_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
@@ -140,8 +196,10 @@ void Sterilizer::ClearSimulation(){
 void Sterilizer::LoadDOMEfficiencySplines(){
   std::vector<unsigned int> years=steeringParams_.years;
   for(size_t year_index=0; year_index<steeringParams_.years.size(); year_index++){
-    domEffConv_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits"));
-    domEffPrompt_[year_index] = std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits"));
+    unsigned int year=years[year_index];
+    yearindices_[year]=year_index;
+    domEffConv_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits")));
+    domEffPrompt_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits")));
   }
   dom_efficiency_splines_constructed_=true;
 }
@@ -221,9 +279,57 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
-  initializeSimulationWeights(mainSimulation_,*pionFluxWeighter_,*kaonFluxWeighter_,*promptFluxWeighter_,osw_);
+  InitializeSimulationWeights();
   simulation_initialized_=true;
 }
+
+void Sterilizer::InitializeSimulationWeights()
+{
+
+
+  if(not dom_efficiency_splines_constructed_)
+    throw std::runtime_error("Simulation cannot be weighted until dom splines are loaded");
+  using iterator=std::deque<Event>::iterator;
+  auto cache=[&](iterator it, iterator end){
+    for(; it!=end; it++){
+      auto& e=*it;
+      LW::Event lw_e {e.leptonEnergyFraction,
+	  e.injectedEnergy,
+	  e.totalColumnDepth,
+	  e.inelasticityProbability,
+	  e.intX,
+	  e.intY,
+	  e.injectedMuonEnergy,
+	  e.injectedMuonZenith,
+	  e.injectedMuonAzimuth,
+	  static_cast<particleType>(e.primaryType),
+	  e.year};
+      
+      double osweight = osw_.EvaluateOversizeCorrection(e.energy, e.zenith);
+      e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      
+      e.cachedAstroWeight=0.;
+    }
+  };
+
+  
+  ThreadPool pool(steeringParams_.evalThreads);
+  iterator it=mainSimulation_.begin(), end=mainSimulation_.end();
+  while(true){
+    unsigned long dist=std::distance(it,end);
+    if(dist>=1000UL){
+      pool.enqueue(cache,it,it+1000);
+      it+=1000;
+    }
+    else{
+      pool.enqueue(cache,it,end);
+      break;
+    }
+  }
+}
+
 
 /*************************************************************************************************************
  * Functions to construct histograms
@@ -347,27 +453,70 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
   return GetRealization(ConvertNuisance(nuisance),seed);
 }
 
+
+
+
 /*************************************************************************************************************
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
 
-void Sterilizer::ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed){
+
+void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, NuisanceFlag fixedParams){
   if(not data_histogram_constructed_)
     throw std::runtime_error("Data histogram needs to be constructed before likelihood problem can be formulated.");
   if(not simulation_histogram_constructed_)
     throw std::runtime_error("Simulation histogram needs to be constructed before likelihood problem can be formulated.");
 
-  auto llhpriors = ConvertPriorSet(priors);
-  auto fitseed   = ConvertNuisance(nuisanceSeed);
+  fixedParams_=fixedParams;
+  fitSeed_=nuisanceSeed;
 
-  //prob_ = std::make_shared<likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>>(
+  UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
+  GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
+  GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
+  LimitedGaussianPrior simple_domEffPrior(pr.domEffCenter,pr.domEffWidth,0.8,1.2);
+  GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
+  GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
+  GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*GetZenithCorrectionScale());
+
+
+  auto llhpriors=makePriorSet(normalizationPrior,
+			      positivePrior,
+			      positivePrior,
+			      crSlopePrior,
+			      simple_domEffPrior,
+			      kaonPrior,
+			      nanPrior,
+			      ZCPrior);
+
+  auto fitseedvec   = ConvertNuisance(nuisanceSeed);
+
   prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
-      likelihood::poissonLikelihood(), fitseed ));
+      likelihood::poissonLikelihood(), fitseedvec ));
   prob_->setEvaluationThreadCount(steeringParams_.evalThreads);
 
   likelihood_problem_constructed_=true;
 }
+
+
+// look up zenith correction scale for a particular flux model.
+double Sterilizer::GetZenithCorrectionScale() const
+{
+  std::map<std::string,double> delta_alpha {
+    {"HondaGaisser",8./7.},
+      {"CombinedGHandHG_H3a_QGSJET",4. /7.},
+        {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
+          {"PolyGonato_QGSJET-II-04",0.5},
+            {"PolyGonato_SIBYLL2",1.0},
+              {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
+                {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
+                  };
+  if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
+    throw std::runtime_error("Jordi delta key not found. Aborting.");
+  return delta_alpha[steeringParams_.modelName];
+}
+
+
 
 double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   if(not likelihood_problem_constructed_)
@@ -379,18 +528,43 @@ double Sterilizer::EvalLL(Nuisance nuisance) const {
   return EvalLLH(ConvertNuisance(nuisance));
 }
 
-FitResult Sterilizer::MinLLH(NuisanceFlag fixedParams) const {
+FitResult Sterilizer::MinLLH() const {
   if(not likelihood_problem_constructed_)
     throw std::runtime_error("Likelihood problem has not been constructed..");
 
   std::vector<double> seed=prob_->getSeed();
   std::vector<unsigned int> fixedIndices;
 
-  std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams);
+  std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams_);
   for(size_t i=0; i!=FixVec.size(); ++i)
       if(FixVec[i]) fixedIndices.push_back(i);
 
-  return DoFitLBFGSB(*prob_, seed, fixedIndices);
+  LBFGSB_Driver minimizer;
+
+  minimizer.addParameter(seed[0],.001,0.0);
+  minimizer.addParameter(seed[1],.001,0.0);
+  minimizer.addParameter(seed[2],.01,0.0);
+  minimizer.addParameter(seed[3],.005);
+  minimizer.addParameter(seed[4],.005,-.1,.3);
+  minimizer.addParameter(seed[5],.01,0.0);
+  minimizer.addParameter(seed[6],.001,0.0,2.0);
+  minimizer.addParameter(seed[7],.001,-1.0,1.0);
+
+  minimizer.setChangeTolerance(1e-5);
+  minimizer.setHistorySize(20);
+
+  for(auto idx : fixedIndices)
+    minimizer.fixParameter(idx);
+
+  FitResult result;
+  result.succeeded=DoFitLBFGSB(*prob_, minimizer);
+  result.likelihood=minimizer.minimumValue();
+  result.params=ConvertVecToNuisance(minimizer.minimumPosition());
+  result.nEval=minimizer.numberOfEvaluations();
+  result.nGrad=minimizer.numberOfEvaluations();
+    
+  return result;
+  
 }
 
 /*************************************************************************************************************
@@ -498,7 +672,7 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
   return ns;
 }
 
-
+// Report back the status of object construction
 void Sterilizer::ReportStatus() const
 {
   std::cout<< "Data loaded:                   " << CheckDataLoaded() <<std::endl;
@@ -508,6 +682,7 @@ void Sterilizer::ReportStatus() const
   std::cout<< "Flux weighter constructed:     " <<CheckFluxWeighterConstructed()<<std::endl;
   std::cout<< "Lepton weighter constructed:   " <<CheckLeptonWeighterConstructed()<<std::endl;
   std::cout<< "Data histogram constructed:    " <<CheckDataHistogramConstructed()<<std::endl;
+  std::cout<< "Oversize weighter constructed: " <<CheckOversizeWeighterConstructed()<<std::endl;
   std::cout<< "Sim histogram constructed:     " <<CheckSimulationHistogramConstructed()<<std::endl;
   std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
 }

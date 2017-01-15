@@ -17,7 +17,7 @@
 #include "likelihood.h"
 #include "Event.h"
 #include "analysisWeighting.h"
-#include "dataIO.h"
+#include "compactIO.h"
 #include "runspec.h"
 #include "oversizeWeight.h"
 
@@ -147,6 +147,10 @@ class Sterilizer {
     HistType dataHist_;
     HistType simHist_;
 
+    // minimizing objects
+    Nuisance     fitSeed_;
+    NuisanceFlag fixedParams_;
+
     // weighter object
     DiffuseFitWeighterMaker DFWM;
     std::shared_ptr<LW::LeptonWeighter> pionFluxWeighter_;
@@ -172,11 +176,11 @@ class Sterilizer {
     bool simulation_initialized_ = (false);
 
     // DOM efficiency splines
-    std::vector<std::unique_ptr<Splinetable>> domEffConv_;
-    std::vector<std::unique_ptr<Splinetable>> domEffPrompt_;
+    std::vector<std::shared_ptr<Splinetable>> domEffConv_;
+    std::vector<std::shared_ptr<Splinetable>> domEffPrompt_;
+    std::map<unsigned int, unsigned int> yearindices_;
 
     // likehood problem object
-    //std::shared_ptr<LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>> prob_;
     std::shared_ptr<LType> prob_;
   public:
     // Constructor
@@ -208,11 +212,14 @@ class Sterilizer {
     void ConstructOversizeWeighter();
     // Function to initialize the MC weights
     void WeightMC();
+    void InitializeSimulationWeights();
     // functions to construct the histograms of data and simulation
     void ConstructDataHistogram();
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
-    void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed);
+    void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed, NuisanceFlag fixedParams);
+
+    double GetZenithCorrectionScale() const;
     // Converters between human and vector forms
     std::vector<double> ConvertNuisance(Nuisance ns) const;
     std::vector<bool> ConvertNuisanceFlag(NuisanceFlag ns) const;
@@ -228,6 +235,7 @@ class Sterilizer {
     bool CheckDOMEfficiencySplinesConstructed() const  {return dom_efficiency_splines_constructed_;};
     bool CheckCrossSectionWeighterConstructed() const  {return xs_weighter_constructed_;};
     bool CheckFluxWeighterConstructed() const          {return flux_weighter_constructed_;};
+    bool CheckOversizeWeighterConstructed() const      {return oversize_weighter_constructed_;};
     bool CheckLeptonWeighterConstructed() const        {return lepton_weighter_constructed_;};
     bool CheckDataHistogramConstructed() const         {return data_histogram_constructed_;};
     bool CheckSimulationHistogramConstructed() const   {return simulation_histogram_constructed_;};
@@ -241,120 +249,21 @@ class Sterilizer {
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
     double EvalLL(Nuisance nuisance) const;
-    FitResult MinLLH(NuisanceFlag fixedParams) const;
+    FitResult MinLLH() const;
     void SetSterileNuParams(SterileNuParams snp);
+
   private:
-    // Do the fit business
+    
+    // Nasty template part of fit function
     template<typename LikelihoodType>
-    FitResult DoFitLBFGSB(LikelihoodType& likelihood, const std::vector<double>& seed,
-              std::vector<unsigned int> indicesToFix) const{
+      bool DoFitLBFGSB(LikelihoodType& likelihood, LBFGSB_Driver& minimizer) const{
       using namespace likelihood;
+      bool succeeded=
+	minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
+      return succeeded;
+    };
 
-      LBFGSB_Driver minimizer;
-      minimizer.addParameter(seed[0],.001,0.0);
-      minimizer.addParameter(seed[1],.001,0.0);
-      minimizer.addParameter(seed[2],.01,0.0);
-      minimizer.addParameter(seed[3],.005);
-      minimizer.addParameter(seed[4],.005,-.1,.3);
-      minimizer.addParameter(seed[5],.01,0.0);
-      minimizer.addParameter(seed[6],.001,0.0,2.0);
-      minimizer.addParameter(seed[7],.001,-1.0,1.0);
-
-      for(auto idx : indicesToFix)
-        minimizer.fixParameter(idx);
-
-      minimizer.setChangeTolerance(1e-5);
-      minimizer.setHistorySize(20);
-      FitResult result;
-      result.succeeded=minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
-      result.likelihood=minimizer.minimumValue();
-      result.params=ConvertVecToNuisance(minimizer.minimumPosition());
-      result.nEval=minimizer.numberOfEvaluations();
-      result.nGrad=minimizer.numberOfEvaluations(); //gradient is always eval'ed with function
-
-      return(result);
-    }
-    // Initialize Simulation Weights
-    template<typename ContainerType, typename WeighterType>
-    void initializeSimulationWeights(ContainerType& simulation, const WeighterType& convPionWeighter, const WeighterType& convKaonWeighter, const WeighterType& promptWeighter, const OversizeWeighter& osw){
-      using iterator=typename ContainerType::iterator;
-      auto cache=[&](iterator it, iterator end){
-        for(; it!=end; it++){
-          auto& e=*it;
-          LW::Event lw_e {e.leptonEnergyFraction,
-                    e.injectedEnergy,
-                    e.totalColumnDepth,
-                    e.inelasticityProbability,
-                    e.intX,
-                    e.intY,
-                    e.injectedMuonEnergy,
-                    e.injectedMuonZenith,
-                    e.injectedMuonAzimuth,
-                    static_cast<particleType>(e.primaryType),
-                    e.year};
-
-          double osweight = osw.EvaluateOversizeCorrection(e.energy, e.zenith);
-          e.cachedConvPionWeight=convPionWeighter(lw_e)*e.cachedLivetime*osweight;
-          e.cachedConvKaonWeight=convKaonWeighter(lw_e)*e.cachedLivetime*osweight;
-          e.cachedPromptWeight=promptWeighter(lw_e)*e.cachedLivetime*osweight;
-          // we will set this to zero. Love. CA.
-          e.cachedAstroWeight=0.;
-        }
-      };
-
-      ThreadPool pool(steeringParams_.evalThreads);
-      iterator it=simulation.begin(), end=simulation.end();
-      while(true){
-        unsigned long dist=std::distance(it,end);
-        if(dist>=1000UL){
-          pool.enqueue(cache,it,it+1000);
-          it+=1000;
-        }
-        else{
-          pool.enqueue(cache,it,end);
-          break;
-        }
-      }
-    }
-
-    // Given a human readable prior set, make a weaverized version
-    //FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>
-    CPrior ConvertPriorSet(Priors pr) const {
-      // construct continuous nuisance priors
-      UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
-      GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
-      GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
-      LimitedGaussianPrior simple_domEffPrior(pr.domEffCenter,pr.domEffWidth,0.8,1.2);
-      GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
-      GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
-
-      // construct zenith correction prior
-      std::map<std::string,double> delta_alpha {
-                        {"HondaGaisser",8./7.},
-                        {"CombinedGHandHG_H3a_QGSJET",4. /7.},
-                        {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
-                        {"PolyGonato_QGSJET-II-04",0.5},
-                        {"PolyGonato_SIBYLL2",1.0},
-                        {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
-                        {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
-      };
-
-      if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
-        throw std::runtime_error("Jordi delta key not found. Aborting.");
-      double alpha = delta_alpha[steeringParams_.modelName];
-
-      GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*alpha);
-
-      // make and return priorset
-      return makePriorSet(normalizationPrior,
-                          positivePrior,
-                          positivePrior,
-                          crSlopePrior,
-                          simple_domEffPrior,
-                          kaonPrior,
-                          nanPrior,
-                          ZCPrior);
-    }
+ 
 
   public:
     // set functions
