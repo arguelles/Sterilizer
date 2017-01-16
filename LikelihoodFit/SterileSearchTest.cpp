@@ -8,12 +8,9 @@ int main(int argc, char* argv[]){
   DataPaths       dp;
   SteeringParams  sp;
   SterileNuParams snp;
-<<<<<<< HEAD
-=======
-  
+
   dp.mc_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
   dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
->>>>>>> ecd0b2432bef7de660662fff4260c577cf72a76e
 
   std::cout<<"==Making an object with non-compact data =="<<std::endl<<std::endl;
   sp.ReadCompact=false;
@@ -65,14 +62,8 @@ int main(int argc, char* argv[]){
 
   std::cout<< "Getting the data distribution"<<std::endl;
   DataDist=ster->GetDataDistribution();
-<<<<<<< HEAD
-  std::cout<<"   Bin 1,1" << DataDist[0][1][1] << std::endl;
-  std::cout<<"   Bin 5,5" << DataDist[0][5][5] << std::endl;
-=======
   std::cout<<"   Bin 1,1 " << DataDist[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5 " << DataDist[0][5][5] << std::endl;
- 
->>>>>>> ecd0b2432bef7de660662fff4260c577cf72a76e
 
   std::cout<<"Adjusting the sterile params to (1.0, 0.2)"<<std::endl;
   snp.th24=0.2;

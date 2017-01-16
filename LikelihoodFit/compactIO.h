@@ -2,8 +2,7 @@
 #define COMPACTIO_H
 
 #include <deque>
-
-#include <Event.h>
+#include "Event.h"
 #include "runspec.h"
 
 uint32_t getFileChecksum(const std::string& filename);

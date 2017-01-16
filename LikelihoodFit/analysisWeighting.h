@@ -761,26 +761,26 @@ private:
 	static constexpr double promptThresholdEnergy=200;
 	//value for dataset 6454 weighted with E^-2 using MuEx fit from [3e2,1e6]
 	static constexpr double astroThresholdEnergy=195;*/
-	
+
 	//limiting values used for sensitivity calculation
 	double minAstroEnergy, maxAstroEnergy;
-	
+
 public:
 	DiffuseFitWeighterMaker():
 	minAstroEnergy(-std::numeric_limits<double>::infinity()),
 	maxAstroEnergy(std::numeric_limits<double>::infinity())
 	{}
-	
+
 	DiffuseFitWeighterMaker(double minAstro, double maxAstro):
 	minAstroEnergy(minAstro),
 	maxAstroEnergy(maxAstro)
 	{}
-	
+
 	double getMinAstroEnergy(){ return(minAstroEnergy); }
 	void setMinAstroEnergy(double me){ minAstroEnergy=me; }
 	double getMaxAstroEnergy(){ return(maxAstroEnergy); }
 	void setMaxAstroEnergy(double me){ maxAstroEnergy=me; }
-	
+
 	template<typename DataType>
 	std::function<DataType(const Event&)> operator()(const std::vector<DataType>& params) const{
 		assert(params.size()==8);
@@ -793,14 +793,14 @@ public:
 		DataType piKRatio=params[5];
 		DataType NeutrinoAntineutrinoRatio=params[6];
 		DataType AtmosphericZenithVariationCorrectionFactorParameter=params[7];
-		
+
 		using cachedWeighter=cachedValueWeighter<DataType,Event,double>;
 		//cachedWeighter livetime(&Event::cachedLivetime);
 		cachedWeighter convPionFlux(&Event::cachedConvPionWeight);
 		cachedWeighter convKaonFlux(&Event::cachedConvKaonWeight);
 		cachedWeighter promptFlux(&Event::cachedPromptWeight);
 		cachedWeighter astroFlux(&Event::cachedAstroWeight);
-		
+
 		using domEffW_t = domEffWeighter<Event,DataType>;
 #ifdef SINGLE_DOMEFF_TEMPLATE
 		domEffW_t convDOMEff(domEffConv2011.get(),deltaDomEff,&Event::cachedConvDOMEff);
@@ -829,7 +829,7 @@ public:
 #endif
 
 		//auto promptComponent = promptNorm*promptFlux
-		//                       *powerlawTiltWeighter<Event,DataType>(medianPromptEnergy, CRDeltaGamma)
+//                       *powerlawTiltWeighter<Event,DataType>(medianPromptEnergy, CRDeltaGamma)
 		//                       *promptDOMEff;
 
 		auto promptComponent = promptNorm*promptFlux

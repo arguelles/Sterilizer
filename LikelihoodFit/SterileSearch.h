@@ -176,9 +176,8 @@ class Sterilizer {
     bool simulation_initialized_ = (false);
 
     // DOM efficiency splines
-    std::vector<std::shared_ptr<Splinetable>> domEffConv_;
-    std::vector<std::shared_ptr<Splinetable>> domEffPrompt_;
-    std::map<unsigned int, unsigned int> yearindices_;
+    std::map<unsigned int,std::shared_ptr<Splinetable>> domEffConv_;
+    std::map<unsigned int,std::shared_ptr<Splinetable>> domEffPrompt_;
 
     // likehood problem object
     std::shared_ptr<LType> prob_;
@@ -193,7 +192,6 @@ class Sterilizer {
     bool CheckDataPath(std::string p) const;
 
     void WriteCompact() const;
-
 
   protected:
     // Functions to load and unload data
@@ -227,7 +225,6 @@ class Sterilizer {
     marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;
 
-
   public:
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
@@ -253,7 +250,7 @@ class Sterilizer {
     void SetSterileNuParams(SterileNuParams snp);
 
   private:
-    
+
     // Nasty template part of fit function
     template<typename LikelihoodType>
       bool DoFitLBFGSB(LikelihoodType& likelihood, LBFGSB_Driver& minimizer) const{

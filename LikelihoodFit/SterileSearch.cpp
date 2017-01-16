@@ -127,9 +127,9 @@ void Sterilizer::LoadMC(){
 
       for(auto simSet : simSetsToLoad){
 	const auto& setInfo=simInfo.find(simSet)->second;
-	int simYear=setInfo.details.year;
-	unsigned int yearindex=yearindices_[simYear];
-	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[yearindex]);
+	unsigned int simYear=setInfo.details.year;
+	//unsigned int yearindex=yearindices_[simYear];
+	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[simYear]);
 	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
 	auto path=dataPaths_.mc_path+setInfo.filename;
 	readFile(path,callback);
@@ -194,12 +194,9 @@ void Sterilizer::ClearSimulation(){
  * **********************************************************************************************************/
 
 void Sterilizer::LoadDOMEfficiencySplines(){
-  std::vector<unsigned int> years=steeringParams_.years;
-  for(size_t year_index=0; year_index<steeringParams_.years.size(); year_index++){
-    unsigned int year=years[year_index];
-    yearindices_[year]=year_index;
-    domEffConv_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(years[year_index])+".fits")));
-    domEffPrompt_.push_back(std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(years[year_index])+".fits")));
+  for(unsigned int year : steeringParams_.years){
+    domEffConv_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(year)+".fits"))});
+    domEffPrompt_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(year)+".fits"))});
   }
   dom_efficiency_splines_constructed_=true;
 }
@@ -330,7 +327,6 @@ void Sterilizer::InitializeSimulationWeights()
   }
 }
 
-
 /*************************************************************************************************************
  * Functions to construct histograms
  * **********************************************************************************************************/
@@ -414,7 +410,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
 
   std::mt19937 rng;
   rng.seed(seed);
- 
+
   auto weighter=DFWM(nuisance);
 
   double expected=0;
@@ -453,13 +449,9 @@ marray<double,3> Sterilizer::GetRealization(Nuisance nuisance, int seed) const {
   return GetRealization(ConvertNuisance(nuisance),seed);
 }
 
-
-
-
 /*************************************************************************************************************
  * Functions to construct likelihood problem and evaluate it
  * **********************************************************************************************************/
-
 
 void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, NuisanceFlag fixedParams){
   if(not data_histogram_constructed_)
@@ -477,7 +469,6 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
   GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
   GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
   GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*GetZenithCorrectionScale());
-
 
   auto llhpriors=makePriorSet(normalizationPrior,
 			      positivePrior,
@@ -498,7 +489,6 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
   likelihood_problem_constructed_=true;
 }
 
-
 // look up zenith correction scale for a particular flux model.
 double Sterilizer::GetZenithCorrectionScale() const
 {
@@ -515,8 +505,6 @@ double Sterilizer::GetZenithCorrectionScale() const
     throw std::runtime_error("Jordi delta key not found. Aborting.");
   return delta_alpha[steeringParams_.modelName];
 }
-
-
 
 double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   if(not likelihood_problem_constructed_)
@@ -628,7 +616,6 @@ bool Sterilizer::CheckDataPaths(DataPaths dp) const
    }
    return status;
  }
-
 
 // Given a human readable nuisance parameter set, make a nuisance vector
 std::vector<double> Sterilizer::ConvertNuisance(Nuisance ns) const {
