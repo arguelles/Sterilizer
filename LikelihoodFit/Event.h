@@ -100,7 +100,7 @@ public:
   int paraboloidStatus;
 
   particleType primaryType;
-  int year;
+  unsigned int year;
   double livetime;
 
   Event():

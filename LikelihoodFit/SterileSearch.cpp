@@ -198,6 +198,7 @@ void Sterilizer::LoadDOMEfficiencySplines(){
     domEffConv_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(year)+".fits"))});
     domEffPrompt_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(year)+".fits"))});
   }
+  DFWM.SetSplines(domEffConv_,domEffPrompt_);
   dom_efficiency_splines_constructed_=true;
 }
 
@@ -300,13 +301,13 @@ void Sterilizer::InitializeSimulationWeights()
 	  e.injectedMuonZenith,
 	  e.injectedMuonAzimuth,
 	  static_cast<particleType>(e.primaryType),
-	  e.year};
-      
+	  static_cast<int>(e.year)};
+
       double osweight = osw_.EvaluateOversizeCorrection(e.energy, e.zenith);
       e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
-      
+
       e.cachedAstroWeight=0.;
     }
   };
