@@ -9,14 +9,16 @@ int main(int argc, char* argv[]){
   SteeringParams  sp;
   SterileNuParams snp;
 
-  dp.mc_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
-  dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
+  //dp.mc_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
+  //dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
+  dp.mc_path="..//test_data/";
+  dp.squids_files_path="../test_data/";
 
   std::cout<<"==Making an object with non-compact data =="<<std::endl<<std::endl;
   sp.ReadCompact=false;
 
   //Make the object
-  Sterilizer * ster = new Sterilizer(dp, sp, snp);
+  std::shared_ptr<Sterilizer> ster = std::make_shared<Sterilizer>(dp, sp, snp);
   ster->ReportStatus();
 
   std::cout<< "Getting the data distribution"<<std::endl;
@@ -51,13 +53,11 @@ int main(int argc, char* argv[]){
   std::cout<<"Writing compact data"<<std::endl;
   ster->WriteCompact();
 
-  std::cout<<"Destructing the Sterilizer"<<std::endl;
-  delete ster;
-
   std::cout<<std::endl<<"==Making an object with compact data=="<<std::endl<<std::endl;
   sp.ReadCompact=true;
 
-  ster = new Sterilizer(dp, sp, snp);
+  // share pointer takes care of deleting the previous one. Just go.
+  ster = std::make_shared<Sterilizer>(dp, sp, snp);
   ster->ReportStatus();
 
   std::cout<< "Getting the data distribution"<<std::endl;
