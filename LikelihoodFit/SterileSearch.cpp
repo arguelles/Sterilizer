@@ -386,6 +386,7 @@ marray<double,3> Sterilizer::GetExpectation(std::vector<double> nuisance) const 
   marray<double,3> array {static_cast<size_t>(simHist_.getBinCount(2)),
                           static_cast<size_t>(simHist_.getBinCount(1)),
                           static_cast<size_t>(simHist_.getBinCount(0))};
+  std::fill(array.begin(),array.end(),0);
 
   auto weighter = DFWM(nuisance);
   for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
@@ -432,11 +433,16 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
   auto realizationHist = makeEmptyHistogramCopy(dataHist_);
   bin(realization,realizationHist,binner);
 
-  if(realization.size() == 0 ) throw std::runtime_error("No events generated. Expected events are "+std::to_string(expected));
+  //if(realization.size() == 0 and not steeringParams_.quiet){
+  if(realization.size() == 0){
+    //std::cout << "No events generated. Expected events are "+std::to_string(expected) + "." << std::endl;
+    throw std::runtime_error("No events generated. Expected events are "+std::to_string(expected));
+  }
 
   marray<double,3> array {static_cast<size_t>(realizationHist.getBinCount(2)),
                           static_cast<size_t>(realizationHist.getBinCount(1)),
                           static_cast<size_t>(realizationHist.getBinCount(0))};
+  std::fill(array.begin(),array.end(),0);
 
   for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year
     for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith
@@ -446,6 +452,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
       }
     }
   }
+
   return array;
 }
 
