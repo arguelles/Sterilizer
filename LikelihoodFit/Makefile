@@ -9,7 +9,7 @@ LDFLAGS+=-L${SNOTBUILDPATH}/lib/
 
 COOLCVMFSROOT=/cvmfs/icecube.opensciencegrid.org/py2-v3_early_access/
 
-CXXFLAGS+=-std=c++11
+CXXFLAGS+=-std=c++11 -g
 CXXFLAGS+=-I. -O3
 CXXFLAGS+=-I${COOLCVMFSROOT}/RHEL_6_x86_64/include
 LDFLAGS+=-L${COOLCVMFSROOT}/RHEL_6_x86_64/lib

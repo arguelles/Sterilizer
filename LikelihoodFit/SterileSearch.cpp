@@ -412,6 +412,7 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
   std::mt19937 rng;
   rng.seed(seed);
 
+  std::cout << "construct weighter" << std::endl;
   auto weighter=DFWM(nuisance);
 
   double expected=0;
@@ -431,9 +432,11 @@ marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int se
   auto realizationHist = makeEmptyHistogramCopy(dataHist_);
   bin(realization,realizationHist,binner);
 
+  if(realization.size() == 0 ) throw std::runtime_error("No events generated. Expected events are "+std::to_string(expected));
+
   marray<double,3> array {static_cast<size_t>(realizationHist.getBinCount(2)),
-      static_cast<size_t>(realizationHist.getBinCount(1)),
-      static_cast<size_t>(realizationHist.getBinCount(0))};
+                          static_cast<size_t>(realizationHist.getBinCount(1)),
+                          static_cast<size_t>(realizationHist.getBinCount(0))};
 
   for(size_t iy=0; iy<realizationHist.getBinCount(2); iy++){ // year
     for(size_t ic=0; ic<realizationHist.getBinCount(1); ic++){ // zenith

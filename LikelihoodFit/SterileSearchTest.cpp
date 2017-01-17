@@ -51,6 +51,11 @@ int main(int argc, char* argv[]){
   std::cout<<"Getting a realization for adjusted nuisance"<<std::endl;
   int seed=100;
   marray<double,3> Realization=ster->GetRealization(ns,seed);
+  /* // are we actiually filling it in.
+  std::cout << Realization.extent(0) << std::endl;
+  std::cout << Realization.extent(1) << std::endl;
+  std::cout << Realization.extent(2) << std::endl;
+  */
   std::cout<<"   Bin 1,1 " << Realization[0][1][1] << std::endl;
   std::cout<<"   Bin 5,5 " << Realization[0][5][5] << std::endl;
 
