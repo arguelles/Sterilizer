@@ -11,8 +11,15 @@ int main(int argc, char* argv[]){
 
   //dp.mc_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
   //dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
-  dp.mc_path="..//test_data/";
-  dp.squids_files_path="../test_data/";
+
+  dp.mc_path="../mc/";
+  dp.squids_files_path="../conventional_fluxes/";
+  dp.prompt_squids_files_path="../prompt_fluxes/";
+  dp.domeff_spline_path="../DOMEfficiencyFits/";
+  dp.xs_spline_path="../cross_sections/";
+  dp.data_path="../data/";
+  dp.oversize_path="../oversize_corrections/";
+  dp.flux_splines_path="../propagated_splines/";
 
   std::cout<<"==Making an object with non-compact data =="<<std::endl<<std::endl;
   sp.ReadCompact=false;
