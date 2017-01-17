@@ -135,7 +135,7 @@ static marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type_num)
 }
 
 // SterileSearchPy module definitions
-
+/*
 static std::vector<double> wrap_llh(LVSearch* lv,std::vector<double> arg){
   if(arg.size() != 3)
     throw std::runtime_error("Number of arguments should be 3. You sent me " + std::to_string(arg.size()));
@@ -164,6 +164,7 @@ marray<double,3> wrap_GetExpectedDistribution(LVSearch* lv,std::vector<double> a
   auto data = lv->GetExpectationDistribution(argv);
   return data;
 }
+*/
 
 BOOST_PYTHON_MODULE(SterileSearchPy)
 {
@@ -171,38 +172,49 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   import_array();
   import_ufunc();
 
-  class_<DataPaths, boost::noncopyable,std::shared_ptr<DataPaths> >("DataPaths")
-    .def("compact_file_path",&DataPaths::compact_file_path)
-    .def("squids_files_path",&DataPaths::squids_files_path)
-    .def("prompt_squids_files_path",&DataPaths::prompt_squids_files_path)
-    .def("xs_spline_path",&DataPaths::xs_spline_path)
-    .def("data_path",&DataPaths::data_path)
-    .def("mc_path",&DataPaths::mc_path)
-    .def("oversize_path",&DataPaths::oversize_path)
-    .def("domeff_spline_path",&DataPaths::domeff_spline_path)
-    .def("flux_splines_path",&DataPaths::flux_splines_path)
+  class_<DataPaths, boost::noncopyable,std::shared_ptr<DataPaths> >("DataPaths",init<>())
+    .def_readwrite("compact_file_path",&DataPaths::compact_file_path)
+    .def_readwrite("squids_files_path",&DataPaths::squids_files_path)
+    .def_readwrite("prompt_squids_files_path",&DataPaths::prompt_squids_files_path)
+    .def_readwrite("xs_spline_path",&DataPaths::xs_spline_path)
+    .def_readwrite("data_path",&DataPaths::data_path)
+    .def_readwrite("mc_path",&DataPaths::mc_path)
+    .def_readwrite("oversize_path",&DataPaths::oversize_path)
+    .def_readwrite("domeff_spline_path",&DataPaths::domeff_spline_path)
+    .def_readwrite("flux_splines_path",&DataPaths::flux_splines_path)
   ;
 
-  class_<SteeringParams, boost::noncopyable,std::shared_ptr<SteeringParams> >("SteeringParams")
-    .def("compact_file_path",&SteeringParams::compact_file_path)
-    .def("squids_files_path",&SteeringParams::squids_files_path)
-    .def("prompt_squids_files_path",&SteeringParams::prompt_squids_files_path)
-    .def("xs_spline_path ",&SteeringParams::xs_spline_path)
-    .def("data_path ",&SteeringParams::data_path)
-    .def("mc_path ",&SteeringParams::mc_path)
-    .def("oversize_path ",&SteeringParams::oversize_path)
-    .def("domeff_spline_path",&SteeringParams::domeff_spline_path)
-    .def("flux_splines_path",&SteeringParams::flux_splines_path)
+  class_<SteeringParams, boost::noncopyable,std::shared_ptr<SteeringParams> >("SteeringParams",init<>())
+    .def_readwrite("minFitEnergy",&SteeringParams::minFitEnergy)
+    .def_readwrite("maxFitEnergy",&SteeringParams::maxFitEnergy)
+    .def_readwrite("minCosth",&SteeringParams::minCosth)
+    .def_readwrite("maxCosth ",&SteeringParams::maxCosth)
+    .def_readwrite("logEbinEdge ",&SteeringParams::logEbinEdge)
+    .def_readwrite("logEbinWidth ",&SteeringParams::logEbinWidth)
+    .def_readwrite("cosThbinEdge ",&SteeringParams::cosThbinEdge)
+    .def_readwrite("cosThbinWidth",&SteeringParams::cosThbinWidth)
+    .def_readwrite("useFactorization",&SteeringParams::useFactorization)
+    .def_readwrite("useBurnSample",&SteeringParams::useBurnSample)
+    .def_readwrite("simToLoad",&SteeringParams::simToLoad)
+    .def_readwrite("quiet",&SteeringParams::quiet)
+    .def_readwrite("evalThreads",&SteeringParams::evalThreads)
+    .def_readwrite("modelName",&SteeringParams::modelName)
+    .def_readwrite("oversizeFunction",&SteeringParams::oversizeFunction)
+    .def_readwrite("ReadCompact",&SteeringParams::ReadCompact)
+    .def_readwrite("xs_model_name",&SteeringParams::xs_model_name)
+    .def_readwrite("years",&SteeringParams::years)
+    .def_readwrite("fullLivetime",&SteeringParams::fullLivetime)
+    .def_readwrite("burnSampleLivetime",&SteeringParams::burnSampleLivetime)
   ;
 
-  class_<SterileNuParams, boost::noncopyable,std::shared_ptr<SterileNuParams> >("SterileNuParams")
-    .def("modelId",&SterileNuParams::modelId)
-    .def("th14",&SterileNuParams::th14)
-    .def("th24",&SterileNuParams::th24)
-    .def("th34",&SterileNuParams::th34)
-    .def("del14",&SterileNuParams::del14)
-    .def("del24",&SterileNuParams::del24)
-    .def("dm41sq",&SterileNuParams::dm41sq)
+  class_<SterileNuParams, boost::noncopyable,std::shared_ptr<SterileNuParams> >("SterileNuParams",init<>())
+    .def_readwrite("modelId",&SterileNuParams::modelId)
+    .def_readwrite("th14",&SterileNuParams::th14)
+    .def_readwrite("th24",&SterileNuParams::th24)
+    .def_readwrite("th34",&SterileNuParams::th34)
+    .def_readwrite("del14",&SterileNuParams::del14)
+    .def_readwrite("del24",&SterileNuParams::del24)
+    .def_readwrite("dm41sq",&SterileNuParams::dm41sq)
   ;
 
   class_<Sterilizer, boost::noncopyable, std::shared_ptr<Sterilizer> >("Sterilizer", init<DataPaths,SteeringParams,SterileNuParams>())
@@ -218,11 +230,10 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("CheckSimulationHistogramConstructed",&Sterilizer::CheckSimulationHistogramConstructed)
     .def("CheckLikelihoodProblemConstruction",&Sterilizer::CheckLikelihoodProblemConstruction)
     .def("CheckDataPaths",&Sterilizer::CheckDataPaths)
-    .def("ReportStatus",&Sterilizer::ReportedStatus)
+    .def("ReportStatus",&Sterilizer::ReportStatus)
     .def("GetDataDistribution",&Sterilizer::GetDataDistribution)
-    .def("GetExpectationDistribution",&Sterilizer::GetExpectationDistribution)
-    .def("GetExpectation",&Sterilizer::GetExpectation)
-    .def("GetRealization",&Sterilizer::GetRealization)
+    .def("GetExpectation",(marray<double,3>(Sterilizer::*)(Nuisance)const)&Sterilizer::GetExpectation)
+    .def("GetRealization",(marray<double,3>(Sterilizer::*)(Nuisance,int)const)&Sterilizer::GetRealization)
     .def("EvalLLH",&Sterilizer::EvalLLH)
     .def("MinLLH",&Sterilizer::MinLLH)
     .def("SetSterileNuParams",&Sterilizer::SetSterileNuParams)
