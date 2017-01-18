@@ -1,7 +1,7 @@
 CC=clang
 CXX=clang++
 
-CFLAGS=-O3
+CFLAGS=-O3 -fPIC
 CXXFLAGS=-DSQUIDS_USE_VECTOR_EXTENSIONS=0
 
 CXXFLAGS+=-I${SNOTBUILDPATH}/include/
@@ -9,7 +9,7 @@ LDFLAGS+=-L${SNOTBUILDPATH}/lib/
 
 COOLCVMFSROOT=/cvmfs/icecube.opensciencegrid.org/py2-v3_early_access/
 
-CXXFLAGS+=-std=c++11 -g
+CXXFLAGS+=-std=c++11 -g -fPIC
 CXXFLAGS+=-I. -O3
 CXXFLAGS+=-I${COOLCVMFSROOT}/RHEL_6_x86_64/include
 LDFLAGS+=-L${COOLCVMFSROOT}/RHEL_6_x86_64/lib
@@ -23,7 +23,7 @@ LDFLAGS+=-lNewNuFlux
 LDFLAGS+=-lPhysTools
 LDFLAGS+=-lSQuIDS -lnuSQuIDS
 LDFLAGS+=-lLeptonWeighter
-#LDFLAGS+=-lsupc++
+LDFLAGS+=-lsupc++
 
 CXXFLAGS+=-I../Likelihood
 LIKELIHOOD_HEADERS=../Likelihood/autodiff.h ../Likelihood/likelihood.h ../Likelihood/nugenWeighting.h ../Likelihood/particleType.h ../Likelihood/tableio.h ../Likelihood/weighting.h ../Likelihood/lbfgsb/lbfgsb.h ../Likelihood/lbfgsb/interface.h
