@@ -3,15 +3,15 @@ import numpy as np
 
 # constructing a data path object
 
-dp=ssp.DataPaths
+dp=ssp.DataPaths()
 
 # constructing a steering object
 
-steer=ssp.SteeringParams
+steer=ssp.SteeringParams()
 
 # constructing a sterile neutrino parameter object
 
-nus=ssp.SterileNuParams
+nus=ssp.SterileNuParams()
 
 # constructing a sterilizer object
 
