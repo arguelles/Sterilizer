@@ -36,14 +36,14 @@ struct Nuisance {
 };
 
 struct NuisanceFlag {
-  bool normalization=0;
-  bool astroFlux=1;
-  bool promptFlux=1;
-  bool crSlope=0;
-  bool domEfficiency=0;
-  bool piKRatio=0;
-  bool nuNubarRatio=0;
-  bool zenithCorrection=0;
+  bool normalization=true;
+  bool astroFlux=false;
+  bool promptFlux=false;
+  bool crSlope=true;
+  bool domEfficiency=true;
+  bool piKRatio=true;
+  bool nuNubarRatio=true;
+  bool zenithCorrection=true;
   NuisanceFlag(){};
 };
 

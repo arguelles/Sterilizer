@@ -219,6 +219,28 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("dm41sq",&SS::SterileNuParams::dm41sq)
   ;
 
+  class_<SS::Nuisance, boost::noncopyable,std::shared_ptr<SS::Nuisance> >("Nuisance",init<>())
+    .def_readwrite("normalization",&SS::Nuisance::normalization)
+    .def_readwrite("astroFlux",&SS::Nuisance::astroFlux)
+    .def_readwrite("promptFlux",&SS::Nuisance::promptFlux)
+    .def_readwrite("crSlope",&SS::Nuisance::crSlope)
+    .def_readwrite("domEfficiency",&SS::Nuisance::domEfficiency)
+    .def_readwrite("piKRatio",&SS::Nuisance::piKRatio)
+    .def_readwrite("nuNubarRatio",&SS::Nuisance::nuNubarRatio)
+    .def_readwrite("zenithCorrection",&SS::Nuisance::zenithCorrection)
+  ;
+
+  class_<SS::NuisanceFlag, boost::noncopyable,std::shared_ptr<SS::NuisanceFlag> >("NuisanceFlag",init<>())
+    .def_readwrite("normalization",&SS::NuisanceFlag::normalization)
+    .def_readwrite("astroFlux",&SS::NuisanceFlag::astroFlux)
+    .def_readwrite("promptFlux",&SS::NuisanceFlag::promptFlux)
+    .def_readwrite("crSlope",&SS::NuisanceFlag::crSlope)
+    .def_readwrite("domEfficiency",&SS::NuisanceFlag::domEfficiency)
+    .def_readwrite("piKRatio",&SS::NuisanceFlag::piKRatio)
+    .def_readwrite("nuNubarRatio",&SS::NuisanceFlag::nuNubarRatio)
+    .def_readwrite("zenithCorrection",&SS::NuisanceFlag::zenithCorrection)
+  ;
+
   class_<SS::Sterilizer, boost::noncopyable, std::shared_ptr<SS::Sterilizer> >("Sterilizer", init<SS::DataPaths,SS::SteeringParams,SS::SterileNuParams>())
     .def("CheckDataLoaded",&SS::Sterilizer::CheckDataLoaded)
     .def("CheckSimulationLoaded",&SS::Sterilizer::CheckSimulationLoaded)

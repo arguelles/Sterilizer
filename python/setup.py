@@ -11,11 +11,11 @@ if sys.platform == 'win32' or sys.platform == 'win64':
 
 else:
     include_dirs = [os.environ['SNOTBUILDPATH']+"/include",
-                    '/usr/local/include',
                     np.get_include(),
                     '../Likelihood/',
                     '../LikelihoodFit/',
                     '.']
+
     libraries = ['python2.7','boost_python','LeptonWeighter',
                  'SQuIDS','nuSQuIDS',
                  'gsl','gslcblas','m',
@@ -24,8 +24,7 @@ else:
     if sys.platform.startswith('linux'):
       libraries.append('supc++')#'cxxrt'
 
-    library_dirs = [os.environ['SNOTBUILDPATH']+"/lib",
-                    '/usr/local/lib']
+    library_dirs = [os.environ['SNOTBUILDPATH']+"/lib",]
 
 files = ['SterileSearchPy.cpp']
 
