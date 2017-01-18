@@ -13,6 +13,8 @@
 
 using namespace boost::python;
 namespace bp = boost::python;
+namespace SS = SterileSearch;
+namespace nsq = nusquids;
 
 template<class T>
 struct VecToList
@@ -29,7 +31,7 @@ struct VecToList
 // converting marray to numpy array and back
 template<unsigned int DIM>
 struct marray_to_numpyarray {
-  static PyObject* convert( marray<double,DIM> const & iarray){
+  static PyObject* convert( nsq::marray<double,DIM> const & iarray){
     // get the data from the marray
     double * data = iarray.size() ? const_cast<double*>(iarray.get_data()) : static_cast<double*>(NULL);
     // construct numpy object
@@ -44,7 +46,7 @@ struct marray_to_numpyarray {
 };
 
 template<typename T,unsigned int DIM>
-static marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type_num){
+static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type_num){
   // es un array de numpy
   if (! PyArray_Check(iarray) )
   {
@@ -98,7 +100,7 @@ static marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type_num)
     dimensions.push_back(array_shape[i]);
 
   // construct output object
-  marray<T,DIM> oarray;
+  nsq::marray<T,DIM> oarray;
   oarray.resize(dimensions);
   auto it = oarray.begin();
 
@@ -172,79 +174,79 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   import_array();
   import_ufunc();
 
-  class_<DataPaths, boost::noncopyable,std::shared_ptr<DataPaths> >("DataPaths",init<>())
-    .def_readwrite("compact_file_path",&DataPaths::compact_file_path)
-    .def_readwrite("squids_files_path",&DataPaths::squids_files_path)
-    .def_readwrite("prompt_squids_files_path",&DataPaths::prompt_squids_files_path)
-    .def_readwrite("xs_spline_path",&DataPaths::xs_spline_path)
-    .def_readwrite("data_path",&DataPaths::data_path)
-    .def_readwrite("mc_path",&DataPaths::mc_path)
-    .def_readwrite("oversize_path",&DataPaths::oversize_path)
-    .def_readwrite("domeff_spline_path",&DataPaths::domeff_spline_path)
-    .def_readwrite("flux_splines_path",&DataPaths::flux_splines_path)
+  class_<SS::DataPaths, boost::noncopyable,std::shared_ptr<SS::DataPaths> >("DataPaths",init<>())
+    .def_readwrite("compact_file_path",&SS::DataPaths::compact_file_path)
+    .def_readwrite("squids_files_path",&SS::DataPaths::squids_files_path)
+    .def_readwrite("prompt_squids_files_path",&SS::DataPaths::prompt_squids_files_path)
+    .def_readwrite("xs_spline_path",&SS::DataPaths::xs_spline_path)
+    .def_readwrite("data_path",&SS::DataPaths::data_path)
+    .def_readwrite("mc_path",&SS::DataPaths::mc_path)
+    .def_readwrite("oversize_path",&SS::DataPaths::oversize_path)
+    .def_readwrite("domeff_spline_path",&SS::DataPaths::domeff_spline_path)
+    .def_readwrite("flux_splines_path",&SS::DataPaths::flux_splines_path)
   ;
 
-  class_<SteeringParams, boost::noncopyable,std::shared_ptr<SteeringParams> >("SteeringParams",init<>())
-    .def_readwrite("minFitEnergy",&SteeringParams::minFitEnergy)
-    .def_readwrite("maxFitEnergy",&SteeringParams::maxFitEnergy)
-    .def_readwrite("minCosth",&SteeringParams::minCosth)
-    .def_readwrite("maxCosth ",&SteeringParams::maxCosth)
-    .def_readwrite("logEbinEdge ",&SteeringParams::logEbinEdge)
-    .def_readwrite("logEbinWidth ",&SteeringParams::logEbinWidth)
-    .def_readwrite("cosThbinEdge ",&SteeringParams::cosThbinEdge)
-    .def_readwrite("cosThbinWidth",&SteeringParams::cosThbinWidth)
-    .def_readwrite("useFactorization",&SteeringParams::useFactorization)
-    .def_readwrite("useBurnSample",&SteeringParams::useBurnSample)
-    .def_readwrite("simToLoad",&SteeringParams::simToLoad)
-    .def_readwrite("quiet",&SteeringParams::quiet)
-    .def_readwrite("evalThreads",&SteeringParams::evalThreads)
-    .def_readwrite("modelName",&SteeringParams::modelName)
-    .def_readwrite("oversizeFunction",&SteeringParams::oversizeFunction)
-    .def_readwrite("ReadCompact",&SteeringParams::ReadCompact)
-    .def_readwrite("xs_model_name",&SteeringParams::xs_model_name)
-    .def_readwrite("years",&SteeringParams::years)
-    .def_readwrite("fullLivetime",&SteeringParams::fullLivetime)
-    .def_readwrite("burnSampleLivetime",&SteeringParams::burnSampleLivetime)
+  class_<SS::SteeringParams, boost::noncopyable,std::shared_ptr<SS::SteeringParams> >("SteeringParams",init<>())
+    .def_readwrite("minFitEnergy",&SS::SteeringParams::minFitEnergy)
+    .def_readwrite("maxFitEnergy",&SS::SteeringParams::maxFitEnergy)
+    .def_readwrite("minCosth",&SS::SteeringParams::minCosth)
+    .def_readwrite("maxCosth ",&SS::SteeringParams::maxCosth)
+    .def_readwrite("logEbinEdge ",&SS::SteeringParams::logEbinEdge)
+    .def_readwrite("logEbinWidth ",&SS::SteeringParams::logEbinWidth)
+    .def_readwrite("cosThbinEdge ",&SS::SteeringParams::cosThbinEdge)
+    .def_readwrite("cosThbinWidth",&SS::SteeringParams::cosThbinWidth)
+    .def_readwrite("useFactorization",&SS::SteeringParams::useFactorization)
+    .def_readwrite("useBurnSample",&SS::SteeringParams::useBurnSample)
+    .def_readwrite("simToLoad",&SS::SteeringParams::simToLoad)
+    .def_readwrite("quiet",&SS::SteeringParams::quiet)
+    .def_readwrite("evalThreads",&SS::SteeringParams::evalThreads)
+    .def_readwrite("modelName",&SS::SteeringParams::modelName)
+    .def_readwrite("oversizeFunction",&SS::SteeringParams::oversizeFunction)
+    .def_readwrite("ReadCompact",&SS::SteeringParams::ReadCompact)
+    .def_readwrite("xs_model_name",&SS::SteeringParams::xs_model_name)
+    .def_readwrite("years",&SS::SteeringParams::years)
+    .def_readwrite("fullLivetime",&SS::SteeringParams::fullLivetime)
+    .def_readwrite("burnSampleLivetime",&SS::SteeringParams::burnSampleLivetime)
   ;
 
-  class_<SterileNuParams, boost::noncopyable,std::shared_ptr<SterileNuParams> >("SterileNuParams",init<>())
-    .def_readwrite("modelId",&SterileNuParams::modelId)
-    .def_readwrite("th14",&SterileNuParams::th14)
-    .def_readwrite("th24",&SterileNuParams::th24)
-    .def_readwrite("th34",&SterileNuParams::th34)
-    .def_readwrite("del14",&SterileNuParams::del14)
-    .def_readwrite("del24",&SterileNuParams::del24)
-    .def_readwrite("dm41sq",&SterileNuParams::dm41sq)
+  class_<SS::SterileNuParams, boost::noncopyable,std::shared_ptr<SS::SterileNuParams> >("SterileNuParams",init<>())
+    .def_readwrite("modelId",&SS::SterileNuParams::modelId)
+    .def_readwrite("th14",&SS::SterileNuParams::th14)
+    .def_readwrite("th24",&SS::SterileNuParams::th24)
+    .def_readwrite("th34",&SS::SterileNuParams::th34)
+    .def_readwrite("del14",&SS::SterileNuParams::del14)
+    .def_readwrite("del24",&SS::SterileNuParams::del24)
+    .def_readwrite("dm41sq",&SS::SterileNuParams::dm41sq)
   ;
 
-  class_<Sterilizer, boost::noncopyable, std::shared_ptr<Sterilizer> >("Sterilizer", init<DataPaths,SteeringParams,SterileNuParams>())
-    .def("CheckDataLoaded",&Sterilizer::CheckDataLoaded)
-    .def("CheckSimulationLoaded",&Sterilizer::CheckSimulationLoaded)
-    .def("CheckDOMEfficiencySplinesConstructed",&Sterilizer::CheckDOMEfficiencySplinesConstructed)
-    .def("CheckCrossSectionWeighterConstructed",&Sterilizer::CheckCrossSectionWeighterConstructed)
-    .def("CheckFluxWeighterConstructed",&Sterilizer::CheckFluxWeighterConstructed)
-    .def("CheckLeptonWeighterConstructed",&Sterilizer::CheckLeptonWeighterConstructed)
-    .def("CheckDataHistogramConstructed",&Sterilizer::CheckDataHistogramConstructed)
-    .def("CheckLeptonWeighterConstructed",&Sterilizer::CheckLeptonWeighterConstructed)
-    .def("CheckDataHistogramConstructed",&Sterilizer::CheckDataHistogramConstructed)
-    .def("CheckSimulationHistogramConstructed",&Sterilizer::CheckSimulationHistogramConstructed)
-    .def("CheckLikelihoodProblemConstruction",&Sterilizer::CheckLikelihoodProblemConstruction)
-    .def("CheckDataPaths",&Sterilizer::CheckDataPaths)
-    .def("ReportStatus",&Sterilizer::ReportStatus)
-    .def("GetDataDistribution",&Sterilizer::GetDataDistribution)
-    .def("GetExpectation",(marray<double,3>(Sterilizer::*)(Nuisance)const)&Sterilizer::GetExpectation)
-    .def("GetRealization",(marray<double,3>(Sterilizer::*)(Nuisance,int)const)&Sterilizer::GetRealization)
-    .def("EvalLLH",&Sterilizer::EvalLLH)
-    .def("MinLLH",&Sterilizer::MinLLH)
-    .def("SetSterileNuParams",&Sterilizer::SetSterileNuParams)
+  class_<SS::Sterilizer, boost::noncopyable, std::shared_ptr<SS::Sterilizer> >("Sterilizer", init<SS::DataPaths,SS::SteeringParams,SS::SterileNuParams>())
+    .def("CheckDataLoaded",&SS::Sterilizer::CheckDataLoaded)
+    .def("CheckSimulationLoaded",&SS::Sterilizer::CheckSimulationLoaded)
+    .def("CheckDOMEfficiencySplinesConstructed",&SS::Sterilizer::CheckDOMEfficiencySplinesConstructed)
+    .def("CheckCrossSectionWeighterConstructed",&SS::Sterilizer::CheckCrossSectionWeighterConstructed)
+    .def("CheckFluxWeighterConstructed",&SS::Sterilizer::CheckFluxWeighterConstructed)
+    .def("CheckLeptonWeighterConstructed",&SS::Sterilizer::CheckLeptonWeighterConstructed)
+    .def("CheckDataHistogramConstructed",&SS::Sterilizer::CheckDataHistogramConstructed)
+    .def("CheckLeptonWeighterConstructed",&SS::Sterilizer::CheckLeptonWeighterConstructed)
+    .def("CheckDataHistogramConstructed",&SS::Sterilizer::CheckDataHistogramConstructed)
+    .def("CheckSimulationHistogramConstructed",&SS::Sterilizer::CheckSimulationHistogramConstructed)
+    .def("CheckLikelihoodProblemConstruction",&SS::Sterilizer::CheckLikelihoodProblemConstruction)
+    .def("CheckDataPaths",&SS::Sterilizer::CheckDataPaths)
+    .def("ReportStatus",&SS::Sterilizer::ReportStatus)
+    .def("GetDataDistribution",&SS::Sterilizer::GetDataDistribution)
+    .def("GetExpectation",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::GetExpectation)
+    .def("GetRealization",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::GetRealization)
+    .def("EvalLLH",&SS::Sterilizer::EvalLLH)
+    .def("MinLLH",&SS::Sterilizer::MinLLH)
+    .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
   ;
 
   // python container to vector<double> convertion
   using namespace scitbx::boost_python::container_conversions;
   from_python_sequence< std::vector<double>, variable_capacity_policy >();
   to_python_converter< std::vector<double, class std::allocator<double> >, VecToList<double> > ();
-  to_python_converter< marray<double,1> , marray_to_numpyarray<1> >();
-  to_python_converter< marray<double,2> , marray_to_numpyarray<2> >();
-  to_python_converter< marray<double,3> , marray_to_numpyarray<3> >();
-  to_python_converter< marray<double,4> , marray_to_numpyarray<4> >();
+  to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
+  to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
+  to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();
+  to_python_converter< nsq::marray<double,4> , marray_to_numpyarray<4> >();
 }

@@ -21,6 +21,8 @@
 #include "runspec.h"
 #include "oversizeWeight.h"
 
+namespace SterileSearch {
+
 struct Nuisance {
   float normalization=1.0;
   float astroFlux=0.0;
@@ -272,5 +274,7 @@ class Sterilizer {
     void       SetSteeringParams(SteeringParams p)   { steeringParams_=p;};
     void       SetDataPaths(DataPaths p)             { dataPaths_=p; CheckDataPaths(p); };
 };
+
+} // close namespace SterileSearch
 
 #endif

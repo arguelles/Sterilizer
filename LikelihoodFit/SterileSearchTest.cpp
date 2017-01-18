@@ -1,6 +1,7 @@
 #import "SterileSearch.h"
 
 int main(int argc, char* argv[]){
+  using namespace SterileSearch;
 
   std::cout<<"==== Running the sterilizer test module ===="<<std::endl<<std::endl;
 

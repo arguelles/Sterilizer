@@ -1,6 +1,8 @@
 #include "SterileSearch.h"
 #include "GenerationSpecifications.h"
 
+namespace SterileSearch {
+
 /*************************************************************************************************************
  * Constructor
  * **********************************************************************************************************/
@@ -684,3 +686,5 @@ void Sterilizer::ReportStatus() const
   std::cout<< "Sim histogram constructed:     " <<CheckSimulationHistogramConstructed()<<std::endl;
   std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
 }
+
+} // close namespace SterileSearch
