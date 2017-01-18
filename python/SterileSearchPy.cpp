@@ -190,10 +190,10 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("minFitEnergy",&SS::SteeringParams::minFitEnergy)
     .def_readwrite("maxFitEnergy",&SS::SteeringParams::maxFitEnergy)
     .def_readwrite("minCosth",&SS::SteeringParams::minCosth)
-    .def_readwrite("maxCosth ",&SS::SteeringParams::maxCosth)
-    .def_readwrite("logEbinEdge ",&SS::SteeringParams::logEbinEdge)
-    .def_readwrite("logEbinWidth ",&SS::SteeringParams::logEbinWidth)
-    .def_readwrite("cosThbinEdge ",&SS::SteeringParams::cosThbinEdge)
+    .def_readwrite("maxCosth",&SS::SteeringParams::maxCosth)
+    .def_readwrite("logEbinEdge",&SS::SteeringParams::logEbinEdge)
+    .def_readwrite("logEbinWidth",&SS::SteeringParams::logEbinWidth)
+    .def_readwrite("cosThbinEdge",&SS::SteeringParams::cosThbinEdge)
     .def_readwrite("cosThbinWidth",&SS::SteeringParams::cosThbinWidth)
     .def_readwrite("useFactorization",&SS::SteeringParams::useFactorization)
     .def_readwrite("useBurnSample",&SS::SteeringParams::useBurnSample)
@@ -266,9 +266,11 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   // python container to vector<double> convertion
   using namespace scitbx::boost_python::container_conversions;
   from_python_sequence< std::vector<double>, variable_capacity_policy >();
+  from_python_sequence< std::vector<unsigned int>, variable_capacity_policy >();
   to_python_converter< std::vector<double, class std::allocator<double> >, VecToList<double> > ();
   to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
   to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
   to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();
   to_python_converter< nsq::marray<double,4> , marray_to_numpyarray<4> >();
+
 }
