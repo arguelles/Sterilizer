@@ -5,15 +5,12 @@ import numpy as np
 
 dp=ssp.DataPaths()
 
-# constructing a steering object
-
 steer=ssp.SteeringParams()
-
-# constructing a sterile neutrino parameter object
-
 nus=ssp.SterileNuParams()
 
-# constructing a sterilizer object
+dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/"
+steer.ReadCompact=False
 
 guy=ssp.Sterilizer(dp,steer,nus)
+
 

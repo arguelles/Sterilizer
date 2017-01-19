@@ -193,6 +193,9 @@ class Sterilizer {
     // Check a directory exists and throw a relevant error otherwise.
     bool CheckDataPath(std::string p) const;
 
+    // Error trap bad file paths
+    std::string CheckedFilePath(std::string) const;
+
     void WriteCompact() const;
 
   protected:

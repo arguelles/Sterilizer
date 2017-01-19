@@ -29,11 +29,11 @@ CXXFLAGS+=-I../Likelihood
 LIKELIHOOD_HEADERS=../Likelihood/autodiff.h ../Likelihood/likelihood.h ../Likelihood/nugenWeighting.h ../Likelihood/particleType.h ../Likelihood/tableio.h ../Likelihood/weighting.h ../Likelihood/lbfgsb/lbfgsb.h ../Likelihood/lbfgsb/interface.h
 
 ICSterile_HELPER_OBJECTS = lbfgsb.o linpack.o analysisWeighting.o compactIO.o Event.o SterileSearch.o oversizeWeight.o
-ICSterile_OBJECT = SterileSearchTest.o
+ICSterile_OBJECT = SterileSearchTestMinimal.o
 
 .PHONY: all clean
 
-all: SterileSearchTest
+all:  SterileSearchTestMinimal
 
 clean:
 	rm -rf SterileSearchFit $(ICSterileRemastered_OBJECT) $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
@@ -62,6 +62,12 @@ SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h E
 SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h
 	$(CXX) $(CXXFLAGS) SterileSearchTest.cpp -c -o SterileSearchTest.o
 
+SterileSearchTestMinimal.o : SterileSearchTestMinimal.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h
+	$(CXX) $(CXXFLAGS) SterileSearchTestMinimal.cpp -c -o SterileSearchTestMinimal.o
+
 SterileSearchTest : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchTest
+
+SterileSearchTestMinimal : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchTestMinimal
 

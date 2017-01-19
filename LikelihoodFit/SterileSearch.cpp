@@ -1,5 +1,7 @@
 #include "SterileSearch.h"
 #include "GenerationSpecifications.h"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 namespace SterileSearch {
 
@@ -73,9 +75,9 @@ void Sterilizer::LoadData(){
     };
     auto ic86Action=[&](RecordID id, Event& e){ dataAction(id,e,2011); };
     if (steeringParams_.useBurnSample)
-      readFile(dataPaths_.data_path+"burnsample_ic86.h5",ic86Action);
+      readFile(CheckedFilePath(dataPaths_.data_path+"burnsample_ic86.h5"),ic86Action);
     else
-      readFile(dataPaths_.data_path+"IC86.h5",ic86Action);    
+      readFile(CheckedFilePath(dataPaths_.data_path+"IC86.h5"),ic86Action);    
   } catch(std::exception& ex){
     std::cerr << "Problem loading experimental data: " << ex.what() << std::endl;
   }
@@ -133,7 +135,7 @@ void Sterilizer::LoadMC(){
 	//unsigned int yearindex=yearindices_[simYear];
 	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[simYear]);
 	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
-	auto path=dataPaths_.mc_path+setInfo.filename;
+	auto path=CheckedFilePath(dataPaths_.mc_path+setInfo.filename);
 	readFile(path,callback);
       }
     } catch(std::exception& ex) 
@@ -151,10 +153,18 @@ void Sterilizer::LoadCompact(){
     auto simulation_information=simInfo.find(steeringParams_.simToLoad);
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
-    std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
-    std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
-    unsplatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
+
+    std::cout<<"There is a segfault between this line"<<std::endl;
+    std::cout<<std::string(dataPaths_.data_path+simulation_information->second.filename)<<std::endl;
+    std::cout<<CheckedFilePath(std::string(dataPaths_.data_path+simulation_information->second.filename))<<std::endl;
+    std::string original_data_file = CheckedFilePath(dataPaths_.data_path+simulation_information->second.filename);
+    std::cout<<" and this one"<<std::endl;
+
+    std::string original_simulation_file = CheckedFilePath(dataPaths_.mc_path+(*simulation_information).second.filename);
+    CheckedFilePath(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat");
+    unsplatData(CheckedFilePath(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat"),
         getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
+
     if(!steeringParams_.quiet){
       std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
       std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
@@ -165,6 +175,7 @@ void Sterilizer::LoadCompact(){
   }
   data_loaded_=true;
   simulation_loaded_=true;
+  std::cout<<"end of load compact"<<std::endl;
 }
 
 void Sterilizer::WriteCompact() const {
@@ -197,8 +208,8 @@ void Sterilizer::ClearSimulation(){
 
 void Sterilizer::LoadDOMEfficiencySplines(){
   for(unsigned int year : steeringParams_.years){
-    domEffConv_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(year)+".fits"))});
-    domEffPrompt_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(year)+".fits"))});
+    domEffConv_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(CheckedFilePath(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(year)+".fits")))});
+    domEffPrompt_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(CheckedFilePath(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(year)+".fits")))});
   }
   DFWM.SetSplines(domEffConv_,domEffPrompt_);
   dom_efficiency_splines_constructed_=true;
@@ -209,6 +220,17 @@ void Sterilizer::LoadDOMEfficiencySplines(){
  * **********************************************************************************************************/
 
 void Sterilizer::ConstructCrossSectionWeighter(){
+  if(steeringParams_.xs_model_name=="")
+    {  
+      CheckedFilePath( dataPaths_.xs_spline_path + "/dsdxdy-numu-N-cc.fits");
+      CheckedFilePath( dataPaths_.xs_spline_path + "/dsdxdy-numubar-N-cc.fits");
+    }
+  else
+    {
+      CheckedFilePath( dataPaths_.xs_spline_path + "/dsdxdy-numu-N-cc-"+steeringParams_.xs_model_name+".fits");
+      CheckedFilePath( dataPaths_.xs_spline_path + "/dsdxdy-numubar-N-cc-"+steeringParams_.xs_model_name+".fits");
+    }
+
   xsw_ = std::make_shared<LW::CrossSectionFromSpline>(static_cast<std::string>(dataPaths_.xs_spline_path),steeringParams_.xs_model_name);
   xs_weighter_constructed_=true;
 }
@@ -221,22 +243,22 @@ void Sterilizer::ConstructFluxWeighter(){
     std::string atmospheric_model_pion = steeringParams_.modelName + "_pion";
     std::string atmospheric_model_kaon = steeringParams_.modelName + "_kaon";
 
-    fluxPion_ = std::make_shared<LW::FactorizedSQUIDSFlux>(dataPaths_.squids_files_path + oscillation_model,
-                                                           dataPaths_.flux_splines_path+atmospheric_model_pion+"_neutrino_spline.fits",
-                                                           dataPaths_.flux_splines_path+atmospheric_model_pion+"_antineutrino_spline.fits");
-    fluxKaon_ = std::make_shared<LW::FactorizedSQUIDSFlux>(dataPaths_.squids_files_path+oscillation_model,
-                                                           dataPaths_.flux_splines_path+atmospheric_model_kaon+"_neutrino_spline.fits",
-                                                           dataPaths_.flux_splines_path+atmospheric_model_kaon+"_antineutrino_spline.fits");
+    fluxPion_ = std::make_shared<LW::FactorizedSQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + oscillation_model),
+                                                           CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_pion+"_neutrino_spline.fits"),
+                                                           CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_pion+"_antineutrino_spline.fits"));
+    fluxKaon_ = std::make_shared<LW::FactorizedSQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path+oscillation_model),
+                                                           CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_kaon+"_neutrino_spline.fits"),
+                                                           CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_kaon+"_antineutrino_spline.fits"));
   } else {
       std::string flux_pion_filename = "pion_atmospheric_"+sterile_neutrino_model_identifier;
       std::string flux_kaon_filename = "kaon_atmospheric_"+sterile_neutrino_model_identifier;
       flux_pion_filename+="_"+steeringParams_.modelName;
       flux_kaon_filename+="_"+steeringParams_.modelName;
-      fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5");
-      fluxPion_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5");
+      fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5"));
+      fluxPion_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5"));
   }
 
-  fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0.000000_0.000000.hdf5");
+  fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0.000000_0.000000.hdf5"));
   flux_weighter_constructed_=true;
 }
 
@@ -264,7 +286,7 @@ void Sterilizer::ConstructLeptonWeighter(){
 }
 
 void Sterilizer::ConstructOversizeWeighter(){
-  osw_=OversizeWeighter(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat");
+  osw_=OversizeWeighter(CheckedFilePath(dataPaths_.oversize_path+"/"+steeringParams_.oversizeFunction+".dat"));
   oversize_weighter_constructed_=true;
 }
 
@@ -685,6 +707,23 @@ void Sterilizer::ReportStatus() const
   std::cout<< "Oversize weighter constructed: " <<CheckOversizeWeighterConstructed()<<std::endl;
   std::cout<< "Sim histogram constructed:     " <<CheckSimulationHistogramConstructed()<<std::endl;
   std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
+}
+
+std::string Sterilizer::CheckedFilePath(std::string FilePath) const
+{
+  namespace fs = boost::filesystem;
+  if(!steeringParams_.quiet) std::cout<<"Reading a file from path "<<FilePath<<std::endl;
+  try{
+    fs::path thefilepath(FilePath);
+    if(fs::exists( thefilepath ))
+      return FilePath;
+    else
+      throw std::runtime_error("File " + FilePath + " does not exist!");
+  }
+  catch(std::exception &re)
+    {
+      throw std::runtime_error("File " + FilePath + " does not exist!");
+    }
 }
 
 } // close namespace SterileSearch
