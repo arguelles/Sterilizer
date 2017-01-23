@@ -1,7 +1,5 @@
 #include "SterileSearch.h"
 #include "GenerationSpecifications.h"
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 
 namespace SterileSearch {
 
@@ -711,11 +709,10 @@ void Sterilizer::ReportStatus() const
 
 std::string Sterilizer::CheckedFilePath(std::string FilePath) const
 {
-  namespace fs = boost::filesystem;
   if(!steeringParams_.quiet) std::cout<<"Reading a file from path "<<FilePath<<std::endl;
   try{
-    fs::path thefilepath(FilePath);
-    if(fs::exists( thefilepath ))
+    std::ifstream thefile(FilePath);
+    if(thefile.good())
       return FilePath;
     else
       throw std::runtime_error("File " + FilePath + " does not exist!");
