@@ -4,16 +4,16 @@ CXX=clang++
 CFLAGS=-O3 -fPIC
 CXXFLAGS=-DSQUIDS_USE_VECTOR_EXTENSIONS=0
 
-CXXFLAGS+=-I${SNOTBUILDPATH}/include/
-LDFLAGS+=-L${SNOTBUILDPATH}/lib/
-
-COOLCVMFSROOT=/cvmfs/icecube.opensciencegrid.org/py2-v3_early_access/
-
 CXXFLAGS+=-std=c++11 -g -fPIC
 CXXFLAGS+=-I. -O3
+
+COOLCVMFSROOT=/cvmfs/icecube.opensciencegrid.org/py2-v3_early_access/
 CXXFLAGS+=-I${COOLCVMFSROOT}/RHEL_6_x86_64/include
 LDFLAGS+=-L${COOLCVMFSROOT}/RHEL_6_x86_64/lib
 LDFLAGS+=-L${COOLCVMFSROOT}/RHEL_6_x86_64/lib64
+
+CXXFLAGS+=-I${SNOTBUILDPATH}/include/
+LDFLAGS+=-L${SNOTBUILDPATH}/lib/
 LDFLAGS+=-lgsl -lgslcblas -lm
 LDFLAGS+=-lboost_system -lboost_iostreams -lboost_filesystem -lboost_regex
 LDFLAGS+=-lhdf5 -lhdf5_hl
@@ -56,7 +56,7 @@ Event.o : Event.cpp Event.h
 oversizeWeight.o : oversizeWeight.cpp oversizeWeight.h
 	$(CXX) $(CXXFLAGS) oversizeWeight.cpp -c -o oversizeWeight.o
 
-SterileSearch.o : SterileSearch.cpp  $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h oversizeWeight.h
+SterileSearch.o : SterileSearch.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h oversizeWeight.h
 	$(CXX) $(CXXFLAGS) SterileSearch.cpp -c -o SterileSearch.o
 
 SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h

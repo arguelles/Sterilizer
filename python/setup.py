@@ -17,7 +17,8 @@ else:
                     '../LikelihoodFit/',
                     '.']
 
-    libraries = ['python2.7','boost_python','LeptonWeighter',
+    libraries = ['python2.7','boost_python','boost_filesystem','boost_iostreams','boost_system','boost_regex',
+                 'LeptonWeighter',
                  'SQuIDS','nuSQuIDS',
                  'gsl','gslcblas','m',
                  'hdf5','hdf5_hl','PhysTools']

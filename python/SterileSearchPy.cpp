@@ -268,7 +268,9 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   from_python_sequence< std::vector<double>, variable_capacity_policy >();
   to_python_converter< std::vector<double, class std::allocator<double> >, VecToList<double> > ();
   from_python_sequence< std::vector<unsigned int>, variable_capacity_policy >();
-  to_python_converter< std::vector<unsigned int, class std::allocator<unsigned int> >, VecToList<unsigned int> > ();
+  //to_python_converter< std::vector<unsigned int, class std::allocator<unsigned int> >, VecToList<unsigned int> > ();
+  to_python_converter< std::vector<unsigned int, std::allocator<unsigned int> >, VecToList<unsigned int> > ();
+
   to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
   to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
   to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();

@@ -303,10 +303,7 @@ void Sterilizer::WeightMC(){
   simulation_initialized_=true;
 }
 
-void Sterilizer::InitializeSimulationWeights()
-{
-
-
+void Sterilizer::InitializeSimulationWeights(){
   if(not dom_efficiency_splines_constructed_)
     throw std::runtime_error("Simulation cannot be weighted until dom splines are loaded");
   using iterator=std::deque<Event>::iterator;
@@ -334,9 +331,10 @@ void Sterilizer::InitializeSimulationWeights()
     }
   };
 
-  
-  ThreadPool pool(steeringParams_.evalThreads);
   iterator it=mainSimulation_.begin(), end=mainSimulation_.end();
+  cache(it,end);
+  /*
+  ThreadPool pool(steeringParams_.evalThreads);
   while(true){
     unsigned long dist=std::distance(it,end);
     if(dist>=1000UL){
@@ -348,6 +346,7 @@ void Sterilizer::InitializeSimulationWeights()
       break;
     }
   }
+  */
 }
 
 /*************************************************************************************************************
