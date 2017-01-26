@@ -544,7 +544,7 @@ double Sterilizer::EvalLLH(std::vector<double> nuisance) const {
   return -prob_->evaluateLikelihood(nuisance);
 }
 
-double Sterilizer::EvalLL(Nuisance nuisance) const {
+double Sterilizer::EvalLLH(Nuisance nuisance) const {
   return EvalLLH(ConvertNuisance(nuisance));
 }
 

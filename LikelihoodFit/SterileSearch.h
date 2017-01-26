@@ -250,7 +250,7 @@ class Sterilizer {
     marray<double,3> GetRealization(Nuisance nuisance, int seed) const;
     // functions to evaluate the likelihood
     double EvalLLH(std::vector<double> nuisance) const;
-    double EvalLL(Nuisance nuisance) const;
+    double EvalLLH(Nuisance nuisance) const;
     FitResult MinLLH() const;
     void SetSterileNuParams(SterileNuParams snp);
 

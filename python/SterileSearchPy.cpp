@@ -258,7 +258,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("GetDataDistribution",&SS::Sterilizer::GetDataDistribution)
     .def("GetExpectation",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::GetExpectation)
     .def("GetRealization",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::GetRealization)
-    .def("EvalLLH",&SS::Sterilizer::EvalLLH)
+    .def("EvalLLH",(double(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::EvalLLH)
     .def("MinLLH",&SS::Sterilizer::MinLLH)
     .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
   ;
