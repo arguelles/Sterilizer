@@ -87,7 +87,7 @@ struct SteeringParams {
   float maxFitEnergy=2.e4;
   float minCosth = -1.;
   float maxCosth = 0.2;
-  float logEbinEdge = 0.0;
+  float logEbinEdge = 2.6;
   float logEbinWidth = 0.169;
   float cosThbinEdge = 0.0;
   float cosThbinWidth = 0.06;
@@ -101,8 +101,8 @@ struct SteeringParams {
   bool ReadCompact=true;
   std::string xs_model_name="";
   std::vector<unsigned int> years={2011};
-  std::map<unsigned int, double> fullLivetime      = std::map<unsigned int,double>{{2011,758.59*60*60}};
-  std::map<unsigned int, double> burnSampleLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
+  std::map<unsigned int, double> burnSampleLivetime      = std::map<unsigned int,double>{{2011,758.59*60*60}};
+  std::map<unsigned int, double> fullLivetime            = std::map<unsigned int,double>{{2011,8249.6*3600}};
   SteeringParams(){};
 };
 
