@@ -40,6 +40,8 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   ConstructDataHistogram();
   if(!steeringParams_.quiet) std::cout<<"Making sim hist" <<std::endl;
   ConstructSimulationHistogram();
+  if(!steeringParams_.quiet) std::cout<<"Construcing likelihood problem with default settings" <<std::endl;
+  ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
 }
 
 /*************************************************************************************************************
@@ -692,8 +694,7 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
 }
 
 // Report back the status of object construction
-void Sterilizer::ReportStatus() const
-{
+void Sterilizer::ReportStatus() const {
   std::cout<< "Data loaded:                   " << CheckDataLoaded() <<std::endl;
   std::cout<< "Sim loaded:                    " << CheckSimulationLoaded()  <<std::endl;
   std::cout<< "Dom eff spline constructed:    " << CheckDOMEfficiencySplinesConstructed()<<std::endl;
@@ -706,8 +707,7 @@ void Sterilizer::ReportStatus() const
   std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
 }
 
-std::string Sterilizer::CheckedFilePath(std::string FilePath) const
-{
+std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
   if(!steeringParams_.quiet) std::cout<<"Reading a file from path "<<FilePath<<std::endl;
   try{
     std::ifstream thefile(FilePath);
