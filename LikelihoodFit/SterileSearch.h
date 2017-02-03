@@ -246,10 +246,11 @@ class Sterilizer {
 
   public:
 
-    // Methods to spit out event samples
+    // Methods to spit out and swallow event samples
     std::vector<ExternEvent> SpitData() const;
     std::vector<ExternEvent> SpitRealization(std::vector<double> nuisance, int seed) const;
-    //  std::vector<ExternEvent> SpitExpectation() const;
+    std::vector<ExternEvent> SpitExpectation( std::vector<double> nuisance) const;
+    void Swallow(std::vector<ExternEvent> Data);
 
     // Methods to get histogram binning
     std::vector<double> GetEnergyBinsData() const;

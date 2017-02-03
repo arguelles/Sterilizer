@@ -65,8 +65,6 @@ auto binner = [](HistType& h, const Event& e){
 
 void Sterilizer::LoadData(){
   try{
-    
-    std::deque<Event> storage;
     auto dataAction = [&](RecordID id, Event& e, int dataYear){
       if(e.check(false,Level::neutrino)){
 	e.year=dataYear;
@@ -723,8 +721,23 @@ std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
 }
 
 /*************************************************************************************************************
- * Functions to spit out event distributions
+ * Functions to spit out event distributions and swallow
  * **********************************************************************************************************/
+
+void Sterilizer::Swallow(std::vector<ExternEvent> Data)
+{
+  sample_.clear();
+  for(std::vector<ExternEvent>::const_iterator it=Data.begin(); it!=Data.end(); ++it)
+    {
+      Event e;
+      e.year=it->Year;
+      e.energy=it->Energy;
+      e.zenith=it->Zenith;
+      e.cachedWeight=it->Weight;
+      sample_.push_back(e);
+    }
+}
+
 
 std::vector<ExternEvent> Sterilizer::SpitData() const
 {
@@ -739,7 +752,6 @@ std::vector<ExternEvent> Sterilizer::SpitData() const
 
 std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
 {
-
   std::vector<ExternEvent> ReturnVec;
   std::mt19937 rng;
   rng.seed(seed);
@@ -759,13 +771,37 @@ std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisan
     expected+=w;
   }
  
-  std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng);
-  
+  std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng); 
   for(std::vector<Event>::const_iterator it=realization.begin(); it!=realization.end(); ++it)
     ReturnVec.push_back(ExternEvent(it->energy, it->zenith, it->year, it->cachedWeight));
   
   return ReturnVec;
  }
+
+
+
+std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
+{
+  std::vector<ExternEvent> ReturnVec;
+  auto weighter = DFWM(nuisance);
+  auto EnergyBins=GetEnergyBinsMC();
+  auto ZenithBins=GetZenithBinsMC();
+  for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<simHist_.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<simHist_.getBinCount(0); ie++){ // energy
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
+        double expectation=0;
+        for(auto event : itc.entries()){
+          expectation+=weighter(event);
+        }
+	
+	ExternEvent e((EnergyBins[ie]+EnergyBins[ie+1])/2., (ZenithBins[ic]+ZenithBins[ic+1])/2., steeringParams_.years[iy], expectation);
+	ReturnVec.push_back(e);
+      }
+    }
+  }
+  return ReturnVec;
+}
 
 /*************************************************************************************************************
  * Functions to get bin edges
