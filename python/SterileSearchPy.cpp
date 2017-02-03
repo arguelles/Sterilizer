@@ -174,6 +174,14 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   import_array();
   import_ufunc();
 
+  class_<SS::ExternEvent, boost::noncopyable,std::shared_ptr<SS::ExternEvent> >("ExternEvent",init<>())
+    .def_readwrite("Energy", &SS::ExternEvent::Energy)
+    .def_readwrite("Zenith", &SS::ExternEvent::Zenith)
+    .def_readwrite("Year", &SS::ExternEvent::Year)
+    .def_readwrite("Weight", &SS::ExternEvent::Weight)
+    ;
+
+
   class_<SS::DataPaths, boost::noncopyable,std::shared_ptr<SS::DataPaths> >("DataPaths",init<>())
     .def_readwrite("compact_file_path",&SS::DataPaths::compact_file_path)
     .def_readwrite("squids_files_path",&SS::DataPaths::squids_files_path)
@@ -256,8 +264,14 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("CheckDataPaths",&SS::Sterilizer::CheckDataPaths)
     .def("ReportStatus",&SS::Sterilizer::ReportStatus)
     .def("GetDataDistribution",&SS::Sterilizer::GetDataDistribution)
+    .def("GetEnergyBinsData",&SS::Sterilizer::GetEnergyBinsData)
+    .def("GetZenithBinsData",&SS::Sterilizer::GetZenithBinsData)
+    .def("GetEnergyBinsMC",&SS::Sterilizer::GetEnergyBinsMC)
+    .def("GetZenithBinsMC",&SS::Sterilizer::GetZenithBinsMC)
     .def("GetExpectation",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::GetExpectation)
     .def("GetRealization",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::GetRealization)
+    .def("SpitData",&SS::Sterilizer::SpitData)
+    .def("SpitRealization",(std::vector<double>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::SpitRealization)
     .def("EvalLLH",(double(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::EvalLLH)
     .def("MinLLH",&SS::Sterilizer::MinLLH)
     .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
@@ -267,6 +281,9 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   using namespace scitbx::boost_python::container_conversions;
   from_python_sequence< std::vector<double>, variable_capacity_policy >();
   to_python_converter< std::vector<double, class std::allocator<double> >, VecToList<double> > ();
+
+  from_python_sequence< std::vector<SS::ExternEvent>, variable_capacity_policy >();
+  to_python_converter< std::vector<SS::ExternEvent, class std::allocator<SS::ExternEvent> >, VecToList<SS::ExternEvent> > ();
   from_python_sequence< std::vector<unsigned int>, variable_capacity_policy >();
   //to_python_converter< std::vector<unsigned int, class std::allocator<unsigned int> >, VecToList<unsigned int> > ();
   to_python_converter< std::vector<unsigned int, std::allocator<unsigned int> >, VecToList<unsigned int> > ();

@@ -40,6 +40,8 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   ConstructDataHistogram();
   if(!steeringParams_.quiet) std::cout<<"Making sim hist" <<std::endl;
   ConstructSimulationHistogram();
+  if(!steeringParams_.quiet) std::cout<<"Construcing likelihood problem with default settings" <<std::endl;
+  ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
 }
 
 /*************************************************************************************************************
@@ -692,8 +694,7 @@ Nuisance Sterilizer::ConvertVecToNuisance(std::vector<double> vecns) const {
 }
 
 // Report back the status of object construction
-void Sterilizer::ReportStatus() const
-{
+void Sterilizer::ReportStatus() const {
   std::cout<< "Data loaded:                   " << CheckDataLoaded() <<std::endl;
   std::cout<< "Sim loaded:                    " << CheckSimulationLoaded()  <<std::endl;
   std::cout<< "Dom eff spline constructed:    " << CheckDOMEfficiencySplinesConstructed()<<std::endl;
@@ -706,8 +707,7 @@ void Sterilizer::ReportStatus() const
   std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
 }
 
-std::string Sterilizer::CheckedFilePath(std::string FilePath) const
-{
+std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
   if(!steeringParams_.quiet) std::cout<<"Reading a file from path "<<FilePath<<std::endl;
   try{
     std::ifstream thefile(FilePath);
@@ -721,5 +721,80 @@ std::string Sterilizer::CheckedFilePath(std::string FilePath) const
       throw std::runtime_error("File " + FilePath + " does not exist!");
     }
 }
+
+/*************************************************************************************************************
+ * Functions to spit out event distributions
+ * **********************************************************************************************************/
+
+std::vector<ExternEvent> Sterilizer::SpitData() const
+{
+  std::vector<ExternEvent> ReturnVec;
+  for(std::deque<Event>::const_iterator it=sample_.begin(); it!=sample_.end(); ++it)
+    ReturnVec.push_back(ExternEvent(it->energy, it->zenith, it->year, it->cachedWeight));
+  
+  return ReturnVec;
+}
+
+
+
+std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
+{
+
+  std::vector<ExternEvent> ReturnVec;
+  std::mt19937 rng;
+  rng.seed(seed);
+  
+  auto weighter=DFWM(nuisance);
+  
+  double expected=0;
+  std::vector<double> weights;
+  for(const Event& e : mainSimulation_){
+    auto w=weighter(e);
+    if(std::isnan(w) || std::isinf(w) || w<0){
+      std::cout << "Bad weight!" << std::endl;
+      std::cout << e.cachedConvPionWeight  << ' ' << e.cachedConvKaonWeight << ' ' << e.cachedLivetime << ' ';
+      std::cout << e.energy << ' ' << e.year << ' ' << w << std::endl;
+    }
+    weights.push_back(w);
+    expected+=w;
+  }
+ 
+  std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng);
+  
+  for(std::vector<Event>::const_iterator it=realization.begin(); it!=realization.end(); ++it)
+    ReturnVec.push_back(ExternEvent(it->energy, it->zenith, it->year, it->cachedWeight));
+  
+  return ReturnVec;
+ }
+
+/*************************************************************************************************************
+ * Functions to get bin edges
+ * **********************************************************************************************************/
+
+// Given a histogram reference h, get bin edges in dimension dim
+ std::vector<double> Sterilizer::PullBinEdges(int dim, const HistType& h) const{
+   std::vector<double> edges_i(h.getBinCount(dim));
+   for(unsigned int j=0; j<h.getBinCount(dim); j++)
+     edges_i[j]=h.getBinEdge(dim,j);
+   edges_i.push_back(h.getBinEdge(dim,h.getBinCount(dim)-1)+h.getBinWidth(dim,h.getBinCount(dim)-1));
+   return edges_i;
+ }
+
+ std::vector<double> Sterilizer::GetEnergyBinsData() const{
+   return PullBinEdges(0,dataHist_);
+ }
+
+ std::vector<double> Sterilizer::GetZenithBinsData() const{
+   return PullBinEdges(1,dataHist_);
+ }
+
+ std::vector<double> Sterilizer::GetEnergyBinsMC() const{
+   return PullBinEdges(0,simHist_);
+ }
+
+ std::vector<double> Sterilizer::GetZenithBinsMC() const{
+   return PullBinEdges(1,simHist_);
+ }
+
 
 } // close namespace SterileSearch
