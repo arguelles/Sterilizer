@@ -739,6 +739,7 @@ void Sterilizer::Swallow(std::vector<ExternEvent> Data)
 }
 
 
+
 std::vector<ExternEvent> Sterilizer::SpitData() const
 {
   std::vector<ExternEvent> ReturnVec;
@@ -748,6 +749,11 @@ std::vector<ExternEvent> Sterilizer::SpitData() const
   return ReturnVec;
 }
 
+
+std::vector<ExternEvent> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
+{
+  return SpitRealization(ConvertNuisance(nuisance), seed);
+}
 
 
 std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
@@ -780,6 +786,12 @@ std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisan
 
 
 
+std::vector<ExternEvent> Sterilizer::SpitExpectation( Nuisance nuisance) const
+{
+  return SpitExpectation(ConvertNuisance(nuisance));
+}
+
+
 std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
 {
   std::vector<ExternEvent> ReturnVec;
@@ -801,6 +813,17 @@ std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisan
     }
   }
   return ReturnVec;
+}
+
+
+void Sterilizer::SetupAsimov(Nuisance nuisance)
+{
+  SetupAsimov(ConvertNuisance(nuisance));
+}
+
+void Sterilizer::SetupAsimov(std::vector<double> nuisance)
+{
+  Swallow(SpitExpectation(nuisance));
 }
 
 /*************************************************************************************************************
