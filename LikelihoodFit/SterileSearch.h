@@ -82,15 +82,6 @@ struct DataPaths {
   DataPaths(){};
 };
 
-struct ExternEvent{
-  float Energy=0;
-  float Zenith=0;
-  unsigned int Year=0;
-  float Weight=1;
-  ExternEvent(float energy, float zenith, float year, float weight=1) {
-    Energy=energy;Zenith=zenith;Weight=weight;Year=year;};
-  ExternEvent() {};
-};
 
 struct SteeringParams {
   float minFitEnergy=4e2;
@@ -240,19 +231,19 @@ class Sterilizer {
     Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
     marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;
-    std::vector<ExternEvent> SpitRealization(std::vector<double> nuisance, int seed) const;
-    std::vector<ExternEvent> SpitExpectation( std::vector<double> nuisance) const;
+    marray<double,2> SpitRealization(std::vector<double> nuisance, int seed) const;
+    marray<double,2> SpitExpectation( std::vector<double> nuisance) const;
     std::vector<double> PullBinEdges(int dim, const  HistType& h) const;
     void SetupAsimov(std::vector<double> Nuisance);
 
   public:
 
     // Methods to spit out and swallow event samples
-    std::vector<ExternEvent> SpitData() const;
-    std::vector<ExternEvent> SpitRealization(Nuisance nuisance, int seed) const;
-    std::vector<ExternEvent> SpitExpectation(Nuisance nuisance) const;
-    void Swallow(std::vector<ExternEvent> Data);
-    void SetupAsimov(Nuisance nuisance);
+    marray<double,2> SpitData() const;
+    marray<double,2> SpitRealization(Nuisance nuisance, int seed) const;
+    marray<double,2> SpitExpectation(Nuisance nuisance) const;
+    double Swallow(marray<double,2> Data);
+    bool SetupAsimov(Nuisance nuisance);
 
     // Methods to get histogram binning
     std::vector<double> GetEnergyBinsData() const;

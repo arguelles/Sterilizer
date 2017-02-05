@@ -68,6 +68,7 @@ void Sterilizer::LoadData(){
     auto dataAction = [&](RecordID id, Event& e, int dataYear){
       if(e.check(false,Level::neutrino)){
 	e.year=dataYear;
+	e.cachedWeight=1.;
 	sample_.push_back(e);
       }
     };
@@ -724,41 +725,48 @@ std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
  * Functions to spit out event distributions and swallow
  * **********************************************************************************************************/
 
-void Sterilizer::Swallow(std::vector<ExternEvent> Data)
+double Sterilizer::Swallow(marray<double,2> Data)
 {
+  double TotalWeight=0;
   sample_.clear();
-  for(std::vector<ExternEvent>::const_iterator it=Data.begin(); it!=Data.end(); ++it)
+  for(size_t i=0; i!=Data.extent(0); ++i)
     {
       Event e;
-      e.year=it->Year;
-      e.energy=it->Energy;
-      e.zenith=it->Zenith;
-      e.cachedWeight=it->Weight;
+      e.energy       = Data[i][0];
+      e.zenith       = Data[i][1];
+      e.year         = Data[i][2];
+      e.cachedWeight = Data[i][3];
+      TotalWeight+=Data[i][3];
       sample_.push_back(e);
     }
+  return TotalWeight;
 }
 
 
 
-std::vector<ExternEvent> Sterilizer::SpitData() const
+marray<double,2> Sterilizer::SpitData() const
 {
-  std::vector<ExternEvent> ReturnVec;
-  for(std::deque<Event>::const_iterator it=sample_.begin(); it!=sample_.end(); ++it)
-    ReturnVec.push_back(ExternEvent(it->energy, it->zenith, it->year, it->cachedWeight));
-  
+  marray<double,2> ReturnVec { sample_.size(), 4} ;
+  for(size_t i=0; i!=sample_.size(); ++i)
+    {
+      ReturnVec[i][0]=sample_[i].energy;
+      ReturnVec[i][1]=sample_[i].zenith;
+      ReturnVec[i][2]=sample_[i].year;
+      ReturnVec[i][3]=sample_[i].cachedWeight;
+    }
   return ReturnVec;
 }
 
 
-std::vector<ExternEvent> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
+marray<double,2> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
 {
   return SpitRealization(ConvertNuisance(nuisance), seed);
 }
 
 
-std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
+marray<double,2> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
 {
-  std::vector<ExternEvent> ReturnVec;
+
   std::mt19937 rng;
   rng.seed(seed);
   
@@ -778,26 +786,35 @@ std::vector<ExternEvent> Sterilizer::SpitRealization( std::vector<double> nuisan
   }
  
   std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng); 
-  for(std::vector<Event>::const_iterator it=realization.begin(); it!=realization.end(); ++it)
-    ReturnVec.push_back(ExternEvent(it->energy, it->zenith, it->year, it->cachedWeight));
-  
+
+  marray<double,2> ReturnVec { realization.size(), 4} ;
+
+  for(size_t i=0; i!=realization.size(); ++i)
+    {
+      ReturnVec[i][0]=realization[i].energy;
+      ReturnVec[i][1]=realization[i].zenith;
+      ReturnVec[i][2]=realization[i].year;
+      ReturnVec[i][3]=1.;
+    }
   return ReturnVec;
+
  }
 
 
 
-std::vector<ExternEvent> Sterilizer::SpitExpectation( Nuisance nuisance) const
+marray<double,2> Sterilizer::SpitExpectation( Nuisance nuisance) const
 {
   return SpitExpectation(ConvertNuisance(nuisance));
 }
 
 
-std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
+marray<double,2> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
 {
-  std::vector<ExternEvent> ReturnVec;
+  marray<double,2> ReturnVec { simHist_.getBinCount(2)*simHist_.getBinCount(1)*simHist_.getBinCount(0), 4} ;
   auto weighter = DFWM(nuisance);
   auto EnergyBins=GetEnergyBinsMC();
   auto ZenithBins=GetZenithBinsMC();
+  unsigned int count=0;
   for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
     for(size_t ic=0; ic<simHist_.getBinCount(1); ic++){ // zenith
       for(size_t ie=0; ie<simHist_.getBinCount(0); ie++){ // energy
@@ -807,8 +824,13 @@ std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisan
           expectation+=weighter(event);
         }
 	
-	ExternEvent e((EnergyBins[ie]+EnergyBins[ie+1])/2., (ZenithBins[ic]+ZenithBins[ic+1])/2., steeringParams_.years[iy], expectation);
-	ReturnVec.push_back(e);
+	ReturnVec[count][0]=(EnergyBins[ie]+EnergyBins[ie+1])/2.;
+	ReturnVec[count][1]=(ZenithBins[ic]+ZenithBins[ic+1])/2.;
+	ReturnVec[count][2]=steeringParams_.years[iy];
+	ReturnVec[count][3]=expectation;
+	++count;
+	 
+
       }
     }
   }
@@ -816,9 +838,10 @@ std::vector<ExternEvent> Sterilizer::SpitExpectation( std::vector<double> nuisan
 }
 
 
-void Sterilizer::SetupAsimov(Nuisance nuisance)
+bool Sterilizer::SetupAsimov(Nuisance nuisance)
 {
   SetupAsimov(ConvertNuisance(nuisance));
+  return true;
 }
 
 void Sterilizer::SetupAsimov(std::vector<double> nuisance)
