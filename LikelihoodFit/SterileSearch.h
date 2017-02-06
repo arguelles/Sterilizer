@@ -67,6 +67,7 @@ struct FitResult {
   double likelihood;
   unsigned int nEval, nGrad;
   bool succeeded;
+  FitResult(){};
 };
 
 struct DataPaths {

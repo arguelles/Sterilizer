@@ -584,9 +584,8 @@ FitResult Sterilizer::MinLLH() const {
   result.params=ConvertVecToNuisance(minimizer.minimumPosition());
   result.nEval=minimizer.numberOfEvaluations();
   result.nGrad=minimizer.numberOfEvaluations();
-    
+
   return result;
-  
 }
 
 /*************************************************************************************************************

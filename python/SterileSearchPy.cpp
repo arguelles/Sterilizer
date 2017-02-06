@@ -174,6 +174,14 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   import_array();
   import_ufunc();
 
+  class_<SS::FitResult, boost::noncopyable,std::shared_ptr<SS::FitResult> >("FitResult",init<>())
+    .def_readwrite("params",&SS::FitResult::params)
+    .def_readwrite("likelihood",&SS::FitResult::likelihood)
+    .def_readwrite("nEval",&SS::FitResult::nEval)
+    .def_readwrite("nGrad",&SS::FitResult::nGrad)
+    .def_readwrite("succeeded",&SS::FitResult::succeeded)
+  ;
+
   class_<SS::DataPaths, boost::noncopyable,std::shared_ptr<SS::DataPaths> >("DataPaths",init<>())
     .def_readwrite("compact_file_path",&SS::DataPaths::compact_file_path)
     .def_readwrite("squids_files_path",&SS::DataPaths::squids_files_path)
