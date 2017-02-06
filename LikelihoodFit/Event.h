@@ -78,15 +78,16 @@ public:
   double energy;
 
   // cached quantities
-	double cachedLivetime;
-	double cachedNugenWeight;
-	double cachedConvPionWeight;
-	double cachedConvKaonWeight;
-	double cachedPromptWeight;
-	double cachedAstroWeight;
+  double cachedLivetime;
+  double cachedNugenWeight;
+  double cachedConvPionWeight;
+  double cachedConvKaonWeight;
+  double cachedPromptWeight;
+  double cachedAstroWeight;
+  double cachedWeight;
 
   // dom eff structure
-	struct domEffValues{
+  struct domEffValues{
 		double baseRate;
 
 		domEffValues():baseRate(std::numeric_limits<double>::quiet_NaN()){}

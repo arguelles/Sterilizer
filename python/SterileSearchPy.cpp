@@ -264,9 +264,18 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("CheckDataPaths",&SS::Sterilizer::CheckDataPaths)
     .def("ReportStatus",&SS::Sterilizer::ReportStatus)
     .def("GetDataDistribution",&SS::Sterilizer::GetDataDistribution)
+    .def("GetEnergyBinsData",&SS::Sterilizer::GetEnergyBinsData)
+    .def("GetZenithBinsData",&SS::Sterilizer::GetZenithBinsData)
+    .def("GetEnergyBinsMC",&SS::Sterilizer::GetEnergyBinsMC)
+    .def("GetZenithBinsMC",&SS::Sterilizer::GetZenithBinsMC)
     .def("GetExpectation",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::GetExpectation)
     .def("GetRealization",(nsq::marray<double,3>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::GetRealization)
+    .def("SpitData",&SS::Sterilizer::SpitData)
+    .def("SpitRealization",(nsq::marray<double,2>(SS::Sterilizer::*)(SS::Nuisance,int)const)&SS::Sterilizer::SpitRealization)
+    .def("SpitExpectation",(nsq::marray<double,2>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::SpitExpectation)
     .def("EvalLLH",(double(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::EvalLLH)
+    .def("SetupAsimov",(bool(SS::Sterilizer::*)(SS::Nuisance))&SS::Sterilizer::SetupAsimov)
+    .def("Swallow",(double(SS::Sterilizer::*)(nsq::marray<double,2>))&SS::Sterilizer::Swallow)
     .def("MinLLH",&SS::Sterilizer::MinLLH)
     .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
   ;
@@ -275,12 +284,14 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   using namespace scitbx::boost_python::container_conversions;
   from_python_sequence< std::vector<double>, variable_capacity_policy >();
   to_python_converter< std::vector<double, class std::allocator<double> >, VecToList<double> > ();
+
   from_python_sequence< std::vector<unsigned int>, variable_capacity_policy >();
   //to_python_converter< std::vector<unsigned int, class std::allocator<unsigned int> >, VecToList<unsigned int> > ();
   to_python_converter< std::vector<unsigned int, std::allocator<unsigned int> >, VecToList<unsigned int> > ();
 
   to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
   to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
+  //  from_python_converter< nsq::marray<double,2> , numpyarray_to_marray<double, 2> >();
   to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();
   to_python_converter< nsq::marray<double,4> , marray_to_numpyarray<4> >();
 

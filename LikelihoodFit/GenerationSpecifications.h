@@ -29,8 +29,8 @@ std::map<std::string,run> GetSimInfo(std::string mc_dataPath)
                                                         2} // spectral index
                                 )},
                                 {"nufsgen_mie_0_99",run(mc_dataPath,"noover_mie_0.99.h5",particleType::NuMu,0.99,
-                                        LW::SimDetails {1,734400000, //total events
-                                                        2011,//year
+                                        LW::SimDetails {1,734400000, //total events 
+							2011,//year
                                                         800, //injection radius
                                                         0,2*pi<double>(), //azimuth range
                                                         80.0*pi<double>()/180.0,pi<double>(), //zenith range

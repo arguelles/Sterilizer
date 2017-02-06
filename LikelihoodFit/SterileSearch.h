@@ -83,12 +83,13 @@ struct DataPaths {
   DataPaths(){};
 };
 
+
 struct SteeringParams {
   float minFitEnergy=4e2;
   float maxFitEnergy=2.e4;
   float minCosth = -1.;
   float maxCosth = 0.2;
-  float logEbinEdge = 0.0;
+  float logEbinEdge = 2.6;
   float logEbinWidth = 0.169;
   float cosThbinEdge = 0.0;
   float cosThbinWidth = 0.06;
@@ -104,6 +105,7 @@ struct SteeringParams {
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
   std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
+
   SteeringParams(){};
 };
 
@@ -230,8 +232,28 @@ class Sterilizer {
     Nuisance ConvertVecToNuisance(std::vector<double> vecns) const;
     marray<double,3> GetRealization(std::vector<double> nuisance, int seed) const;
     marray<double,3> GetExpectation(std::vector<double> nuisance) const;
+    marray<double,2> SpitRealization(std::vector<double> nuisance, int seed) const;
+    marray<double,2> SpitExpectation( std::vector<double> nuisance) const;
+    std::vector<double> PullBinEdges(int dim, const  HistType& h) const;
+    void SetupAsimov(std::vector<double> Nuisance);
 
   public:
+
+    // Methods to spit out and swallow event samples
+    marray<double,2> SpitData() const;
+    marray<double,2> SpitRealization(Nuisance nuisance, int seed) const;
+    marray<double,2> SpitExpectation(Nuisance nuisance) const;
+    double Swallow(marray<double,2> Data);
+    bool SetupAsimov(Nuisance nuisance);
+
+    // Methods to get histogram binning
+    std::vector<double> GetEnergyBinsData() const;
+    std::vector<double> GetZenithBinsData() const;
+    std::vector<double> GetEnergyBinsMC() const;
+    std::vector<double> GetZenithBinsMC() const;
+
+
+
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
     bool CheckSimulationLoaded() const                 {return simulation_loaded_;};

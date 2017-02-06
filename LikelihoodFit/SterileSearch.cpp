@@ -65,11 +65,10 @@ auto binner = [](HistType& h, const Event& e){
 
 void Sterilizer::LoadData(){
   try{
-    
-    std::deque<Event> storage;
     auto dataAction = [&](RecordID id, Event& e, int dataYear){
       if(e.check(false,Level::neutrino)){
 	e.year=dataYear;
+	e.cachedWeight=1.;
 	sample_.push_back(e);
       }
     };
@@ -720,5 +719,163 @@ std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
       throw std::runtime_error("File " + FilePath + " does not exist!");
     }
 }
+
+/*************************************************************************************************************
+ * Functions to spit out event distributions and swallow
+ * **********************************************************************************************************/
+
+double Sterilizer::Swallow(marray<double,2> Data)
+{
+  double TotalWeight=0;
+  sample_.clear();
+  for(size_t i=0; i!=Data.extent(0); ++i)
+    {
+      Event e;
+      e.energy       = Data[i][0];
+      e.zenith       = Data[i][1];
+      e.year         = Data[i][2];
+      e.cachedWeight = Data[i][3];
+      TotalWeight+=Data[i][3];
+      sample_.push_back(e);
+    }
+  return TotalWeight;
+}
+
+
+
+marray<double,2> Sterilizer::SpitData() const
+{
+  marray<double,2> ReturnVec { sample_.size(), 4} ;
+  for(size_t i=0; i!=sample_.size(); ++i)
+    {
+      ReturnVec[i][0]=sample_[i].energy;
+      ReturnVec[i][1]=sample_[i].zenith;
+      ReturnVec[i][2]=sample_[i].year;
+      ReturnVec[i][3]=sample_[i].cachedWeight;
+    }
+  return ReturnVec;
+}
+
+
+marray<double,2> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
+{
+  return SpitRealization(ConvertNuisance(nuisance), seed);
+}
+
+
+marray<double,2> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
+{
+
+  std::mt19937 rng;
+  rng.seed(seed);
+  
+  auto weighter=DFWM(nuisance);
+  
+  double expected=0;
+  std::vector<double> weights;
+  for(const Event& e : mainSimulation_){
+    auto w=weighter(e);
+    if(std::isnan(w) || std::isinf(w) || w<0){
+      std::cout << "Bad weight!" << std::endl;
+      std::cout << e.cachedConvPionWeight  << ' ' << e.cachedConvKaonWeight << ' ' << e.cachedLivetime << ' ';
+      std::cout << e.energy << ' ' << e.year << ' ' << w << std::endl;
+    }
+    weights.push_back(w);
+    expected+=w;
+  }
+ 
+  std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng); 
+
+  marray<double,2> ReturnVec { realization.size(), 4} ;
+
+  for(size_t i=0; i!=realization.size(); ++i)
+    {
+      ReturnVec[i][0]=realization[i].energy;
+      ReturnVec[i][1]=realization[i].zenith;
+      ReturnVec[i][2]=realization[i].year;
+      ReturnVec[i][3]=1.;
+    }
+  return ReturnVec;
+
+ }
+
+
+
+marray<double,2> Sterilizer::SpitExpectation( Nuisance nuisance) const
+{
+  return SpitExpectation(ConvertNuisance(nuisance));
+}
+
+
+marray<double,2> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
+{
+  marray<double,2> ReturnVec { simHist_.getBinCount(2)*simHist_.getBinCount(1)*simHist_.getBinCount(0), 4} ;
+  auto weighter = DFWM(nuisance);
+  auto EnergyBins=GetEnergyBinsMC();
+  auto ZenithBins=GetZenithBinsMC();
+  unsigned int count=0;
+  for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<simHist_.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<simHist_.getBinCount(0); ie++){ // energy
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
+        double expectation=0;
+        for(auto event : itc.entries()){
+          expectation+=weighter(event);
+        }
+	
+	ReturnVec[count][0]=(EnergyBins[ie]+EnergyBins[ie+1])/2.;
+	ReturnVec[count][1]=(ZenithBins[ic]+ZenithBins[ic+1])/2.;
+	ReturnVec[count][2]=steeringParams_.years[iy];
+	ReturnVec[count][3]=expectation;
+	++count;
+	 
+
+      }
+    }
+  }
+  return ReturnVec;
+}
+
+
+bool Sterilizer::SetupAsimov(Nuisance nuisance)
+{
+  SetupAsimov(ConvertNuisance(nuisance));
+  return true;
+}
+
+void Sterilizer::SetupAsimov(std::vector<double> nuisance)
+{
+  Swallow(SpitExpectation(nuisance));
+}
+
+/*************************************************************************************************************
+ * Functions to get bin edges
+ * **********************************************************************************************************/
+
+// Given a histogram reference h, get bin edges in dimension dim
+ std::vector<double> Sterilizer::PullBinEdges(int dim, const HistType& h) const{
+   std::vector<double> edges_i(h.getBinCount(dim));
+   for(unsigned int j=0; j<h.getBinCount(dim); j++)
+     edges_i[j]=h.getBinEdge(dim,j);
+   edges_i.push_back(h.getBinEdge(dim,h.getBinCount(dim)-1)+h.getBinWidth(dim,h.getBinCount(dim)-1));
+   return edges_i;
+ }
+
+ std::vector<double> Sterilizer::GetEnergyBinsData() const{
+   return PullBinEdges(0,dataHist_);
+ }
+
+ std::vector<double> Sterilizer::GetZenithBinsData() const{
+   return PullBinEdges(1,dataHist_);
+ }
+
+ std::vector<double> Sterilizer::GetEnergyBinsMC() const{
+   return PullBinEdges(0,simHist_);
+ }
+
+ std::vector<double> Sterilizer::GetZenithBinsMC() const{
+   return PullBinEdges(1,simHist_);
+ }
+
 
 } // close namespace SterileSearch
