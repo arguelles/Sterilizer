@@ -127,7 +127,7 @@ using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 using CPrior=FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>;
-using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,6>;
+using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,8>;
 
 template<typename ContainerType, typename HistType, typename BinnerType>
   void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){

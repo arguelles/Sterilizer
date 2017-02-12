@@ -514,7 +514,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
 
   auto fitseedvec = ConvertNuisance(nuisanceSeed);
 
-  prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
+  prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 8>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
       likelihood::poissonLikelihood(), fitseedvec ));
   prob_->setEvaluationThreadCount(steeringParams_.evalThreads);
