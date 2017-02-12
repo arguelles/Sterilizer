@@ -28,7 +28,7 @@ struct Nuisance {
   float astroFlux=0.0;
   float promptFlux=0.0;
   float crSlope=0.0;
-  float domEfficiency=-0.1;
+  float domEfficiency=0.1;
   float piKRatio=1.0;
   float nuNubarRatio=1.0;
   float zenithCorrection=0.0;
@@ -52,8 +52,8 @@ struct Priors {
   float normWidth=0.4;
   float crSlopeCenter=0.0;
   float crSlopeWidth=0.05;
-  float domEffCenter=-0.1;
-  float domEffWidth=0.3;
+  float domEffCenter=0.1;
+  float domEffWidth=0.1;
   float piKRatioCenter=1.0;
   float piKRatioWidth=0.1;
   float nuNubarRatioCenter=1.0;
@@ -110,7 +110,7 @@ struct SteeringParams {
 };
 
 struct SterileNuParams {
-  unsigned int modelId =0;
+  unsigned int modelId = 0;
   double th14 = 0;
   double th24 = 0;
   double th34 = 0;
@@ -252,8 +252,6 @@ class Sterilizer {
     std::vector<double> GetEnergyBinsMC() const;
     std::vector<double> GetZenithBinsMC() const;
 
-
-
     // functions to check the status of the object
     bool CheckDataLoaded() const                       {return data_loaded_;};
     bool CheckSimulationLoaded() const                 {return simulation_loaded_;};
@@ -287,8 +285,6 @@ class Sterilizer {
 	minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
       return succeeded;
     };
-
- 
 
   public:
     // set functions

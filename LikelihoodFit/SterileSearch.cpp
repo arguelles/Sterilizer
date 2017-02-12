@@ -67,9 +67,9 @@ void Sterilizer::LoadData(){
   try{
     auto dataAction = [&](RecordID id, Event& e, int dataYear){
       if(e.check(false,Level::neutrino)){
-	e.year=dataYear;
-	e.cachedWeight=1.;
-	sample_.push_back(e);
+        e.year=dataYear;
+        e.cachedWeight=1.;
+        sample_.push_back(e);
       }
     };
     auto ic86Action=[&](RecordID id, Event& e){ dataAction(id,e,2011); };
@@ -312,16 +312,16 @@ void Sterilizer::InitializeSimulationWeights(){
     for(; it!=end; it++){
       auto& e=*it;
       LW::Event lw_e {e.leptonEnergyFraction,
-	  e.injectedEnergy,
-	  e.totalColumnDepth,
-	  e.inelasticityProbability,
-	  e.intX,
-	  e.intY,
-	  e.injectedMuonEnergy,
-	  e.injectedMuonZenith,
-	  e.injectedMuonAzimuth,
-	  static_cast<particleType>(e.primaryType),
-	  static_cast<int>(e.year)};
+      e.injectedEnergy,
+      e.totalColumnDepth,
+      e.inelasticityProbability,
+      e.intX,
+      e.intY,
+      e.injectedMuonEnergy,
+      e.injectedMuonZenith,
+      e.injectedMuonAzimuth,
+      static_cast<particleType>(e.primaryType),
+      static_cast<int>(e.year)};
 
       double osweight = osw_.EvaluateOversizeCorrection(e.energy, e.zenith);
       e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
@@ -498,7 +498,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
   UniformPrior  positivePrior(0.0,std::numeric_limits<double>::infinity());
   GaussianPrior normalizationPrior(pr.normCenter,pr.normWidth);
   GaussianPrior crSlopePrior(pr.crSlopeCenter,pr.crSlopeWidth);
-  LimitedGaussianPrior simple_domEffPrior(pr.domEffCenter,pr.domEffWidth,0.8,1.2);
+  LimitedGaussianPrior simple_domEffPrior(pr.domEffCenter,pr.domEffWidth,-0.1,0.3);
   GaussianPrior kaonPrior(pr.piKRatioCenter,pr.piKRatioWidth);
   GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
   GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*GetZenithCorrectionScale());
@@ -512,7 +512,7 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
 			      nanPrior,
 			      ZCPrior);
 
-  auto fitseedvec   = ConvertNuisance(nuisanceSeed);
+  auto fitseedvec = ConvertNuisance(nuisanceSeed);
 
   prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 6>(
       dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
@@ -527,12 +527,12 @@ double Sterilizer::GetZenithCorrectionScale() const
 {
   std::map<std::string,double> delta_alpha {
     {"HondaGaisser",8./7.},
-      {"CombinedGHandHG_H3a_QGSJET",4. /7.},
-        {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
-          {"PolyGonato_QGSJET-II-04",0.5},
-            {"PolyGonato_SIBYLL2",1.0},
-              {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
-                {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
+    {"CombinedGHandHG_H3a_QGSJET",4. /7.},
+    {"CombinedGHandHG_H3a_SIBYLL2",8./7.},
+    {"PolyGonato_QGSJET-II-04",0.5},
+    {"PolyGonato_SIBYLL2",1.0},
+    {"ZatsepinSokolskaya_pamela_QGSJET",5./7.},
+    {"ZatsepinSokolskaya_pamela_SIBYLL2",5./7.},
                   };
   if( delta_alpha.find(steeringParams_.modelName) == delta_alpha.end() )
     throw std::runtime_error("Jordi delta key not found. Aborting.");
@@ -697,12 +697,12 @@ void Sterilizer::ReportStatus() const {
   std::cout<< "Sim loaded:                    " << CheckSimulationLoaded()  <<std::endl;
   std::cout<< "Dom eff spline constructed:    " << CheckDOMEfficiencySplinesConstructed()<<std::endl;
   std::cout<< "XS weighter constructed:       " << CheckCrossSectionWeighterConstructed() <<std::endl;
-  std::cout<< "Flux weighter constructed:     " <<CheckFluxWeighterConstructed()<<std::endl;
-  std::cout<< "Lepton weighter constructed:   " <<CheckLeptonWeighterConstructed()<<std::endl;
-  std::cout<< "Data histogram constructed:    " <<CheckDataHistogramConstructed()<<std::endl;
-  std::cout<< "Oversize weighter constructed: " <<CheckOversizeWeighterConstructed()<<std::endl;
-  std::cout<< "Sim histogram constructed:     " <<CheckSimulationHistogramConstructed()<<std::endl;
-  std::cout<< "LLH problem constructed:       " <<CheckLikelihoodProblemConstruction()<<std::endl;
+  std::cout<< "Flux weighter constructed:     " << CheckFluxWeighterConstructed()<<std::endl;
+  std::cout<< "Lepton weighter constructed:   " << CheckLeptonWeighterConstructed()<<std::endl;
+  std::cout<< "Data histogram constructed:    " << CheckDataHistogramConstructed()<<std::endl;
+  std::cout<< "Oversize weighter constructed: " << CheckOversizeWeighterConstructed()<<std::endl;
+  std::cout<< "Sim histogram constructed:     " << CheckSimulationHistogramConstructed()<<std::endl;
+  std::cout<< "LLH problem constructed:       " << CheckLikelihoodProblemConstruction()<<std::endl;
 }
 
 std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
@@ -741,8 +741,6 @@ double Sterilizer::Swallow(marray<double,2> Data)
   return TotalWeight;
 }
 
-
-
 marray<double,2> Sterilizer::SpitData() const
 {
   marray<double,2> ReturnVec { sample_.size(), 4} ;
@@ -765,12 +763,10 @@ marray<double,2> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
 
 marray<double,2> Sterilizer::SpitRealization( std::vector<double> nuisance, int seed) const
 {
-
   std::mt19937 rng;
   rng.seed(seed);
-  
+
   auto weighter=DFWM(nuisance);
-  
   double expected=0;
   std::vector<double> weights;
   for(const Event& e : mainSimulation_){
@@ -783,7 +779,7 @@ marray<double,2> Sterilizer::SpitRealization( std::vector<double> nuisance, int 
     weights.push_back(w);
     expected+=w;
   }
- 
+
   std::vector<Event> realization= likelihood::generateSample(weights,mainSimulation_,expected,rng); 
 
   marray<double,2> ReturnVec { realization.size(), 4} ;
@@ -797,15 +793,12 @@ marray<double,2> Sterilizer::SpitRealization( std::vector<double> nuisance, int 
     }
   return ReturnVec;
 
- }
-
-
+}
 
 marray<double,2> Sterilizer::SpitExpectation( Nuisance nuisance) const
 {
   return SpitExpectation(ConvertNuisance(nuisance));
 }
-
 
 marray<double,2> Sterilizer::SpitExpectation( std::vector<double> nuisance) const
 {
@@ -822,20 +815,16 @@ marray<double,2> Sterilizer::SpitExpectation( std::vector<double> nuisance) cons
         for(auto event : itc.entries()){
           expectation+=weighter(event);
         }
-	
-	ReturnVec[count][0]=(EnergyBins[ie]+EnergyBins[ie+1])/2.;
-	ReturnVec[count][1]=(ZenithBins[ic]+ZenithBins[ic+1])/2.;
-	ReturnVec[count][2]=steeringParams_.years[iy];
-	ReturnVec[count][3]=expectation;
-	++count;
-	 
-
+        ReturnVec[count][0]=(EnergyBins[ie]+EnergyBins[ie+1])/2.;
+        ReturnVec[count][1]=(ZenithBins[ic]+ZenithBins[ic+1])/2.;
+        ReturnVec[count][2]=steeringParams_.years[iy];
+        ReturnVec[count][3]=expectation;
+        ++count;
       }
     }
   }
   return ReturnVec;
 }
-
 
 bool Sterilizer::SetupAsimov(Nuisance nuisance)
 {
