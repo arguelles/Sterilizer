@@ -174,7 +174,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
   import_array();
   import_ufunc();
 
-  class_<SS::FitResult, boost::noncopyable,std::shared_ptr<SS::FitResult> >("FitResult",init<>())
+  class_<SS::FitResult, std::shared_ptr<SS::FitResult> >("FitResult",init<>())
     .def_readwrite("params",&SS::FitResult::params)
     .def_readwrite("likelihood",&SS::FitResult::likelihood)
     .def_readwrite("nEval",&SS::FitResult::nEval)
