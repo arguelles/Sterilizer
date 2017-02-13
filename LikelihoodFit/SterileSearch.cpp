@@ -256,8 +256,12 @@ void Sterilizer::ConstructFluxWeighter(){
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5"));
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5"));
   }
-
-  fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_"+sterile_neutrino_model_identifier+".hdf5"));
+  std::string PromptPath;
+  if(steeringParams_.OnePromptFitsAll)
+    PromptPath=CheckedFilePath(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_0_0.000000_0.000000_0.000000_0.000000_0.000000_0.000000.hdf5");
+  else
+    PromptPath=CheckedFilePath(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_"+sterile_neutrino_model_identifier+".hdf5");
+  fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(PromptPath);
   flux_weighter_constructed_=true;
 }
 
