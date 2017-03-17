@@ -557,7 +557,7 @@ FitResult Sterilizer::MinLLH() const {
   std::vector<unsigned int> fixedIndices;
 
   std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams_);
-  for(size_t i=0; i!=FixVec.size(); ++i)
+  for(size_t i=0; i!=FixVec.size(); i++)
       if(FixVec[i]) fixedIndices.push_back(i);
 
   LBFGSB_Driver minimizer;

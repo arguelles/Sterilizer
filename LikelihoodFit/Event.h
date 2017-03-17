@@ -160,65 +160,35 @@ void readFile(const std::string& filePath, CallbackType action){
   H5Giterate(h5file,"/",NULL,&collectTableNames,&tables);
   if(tables.empty())
     throw std::runtime_error(filePath+" contains no tables");
-  #ifndef NO_STD_OUTPUT
-  //std::cout << "Reading " << filePath << std::endl;
-  #endif
   std::map<RecordID,Event> intermediateData;
 
-  using particle = TableRow<field<double,CTS("time")>,
-                            field<double,CTS("zenith")>,
-                            field<double,CTS("azimuth")>,
-                            field<double,CTS("energy")>,
-                            field<int,CTS("type")>>;
+  // DO NOT change anything above this line
 
   if(tables.count("MuEx")){
-  readTable<particle>(h5file, "MuEx", intermediateData,
-        [](const particle& p, Event& e){
-          e.runid = p.id.run;
-          e.eventid = p.id.event;
-          e.zenith=p.get<CTS("zenith")>();
-          e.azimuth=p.get<CTS("azimuth")>();
-          e.energy=p.get<CTS("energy")>();
-        });
+    using particle = TableRow<field<double,CTS("time")>,
+                              field<double,CTS("zenith")>,
+                              field<double,CTS("azimuth")>,
+                              field<double,CTS("energy")>,
+                              field<int,CTS("type")>>;
+
+    readTable<particle>(h5file, "MuEx", intermediateData,
+          [](const particle& p, Event& e){
+            e.runid = p.id.run;
+            e.eventid = p.id.event;
+            e.zenith=p.get<CTS("zenith")>();
+            e.azimuth=p.get<CTS("azimuth")>();
+            e.energy=p.get<CTS("energy")>();
+          });
   }
 
-  using iniceprop = TableRow<field<double,CTS("zenith")>,
-                             field<double,CTS("azimuth")>,
-                             field<double,CTS("energy")>,
-                             field<int,CTS("pdg_encoding")>,
-                             field<int,CTS("type")>>;
+  if(tables.count("GenerationSpec")){
+    using nmcprop = TableRow<field<double,CTS("injectedEnergy")>,
+                             field<double,CTS("muonEnergyFraction")>,
+                             field<double,CTS("finalStateProbability")>,
+                             field<double,CTS("finalStateX")>,
+                             field<double,CTS("finalStateY")>,
+                             field<double,CTS("totalColumnDepth")>>;
 
-  if(tables.count("MCMaxInIceTrack"))
-    readTable<iniceprop>(h5file,"MCMaxInIceTrack",intermediateData,
-                 [](const iniceprop& p, Event& e){
-                  e.injectedMuonEnergy=p.get<CTS("energy")>();
-                  e.injectedMuonZenith=p.get<CTS("zenith")>();
-                  e.injectedMuonAzimuth=p.get<CTS("azimuth")>();
-                  e.primaryType=static_cast<particleType>(p.get<CTS("type")>());
-                  });
-
-  if(tables.count("CutL3")){
-    using cutFlag = TableRow<field<unsigned char,CTS("value")>>;
-    readTable<cutFlag>(h5file, "CutL3", intermediateData,
-    [](const cutFlag& c, Event& e){ e.cutL3=c.get<CTS("value")>(); });
-  }
-
-  if(tables.count("TrackFitParaboloidFitParams")){
-    using paraboloidParams = TableRow<field<int,CTS("status")>>;
-    readTable<paraboloidParams>(h5file, "TrackFitParaboloidFitParams", intermediateData,
-    [](const paraboloidParams& c, Event& e){ e.paraboloidStatus = c.get<CTS("status")>(); });
-
-  }
-
-
-  using nmcprop = TableRow<field<double,CTS("injectedEnergy")>,
-                           field<double,CTS("muonEnergyFraction")>,
-                           field<double,CTS("finalStateProbability")>,
-                           field<double,CTS("finalStateX")>,
-                           field<double,CTS("finalStateY")>,
-                           field<double,CTS("totalColumnDepth")>>;
-
-  if(tables.count("GenerationSpec"))
     readTable<nmcprop>(h5file,"GenerationSpec",intermediateData,
                  [](const nmcprop& p, Event& e){
                     e.injectedEnergy = p.get<CTS("injectedEnergy")>();
@@ -228,7 +198,62 @@ void readFile(const std::string& filePath, CallbackType action){
                     e.intX = p.get<CTS("finalStateX")>();
                     e.intY = p.get<CTS("finalStateY")>();
                  });
+  }
 
+  { // functions in this unnamed focus are auxiliary and will be remove eventually
+    using iniceprop = TableRow<field<double,CTS("zenith")>,
+                               field<double,CTS("azimuth")>,
+                               field<double,CTS("energy")>,
+                               field<int,CTS("pdg_encoding")>,
+                               field<int,CTS("type")>>;
+
+    if(tables.count("MCMaxInIceTrack"))
+      readTable<iniceprop>(h5file,"MCMaxInIceTrack",intermediateData,
+                   [](const iniceprop& p, Event& e){
+                    e.injectedMuonEnergy=p.get<CTS("energy")>();
+                    e.injectedMuonZenith=p.get<CTS("zenith")>();
+                    e.injectedMuonAzimuth=p.get<CTS("azimuth")>();
+                    e.primaryType=static_cast<particleType>(p.get<CTS("type")>());
+                    });
+
+    if(tables.count("CutL3")){
+      using cutFlag = TableRow<field<unsigned char,CTS("value")>>;
+      readTable<cutFlag>(h5file, "CutL3", intermediateData,
+      [](const cutFlag& c, Event& e){ e.cutL3=c.get<CTS("value")>(); });
+    }
+
+    if(tables.count("TrackFitParaboloidFitParams")){
+      using paraboloidParams = TableRow<field<int,CTS("status")>>;
+      readTable<paraboloidParams>(h5file, "TrackFitParaboloidFitParams", intermediateData,
+      [](const paraboloidParams& c, Event& e){ e.paraboloidStatus = c.get<CTS("status")>(); });
+    }
+  }
+
+  // The following lines are here to temporarly accomodate the new file format before the new LW
+  // files are ready. Please if you do not like this keep hitting Carlos to make LI/LW work
+  // this is ugly. Love. CA.
+
+  {
+    if(tables.count("injected_muon_azimuth")){
+      using injected_muon_azimuth_type=TableRow<field<double,CTS("value")>>;
+      readTable<injected_muon_azimuth_type>(h5file, "injected_muon_azimuth", intermediateData,
+      [](const injected_muon_azimuth_type& c, Event& e){ e.injectedMuonAzimuth=c.get<CTS("value")>();});
+    }
+
+    if(tables.count("injected_muon_zenith")){
+      using injected_muon_zenith_type=TableRow<field<double,CTS("value")>>;
+      readTable<injected_muon_zenith_type>(h5file, "injected_muon_zenith", intermediateData,
+      [](const injected_muon_zenith_type& c, Event& e){ e.injectedMuonZenith=c.get<CTS("value")>();});
+    }
+
+    if(tables.count("injected_muon_energy")){
+      using injected_muon_energy_type=TableRow<field<double,CTS("value")>>;
+      readTable<injected_muon_energy_type>(h5file, "injected_muon_energy", intermediateData,
+      [](const injected_muon_energy_type& c, Event& e){ e.injectedMuonEnergy=c.get<CTS("value")>();});
+    }
+  }
+
+  // DO NOT modify the following line.
 
   for(std::map<RecordID,Event>::value_type& item : intermediateData)
     action(item.first,item.second);
