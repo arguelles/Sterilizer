@@ -124,21 +124,20 @@ public:
   {}
 
   bool check(bool check_, Level level) const{
-    if(cutL3 || paraboloidStatus!=0)
-      return false;
+    std::cout << cutL3 << " " << paraboloidStatus << std::endl;
     if (!check_)
       return true;
     else if ( level == Level::generation )
-      return(!std::isnan(injectedEnergy) && !std::isnan(leptonEnergyFraction)
+      return(!std::isnan(injectedEnergy) && !std::isnan(injectedMuonAzimuth) && !std::isnan(injectedMuonZenith)
          && !std::isnan(totalColumnDepth) && !std::isnan(inelasticityProbability)
          && !std::isnan(intX) && !std::isnan(intY)
          && primaryType!=particleType::unknown);
     else if ( level == Level::neutrino ){
-      return(!std::isnan(injectedEnergy) && !std::isnan(leptonEnergyFraction)
+      return(!std::isnan(injectedEnergy) &&!std::isnan(injectedMuonAzimuth) && !std::isnan(injectedMuonZenith)
              && !std::isnan(totalColumnDepth) && !std::isnan(inelasticityProbability)
              && !std::isnan(intX) && !std::isnan(intY)
              && !std::isnan(zenith) && !std::isnan(energy) && !std::isnan(azimuth)
-             && !cutL3
+             && !cutL3 && paraboloidStatus==0
              && primaryType!=particleType::unknown);
     } else {
       return false;
@@ -234,22 +233,20 @@ void readFile(const std::string& filePath, CallbackType action){
   // this is ugly. Love. CA.
 
   {
-    if(tables.count("injected_muon_azimuth")){
-      using injected_muon_azimuth_type=TableRow<field<double,CTS("value")>>;
-      readTable<injected_muon_azimuth_type>(h5file, "injected_muon_azimuth", intermediateData,
-      [](const injected_muon_azimuth_type& c, Event& e){ e.injectedMuonAzimuth=c.get<CTS("value")>();});
-    }
+    if(tables.count("WeightingMuon")){
+      using weightingmuon= TableRow<field<double,CTS("zenith")>,
+                                    field<double,CTS("azimuth")>,
+                                    field<double,CTS("energy")>,
+                                    field<int,CTS("type")>>;
 
-    if(tables.count("injected_muon_zenith")){
-      using injected_muon_zenith_type=TableRow<field<double,CTS("value")>>;
-      readTable<injected_muon_zenith_type>(h5file, "injected_muon_zenith", intermediateData,
-      [](const injected_muon_zenith_type& c, Event& e){ e.injectedMuonZenith=c.get<CTS("value")>();});
-    }
+      readTable<weightingmuon>(h5file,"WeightingMuon",intermediateData,
+                   [](const weightingmuon& p, Event& e){
+                    e.injectedMuonEnergy=p.get<CTS("energy")>();
+                    e.injectedMuonZenith=p.get<CTS("zenith")>();
+                    e.injectedMuonAzimuth=p.get<CTS("azimuth")>();
+                    e.primaryType=static_cast<particleType>(p.get<CTS("type")>());
+                    });
 
-    if(tables.count("injected_muon_energy")){
-      using injected_muon_energy_type=TableRow<field<double,CTS("value")>>;
-      readTable<injected_muon_energy_type>(h5file, "injected_muon_energy", intermediateData,
-      [](const injected_muon_energy_type& c, Event& e){ e.injectedMuonEnergy=c.get<CTS("value")>();});
     }
   }
 
