@@ -124,7 +124,6 @@ public:
   {}
 
   bool check(bool check_, Level level) const{
-    std::cout << cutL3 << " " << paraboloidStatus << std::endl;
     if (!check_)
       return true;
     else if ( level == Level::generation )
