@@ -738,6 +738,13 @@ double Sterilizer::Swallow(marray<double,2> Data)
       TotalWeight+=Data[i][3];
       sample_.push_back(e);
     }
+  // remaking data histogram
+  if(!steeringParams_.quiet) std::cout<<"Remaking data hist" <<std::endl;
+  ConstructDataHistogram();
+  if(!steeringParams_.quiet) std::cout<<"ReMaking sim hist" <<std::endl;
+  ConstructSimulationHistogram();
+  //if(!steeringParams_.quiet) std::cout<<"Reconstrucing likelihood problem" <<std::endl;
+  //ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
   return TotalWeight;
 }
 
