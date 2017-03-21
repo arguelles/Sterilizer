@@ -138,7 +138,7 @@ static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type
 
 // auxiliary wrapper functions // evil // Carlos
 
-static void wrap_Swallow(SS::Sterilizer* st, PyObject * array){
+static double wrap_Swallow(SS::Sterilizer* st, PyObject * array){
   if (! PyArray_Check(array) )
   {
     throw std::runtime_error("Sterilizer::Error:Input array is not a numpy array.");
@@ -155,7 +155,8 @@ static void wrap_Swallow(SS::Sterilizer* st, PyObject * array){
 
   if ( array_dim == 2 ) {
     nsq::marray<double,2> state = numpyarray_to_marray<double,2>(array, type);
-    st->Swallow(state);
+    double value = st->Swallow(state);
+    return value;
   } else
     throw std::runtime_error("Sterilizer::Input array has wrong dimenions.");
 }
