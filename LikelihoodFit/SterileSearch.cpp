@@ -743,8 +743,9 @@ double Sterilizer::Swallow(marray<double,2> Data)
   ConstructDataHistogram();
   if(!steeringParams_.quiet) std::cout<<"ReMaking sim hist" <<std::endl;
   ConstructSimulationHistogram();
-  //if(!steeringParams_.quiet) std::cout<<"Reconstrucing likelihood problem" <<std::endl;
-  //ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
+  // TO DO Improve this
+  if(!steeringParams_.quiet) std::cout<<"Reconstrucing likelihood problem" <<std::endl;
+  ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
   return TotalWeight;
 }
 
