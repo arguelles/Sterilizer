@@ -62,7 +62,7 @@ static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type
   if ( PyArray_DESCR(numpy_array)->type_num != type_num )
   {
     if ( PyArray_DESCR(numpy_array)->type_num == NPY_LONG &&
-        PyArray_ITEMSIZE(numpy_array) == 4 && type_num == NPY_INT)
+         PyArray_ITEMSIZE(numpy_array) == 4 && type_num == NPY_INT)
     {
       // numpy on 32 bits sets numpy.int32 to NPY_LONG. So its all ok.
     }
@@ -135,6 +135,31 @@ static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type
 
   return oarray;
 }
+
+// auxiliary wrapper functions // evil // Carlos
+
+static void wrap_Swallow(SS::Sterilizer* st, PyObject * array){
+  if (! PyArray_Check(array) )
+  {
+    throw std::runtime_error("Sterilizer::Error:Input array is not a numpy array.");
+  }
+
+  PyArrayObject* numpy_array = (PyArrayObject*)array;
+  unsigned int array_dim = PyArray_NDIM(numpy_array);
+  NPY_TYPES type = (NPY_TYPES) PyArray_DESCR(numpy_array)->type_num;
+
+  // things i think can cast ok to doubles
+  if (!( type == NPY_LONG or type == NPY_INT or type == NPY_SHORT or type == NPY_FLOAT or
+      type == NPY_DOUBLE or type == NPY_LONGDOUBLE or type == NPY_CFLOAT or type == NPY_CDOUBLE))
+    throw std::runtime_error("Sterilizer::Error:Input numpy array cannot be meaninfully casted into double.");
+
+  if ( array_dim == 2 ) {
+    nsq::marray<double,2> state = numpyarray_to_marray<double,2>(array, type);
+    st->Swallow(state);
+  } else
+    throw std::runtime_error("Sterilizer::Input array has wrong dimenions.");
+}
+
 
 // SterileSearchPy module definitions
 /*
@@ -275,7 +300,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("SpitExpectation",(nsq::marray<double,2>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::SpitExpectation)
     .def("EvalLLH",(double(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::EvalLLH)
     .def("SetupAsimov",(bool(SS::Sterilizer::*)(SS::Nuisance))&SS::Sterilizer::SetupAsimov)
-    .def("Swallow",(double(SS::Sterilizer::*)(nsq::marray<double,2>))&SS::Sterilizer::Swallow)
+    .def("Swallow",wrap_Swallow)
     .def("MinLLH",&SS::Sterilizer::MinLLH)
     .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
   ;
@@ -291,7 +316,6 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
 
   to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
   to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
-  //  from_python_converter< nsq::marray<double,2> , numpyarray_to_marray<double, 2> >();
   to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();
   to_python_converter< nsq::marray<double,4> , marray_to_numpyarray<4> >();
 
