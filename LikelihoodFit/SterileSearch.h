@@ -71,16 +71,53 @@ struct FitResult {
 };
 
 struct DataPaths {
-  std::string compact_file_path =        "../compact_data/";
-  std::string squids_files_path =        "/data/user/twatson/fluxes/flux_0/";
-  std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
-  std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
-  std::string data_path =                "/data/ana/NuFSGenMC/Data/";
-  std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
-  std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
-  std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
-  std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
-  DataPaths(){};
+  private:
+   bool CheckDataPath(std::string p) const {
+     struct stat info;
+     bool status=true;
+     if(p!="")
+       {
+         if( stat(p.c_str(), &info) != 0 )
+         {
+             status=false;
+             throw std::runtime_error("cannot access "+ p);
+         }
+         else if( !(info.st_mode & S_IFDIR) )
+         {
+             status=false;
+             throw std::runtime_error("is not a directory: " +p);
+         }
+     } else {
+       std::cout<<"Warning, there are unset paths in DataPaths. Check you want this."<<std::endl;
+       return false;
+     }
+     return status;
+    }
+  public:
+    std::string compact_file_path =        "../compact_data/";
+    std::string squids_files_path =        "/data/user/twatson/fluxes/flux_0/";
+    std::string prompt_squids_files_path = "/data/ana/NuFSGenMC/IC86_hypotheses/fluxes/prompt_0/";
+    std::string xs_spline_path =           "/data/ana/NuFSGenMC/CrossSections/";
+    std::string data_path =                "/data/ana/NuFSGenMC/Data/";
+    std::string mc_path =                  "/data/ana/NuFSGenMC/Merged/";
+    std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
+    std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
+    std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
+
+    DataPaths(){};
+
+    bool CheckDataPaths() const {
+      CheckDataPath(compact_file_path);
+      CheckDataPath(squids_files_path);
+      CheckDataPath(prompt_squids_files_path);
+      CheckDataPath(xs_spline_path);
+      CheckDataPath(data_path);
+      CheckDataPath(mc_path);
+      CheckDataPath(oversize_path);
+      CheckDataPath(domeff_spline_path);
+      CheckDataPath(flux_splines_path);
+      return true;
+    }
 };
 
 

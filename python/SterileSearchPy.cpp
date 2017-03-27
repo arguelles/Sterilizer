@@ -218,6 +218,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("oversize_path",&SS::DataPaths::oversize_path)
     .def_readwrite("domeff_spline_path",&SS::DataPaths::domeff_spline_path)
     .def_readwrite("flux_splines_path",&SS::DataPaths::flux_splines_path)
+    .def("CheckDataPaths",&SS::DataPaths::CheckDataPaths)
   ;
 
   class_<SS::SteeringParams, boost::noncopyable,std::shared_ptr<SS::SteeringParams> >("SteeringParams",init<>())
