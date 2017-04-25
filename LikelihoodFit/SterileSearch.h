@@ -130,7 +130,7 @@ struct SteeringParams {
   float logEbinWidth = 0.169;
   float cosThbinEdge = 0.0;
   float cosThbinWidth = 0.06;
-  bool OnePromptFitsAll=true;
+  bool onePromptFitsAll=true;
   bool useFactorization=false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
