@@ -62,7 +62,7 @@ static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type
   if ( PyArray_DESCR(numpy_array)->type_num != type_num )
   {
     if ( PyArray_DESCR(numpy_array)->type_num == NPY_LONG &&
-        PyArray_ITEMSIZE(numpy_array) == 4 && type_num == NPY_INT)
+         PyArray_ITEMSIZE(numpy_array) == 4 && type_num == NPY_INT)
     {
       // numpy on 32 bits sets numpy.int32 to NPY_LONG. So its all ok.
     }
@@ -136,6 +136,32 @@ static nsq::marray<T,DIM> numpyarray_to_marray(PyObject * iarray, NPY_TYPES type
   return oarray;
 }
 
+// auxiliary wrapper functions // evil // Carlos
+
+static double wrap_Swallow(SS::Sterilizer* st, PyObject * array){
+  if (! PyArray_Check(array) )
+  {
+    throw std::runtime_error("Sterilizer::Error:Input array is not a numpy array.");
+  }
+
+  PyArrayObject* numpy_array = (PyArrayObject*)array;
+  unsigned int array_dim = PyArray_NDIM(numpy_array);
+  NPY_TYPES type = (NPY_TYPES) PyArray_DESCR(numpy_array)->type_num;
+
+  // things i think can cast ok to doubles
+  if (!( type == NPY_LONG or type == NPY_INT or type == NPY_SHORT or type == NPY_FLOAT or
+      type == NPY_DOUBLE or type == NPY_LONGDOUBLE or type == NPY_CFLOAT or type == NPY_CDOUBLE))
+    throw std::runtime_error("Sterilizer::Error:Input numpy array cannot be meaninfully casted into double.");
+
+  if ( array_dim == 2 ) {
+    nsq::marray<double,2> state = numpyarray_to_marray<double,2>(array, type);
+    double value = st->Swallow(state);
+    return value;
+  } else
+    throw std::runtime_error("Sterilizer::Input array has wrong dimenions.");
+}
+
+
 // SterileSearchPy module definitions
 /*
 static std::vector<double> wrap_llh(LVSearch* lv,std::vector<double> arg){
@@ -192,6 +218,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("oversize_path",&SS::DataPaths::oversize_path)
     .def_readwrite("domeff_spline_path",&SS::DataPaths::domeff_spline_path)
     .def_readwrite("flux_splines_path",&SS::DataPaths::flux_splines_path)
+    .def("CheckDataPaths",&SS::DataPaths::CheckDataPaths)
   ;
 
   class_<SS::SteeringParams, boost::noncopyable,std::shared_ptr<SS::SteeringParams> >("SteeringParams",init<>())
@@ -204,6 +231,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("cosThbinEdge",&SS::SteeringParams::cosThbinEdge)
     .def_readwrite("cosThbinWidth",&SS::SteeringParams::cosThbinWidth)
     .def_readwrite("useFactorization",&SS::SteeringParams::useFactorization)
+    .def_readwrite("onePromptFitsAll",&SS::SteeringParams::onePromptFitsAll)
     .def_readwrite("useBurnSample",&SS::SteeringParams::useBurnSample)
     .def_readwrite("simToLoad",&SS::SteeringParams::simToLoad)
     .def_readwrite("quiet",&SS::SteeringParams::quiet)
@@ -275,7 +303,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def("SpitExpectation",(nsq::marray<double,2>(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::SpitExpectation)
     .def("EvalLLH",(double(SS::Sterilizer::*)(SS::Nuisance)const)&SS::Sterilizer::EvalLLH)
     .def("SetupAsimov",(bool(SS::Sterilizer::*)(SS::Nuisance))&SS::Sterilizer::SetupAsimov)
-    .def("Swallow",(double(SS::Sterilizer::*)(nsq::marray<double,2>))&SS::Sterilizer::Swallow)
+    .def("Swallow",wrap_Swallow)
     .def("MinLLH",&SS::Sterilizer::MinLLH)
     .def("SetSterileNuParams",&SS::Sterilizer::SetSterileNuParams)
   ;
@@ -291,7 +319,6 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
 
   to_python_converter< nsq::marray<double,1> , marray_to_numpyarray<1> >();
   to_python_converter< nsq::marray<double,2> , marray_to_numpyarray<2> >();
-  //  from_python_converter< nsq::marray<double,2> , numpyarray_to_marray<double, 2> >();
   to_python_converter< nsq::marray<double,3> , marray_to_numpyarray<3> >();
   to_python_converter< nsq::marray<double,4> , marray_to_numpyarray<4> >();
 

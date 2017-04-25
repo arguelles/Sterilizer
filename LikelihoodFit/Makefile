@@ -4,7 +4,7 @@ CXX=clang++
 CFLAGS=-O3 -fPIC
 CXXFLAGS=-DSQUIDS_USE_VECTOR_EXTENSIONS=0
 
-CXXFLAGS+=-std=c++11 -g -fPIC
+CXXFLAGS+=-std=c++11 -fPIC
 CXXFLAGS+=-I. -O3
 
 COOLCVMFSROOT=/cvmfs/icecube.opensciencegrid.org/py2-v3_early_access/

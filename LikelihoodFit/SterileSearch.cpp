@@ -262,6 +262,7 @@ void Sterilizer::ConstructFluxWeighter(){
   else
     PromptPath=CheckedFilePath(dataPaths_.prompt_squids_files_path + "prompt_atmospheric_"+sterile_neutrino_model_identifier+".hdf5");
   fluxPrompt_ = std::make_shared<LW::SQUIDSFlux>(PromptPath);
+
   flux_weighter_constructed_=true;
 }
 
@@ -561,7 +562,7 @@ FitResult Sterilizer::MinLLH() const {
   std::vector<unsigned int> fixedIndices;
 
   std::vector<bool> FixVec=ConvertNuisanceFlag(fixedParams_);
-  for(size_t i=0; i!=FixVec.size(); ++i)
+  for(size_t i=0; i!=FixVec.size(); i++)
       if(FixVec[i]) fixedIndices.push_back(i);
 
   LBFGSB_Driver minimizer;
@@ -742,6 +743,14 @@ double Sterilizer::Swallow(marray<double,2> Data)
       TotalWeight+=Data[i][3];
       sample_.push_back(e);
     }
+  // remaking data histogram
+  if(!steeringParams_.quiet) std::cout<<"Remaking data hist" <<std::endl;
+  ConstructDataHistogram();
+  if(!steeringParams_.quiet) std::cout<<"ReMaking sim hist" <<std::endl;
+  ConstructSimulationHistogram();
+  // TO DO Improve this
+  if(!steeringParams_.quiet) std::cout<<"Reconstrucing likelihood problem" <<std::endl;
+  ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
   return TotalWeight;
 }
 
