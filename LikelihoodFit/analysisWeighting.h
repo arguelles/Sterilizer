@@ -360,7 +360,7 @@ public:
 		DataType NeutrinoAntineutrinoRatio=params[6];
 		DataType AtmosphericZenithVariationCorrectionFactorParameter=params[7];
 
-		using cachedWeighter=cachedValueWeighter<DataType,Event,double>;
+		using cachedWeighter=cachedValueWeighter<DataType,Event,float>;
 		//cachedWeighter livetime(&Event::cachedLivetime);
 		cachedWeighter convPionFlux(&Event::cachedConvPionWeight);
 		cachedWeighter convKaonFlux(&Event::cachedConvKaonWeight);

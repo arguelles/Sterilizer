@@ -156,7 +156,7 @@ void Sterilizer::LoadCompact(){
     std::cout<<"There is a segfault between this line"<<std::endl;
     std::cout<<std::string(dataPaths_.data_path+simulation_information->second.filename)<<std::endl;
     std::cout<<CheckedFilePath(std::string(dataPaths_.data_path+simulation_information->second.filename))<<std::endl;
-    std::string original_data_file = CheckedFilePath(dataPaths_.data_path+simulation_information->second.filename);
+    std::string original_data_file = CheckedFilePath(dataPaths_.data_path+"IC86.h5");
     std::cout<<" and this one"<<std::endl;
 
     std::string original_simulation_file = CheckedFilePath(dataPaths_.mc_path+(*simulation_information).second.filename);
@@ -183,8 +183,9 @@ bool Sterilizer::WriteCompact() const {
     auto simulation_information=simInfo.find(steeringParams_.simToLoad);
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
-    std::string original_data_file = dataPaths_.data_path+(*simulation_information).second.filename;
+    std::string original_data_file =dataPaths_.data_path+"IC86.h5";
     std::string original_simulation_file = dataPaths_.mc_path+(*simulation_information).second.filename;
+    std::cout<<"Files " << original_data_file<<" " << original_simulation_file<<std::endl;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
   } catch(std::runtime_error& re){
