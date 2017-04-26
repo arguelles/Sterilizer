@@ -768,6 +768,12 @@ marray<double,2> Sterilizer::SpitData() const
 }
 
 
+double Sterilizer::SetupDataChallenge(int seed, Nuisance nuisance)
+{
+  return Swallow(SpitRealization(ConvertNuisance(nuisance),seed));
+}
+
+
 marray<double,2> Sterilizer::SpitRealization( Nuisance nuisance, int seed) const
 {
   return SpitRealization(ConvertNuisance(nuisance), seed);

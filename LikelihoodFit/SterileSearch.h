@@ -283,6 +283,7 @@ class Sterilizer {
     marray<double,2> SpitExpectation(Nuisance nuisance) const;
     double Swallow(marray<double,2> Data);
     bool SetupAsimov(Nuisance nuisance);
+    double SetupDataChallenge(int seed, Nuisance nuisance);
 
     // Methods to get histogram binning
     std::vector<double> GetEnergyBinsData() const;
