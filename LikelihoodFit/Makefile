@@ -33,7 +33,7 @@ ICSterile_OBJECT = SterileSearchTestMinimal.o
 
 .PHONY: all clean
 
-all:  SterileSearchTestMinimal
+all:  SterileSearchTestMinimal MakeCompact
 
 clean:
 	rm -rf SterileSearchFit $(ICSterileRemastered_OBJECT) $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
@@ -65,9 +65,12 @@ SterileSearchTest.o : SterileSearchTest.cpp $(LIKELIHOOD_HEADERS) analysisWeight
 SterileSearchTestMinimal.o : SterileSearchTestMinimal.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h
 	$(CXX) $(CXXFLAGS) SterileSearchTestMinimal.cpp -c -o SterileSearchTestMinimal.o
 
-SterileSearchTest : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchTest
+MakeCompact.o : MakeCompact.cpp $(LIKELIHOOD_HEADERS) analysisWeighting.h Event.h compactIO.h splinetable.h SterileSearch.h
+	$(CXX) $(CXXFLAGS) MakeCompact.cpp -c -o MakeCompact.o
 
 SterileSearchTestMinimal : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchTestMinimal
+
+MakeCompact : $(ICSterile_HELPER_OBJECTS) MakeCompact.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) MakeCompact.o -o MakeCompact
 
