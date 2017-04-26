@@ -177,7 +177,7 @@ void Sterilizer::LoadCompact(){
   std::cout<<"end of load compact"<<std::endl;
 }
 
-void Sterilizer::WriteCompact() const {
+bool Sterilizer::WriteCompact() const {
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
     auto simulation_information=simInfo.find(steeringParams_.simToLoad);
@@ -253,6 +253,13 @@ void Sterilizer::ConstructFluxWeighter(){
       std::string flux_kaon_filename = "kaon_atmospheric_"+sterile_neutrino_model_identifier;
       flux_pion_filename+="_"+steeringParams_.modelName;
       flux_kaon_filename+="_"+steeringParams_.modelName;
+
+      if(dataPaths_.use_simple_filename)
+	{
+	  flux_pion_filename = "pion_"+std::to_string(sterileNuParams_.modelId);
+	  flux_kaon_filename = "kaon_"+std::to_string(sterileNuParams_.modelId);
+	}
+
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5"));
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5"));
   }

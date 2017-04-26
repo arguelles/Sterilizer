@@ -103,7 +103,7 @@ struct DataPaths {
     std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
     std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
     std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
-
+    bool use_simple_filename=false;
     DataPaths(){};
 
     bool CheckDataPaths() const {
@@ -237,7 +237,7 @@ class Sterilizer {
     // Error trap bad file paths
     std::string CheckedFilePath(std::string) const;
 
-    void WriteCompact() const;
+    bool WriteCompact() const;
 
   protected:
     // Functions to load and unload data
