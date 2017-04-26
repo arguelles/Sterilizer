@@ -4,29 +4,35 @@ import numpy as np
 import SterileSearchPy as ssp
 
 
+CachedLookups={}
+
 def Make2DHypDicts(FileName):
-    Data=np.loadtxt(FileName)
-    PointToHypID={}
-    HypIDToPoint={}
-    MaxHypID=[]
-    AllSin2s=[]
-    AllDm2s=[]
-    for i in range(0,len(Data)):
-        HypID=i+1
-        Sin2=np.round(Data[i][3],4)
-        Dm2=np.round(Data[i][2],4)
-        PointToHypID[(Sin2,Dm2)]=HypID
-        HypIDToPoint[HypID]=(Sin2,Dm2)
-        MaxHypID=HypID
-        if(not Sin2 in AllSin2s):
-            AllSin2s.append(Sin2)
-        if(not Dm2 in AllDm2s):
-            AllDm2s.append(Dm2)
-    ReturnDict={}
-    ReturnDict['ParamsToHypothesisNumber']=PointToHypID
-    ReturnDict['HypothesisNumberToParams']=HypIDToPoint
-    ReturnDict['MaxHypID']=MaxHypID
-    ReturnDict['AllParamVals']=[AllSin2s,AllDm2s]
+    if FileName in CachedLookups:
+        return CachedLookups[FileName]
+    else:
+        Data=np.loadtxt(FileName)
+        PointToHypID={}
+        HypIDToPoint={}
+        MaxHypID=[]
+        AllSin2s=[]
+        AllDm2s=[]
+        for i in range(0,len(Data)):
+            HypID=i+1
+            Sin2=np.round(Data[i][3],4)
+            Dm2=np.round(Data[i][2],4)
+            PointToHypID[(Sin2,Dm2)]=HypID
+            HypIDToPoint[HypID]=(Sin2,Dm2)
+            MaxHypID=HypID
+            if(not Sin2 in AllSin2s):
+                AllSin2s.append(Sin2)
+            if(not Dm2 in AllDm2s):
+                AllDm2s.append(Dm2)
+        ReturnDict={}
+        ReturnDict['ParamsToHypothesisNumber']=PointToHypID
+        ReturnDict['HypothesisNumberToParams']=HypIDToPoint
+        ReturnDict['MaxHypID']=MaxHypID
+        ReturnDict['AllParamVals']=[AllSin2s,AllDm2s]
+    CachedLookups[FileName]=ReturnDict
     return ReturnDict
 
 
