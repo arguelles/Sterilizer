@@ -57,34 +57,27 @@ enum class Level {generation,level_1,level_2,neutrino};
 
 class Event{
 public:
-  // event ids
-  unsigned int runid;
-  unsigned int eventid;
   // new mc variables
-  double leptonEnergyFraction;
-  double injectedEnergy;
-  double totalColumnDepth;
-  double inelasticityProbability;
-  double intX,intY;
+  float leptonEnergyFraction;
+  float injectedEnergy;
+  float totalColumnDepth;
+  float inelasticityProbability;
+  float intX,intY;
 
   // true muon quantities
-  double injectedMuonEnergy;
-  double injectedMuonZenith;
-  double injectedMuonAzimuth;
+  float injectedMuonEnergy;
+  float injectedMuonZenith;
 
   // reconstructed quantities
-  double zenith;
-  double azimuth;
-  double energy;
+  float zenith;
+  float energy;
 
   // cached quantities
-  double cachedLivetime;
-  double cachedNugenWeight;
-  double cachedConvPionWeight;
-  double cachedConvKaonWeight;
-  double cachedPromptWeight;
-  double cachedAstroWeight;
-  double cachedWeight;
+  float cachedLivetime;
+  float cachedConvPionWeight;
+  float cachedConvKaonWeight;
+  float cachedPromptWeight;
+  float cachedWeight;
 
   // dom eff structure
   struct domEffValues{
@@ -94,7 +87,6 @@ public:
 	};
 	domEffValues cachedConvDOMEff;
 	domEffValues cachedPromptDOMEff;
-	domEffValues cachedAstroDOMEff;
 
   // not pass analysis cuts, i.e. was cutted
   bool cutL3;
@@ -102,14 +94,11 @@ public:
 
   particleType primaryType;
   unsigned int year;
-  double livetime;
+  float livetime;
 
   Event():
-    runid(std::numeric_limits<unsigned int>::quiet_NaN()),
-    eventid(std::numeric_limits<unsigned int>::quiet_NaN()),
     energy(std::numeric_limits<float>::quiet_NaN()),
     zenith(std::numeric_limits<float>::quiet_NaN()),
-    azimuth(std::numeric_limits<float>::quiet_NaN()),
     injectedEnergy(std::numeric_limits<float>::quiet_NaN()),
     leptonEnergyFraction(std::numeric_limits<float>::quiet_NaN()),
     totalColumnDepth(std::numeric_limits<float>::quiet_NaN()),
@@ -137,7 +126,7 @@ public:
       return(!std::isnan(injectedEnergy) && !std::isnan(leptonEnergyFraction)
              && !std::isnan(totalColumnDepth) && !std::isnan(inelasticityProbability)
              && !std::isnan(intX) && !std::isnan(intY)
-             && !std::isnan(zenith) && !std::isnan(energy) && !std::isnan(azimuth)
+             && !std::isnan(zenith) && !std::isnan(energy)
              && !cutL3
              && primaryType!=particleType::unknown);
     } else {
@@ -167,23 +156,18 @@ void readFile(const std::string& filePath, CallbackType action){
 
   using particle = TableRow<field<double,CTS("time")>,
                             field<double,CTS("zenith")>,
-                            field<double,CTS("azimuth")>,
                             field<double,CTS("energy")>,
                             field<int,CTS("type")>>;
 
   if(tables.count("MuEx")){
   readTable<particle>(h5file, "MuEx", intermediateData,
         [](const particle& p, Event& e){
-          e.runid = p.id.run;
-          e.eventid = p.id.event;
           e.zenith=p.get<CTS("zenith")>();
-          e.azimuth=p.get<CTS("azimuth")>();
           e.energy=p.get<CTS("energy")>();
         });
   }
 
   using iniceprop = TableRow<field<double,CTS("zenith")>,
-                             field<double,CTS("azimuth")>,
                              field<double,CTS("energy")>,
                              field<int,CTS("pdg_encoding")>,
                              field<int,CTS("type")>>;
@@ -193,7 +177,6 @@ void readFile(const std::string& filePath, CallbackType action){
                  [](const iniceprop& p, Event& e){
                   e.injectedMuonEnergy=p.get<CTS("energy")>();
                   e.injectedMuonZenith=p.get<CTS("zenith")>();
-                  e.injectedMuonAzimuth=p.get<CTS("azimuth")>();
                   e.primaryType=static_cast<particleType>(p.get<CTS("type")>());
                   });
 

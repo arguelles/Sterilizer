@@ -119,19 +119,6 @@ public:
 	}
 };
 
-struct astroNeutrinoFluxWeighter : public GenericWeighter<astroNeutrinoFluxWeighter>{
-private:
-	piecewisePowerlawFlux flux;
-public:
-	astroNeutrinoFluxWeighter(std::string modelPath):flux(modelPath){}
-	
-	using result_type=double;
-	
-	template<typename Event>
-	result_type operator()(const Event& e) const{
-		return(flux.getFlux(e.primaryEnergy));
-	}
-};
 
 template<typename T>
 struct powerlawWeighter : public GenericWeighter<powerlawWeighter<T>>{
@@ -365,7 +352,6 @@ public:
 		cachedWeighter convPionFlux(&Event::cachedConvPionWeight);
 		cachedWeighter convKaonFlux(&Event::cachedConvKaonWeight);
 		cachedWeighter promptFlux(&Event::cachedPromptWeight);
-		cachedWeighter astroFlux(&Event::cachedAstroWeight);
 
 		using domEffW_t = domEffWeighter<Event,DataType>;
 		domEffW_t convDOMEff(domEffConv_,deltaDomEff,&Event::cachedConvDOMEff);

@@ -117,7 +117,6 @@ void Sterilizer::LoadMC(){
 	  e.cachedConvPionWeight=0;
 	  e.cachedConvKaonWeight=0;
 	  e.cachedPromptWeight=0;
-	  e.cachedAstroWeight=0;
 	  domEff.setCache(e);
 	  if(e.primaryType==particleType::NuTau || e.primaryType==particleType::NuTauBar){
 	    assert(e.cachedConvPionWeight==0.0);
@@ -332,7 +331,7 @@ void Sterilizer::InitializeSimulationWeights(){
       e.intY,
       e.injectedMuonEnergy,
       e.injectedMuonZenith,
-      e.injectedMuonAzimuth,
+	  0, // for azimuth
       static_cast<particleType>(e.primaryType),
       static_cast<int>(e.year)};
 
@@ -341,7 +340,6 @@ void Sterilizer::InitializeSimulationWeights(){
       e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
 
-      e.cachedAstroWeight=0.;
     }
   };
 
