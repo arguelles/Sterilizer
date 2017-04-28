@@ -774,9 +774,13 @@ marray<double,2> Sterilizer::SpitData() const
 }
 
 
-double Sterilizer::SetupDataChallenge(int seed, Nuisance nuisance)
+double Sterilizer::SetupDataChallenge(int seed, Nuisance nuisance_dc, SterileNuParams snp_dc)
 {
-  return Swallow(SpitRealization(ConvertNuisance(nuisance),seed));
+  SterileNuParams my_snp=sterileNuParams_;
+  SetSterileNuParams(snp_dc);
+  marray<double,2> TheRealization=SpitRealization(ConvertNuisance(nuisance_dc),seed);
+  SetSterileNuParams(my_snp);
+  return Swallow(TheRealization);
 }
 
 
