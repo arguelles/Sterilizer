@@ -776,10 +776,20 @@ marray<double,2> Sterilizer::SpitData() const
 
 double Sterilizer::SetupDataChallenge(int seed, Nuisance nuisance_dc, SterileNuParams snp_dc)
 {
+  // Save these two things for later, since we'll be adjusting them
+  bool my_quiet=steeringParams_.quiet;
   SterileNuParams my_snp=sterileNuParams_;
+
+  // Set the parameter point to the data challenge point and make realization
+  steeringParams_.quiet=true;
   SetSterileNuParams(snp_dc);
   marray<double,2> TheRealization=SpitRealization(ConvertNuisance(nuisance_dc),seed);
+
+  // Set the parameter point back to the original one
   SetSterileNuParams(my_snp);
+  steeringParams_.quiet=my_quiet;
+
+  // Set the realization as data
   return Swallow(TheRealization);
 }
 
