@@ -103,6 +103,7 @@ struct DataPaths {
     std::string oversize_path =            "/data/ana/NuFSGenMC/OversizeCorrections/";
     std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
     std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
+    std::string initial_flux_files_path =  "/home/carguelles/work/Sterilizer/InitialFluxes/";
     bool use_simple_filename=false;
     DataPaths(){};
 
@@ -116,25 +117,27 @@ struct DataPaths {
       CheckDataPath(oversize_path);
       CheckDataPath(domeff_spline_path);
       CheckDataPath(flux_splines_path);
+      CheckDataPath(initial_flux_files_path);
       return true;
     }
 };
 
 
 struct SteeringParams {
-  float minFitEnergy=4e2;
-  float maxFitEnergy=2.e4;
+  float minFitEnergy = 4e2;
+  float maxFitEnergy = 2.e4;
   float minCosth = -1.;
   float maxCosth = 0.2;
   float logEbinEdge = 2.6;
   float logEbinWidth = 0.169;
   float cosThbinEdge = 0.0;
   float cosThbinWidth = 0.06;
-  bool onePromptFitsAll=true;
-  bool useFactorization=false;
+  bool onePromptFitsAll = true;
+  bool useFactorization = false;
   bool useBurnSample=false;
   std::string simToLoad="nufsgen_mie_0_99";
   bool quiet=false;
+  bool generate_nusquids_file=false;
   size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
@@ -204,6 +207,12 @@ class Sterilizer {
     LW::mcgenWeighter mcw_;
     OversizeWeighter osw_;
 
+    // nuSQuIDS objects
+    const squids::Const units;
+    const unsigned int numneu = 4;
+    nuSQUIDSAtm<> nus_atm_pion_;
+    nuSQUIDSAtm<> nus_atm_kaon_;
+
     // Status flags
     bool xs_weighter_constructed_ = (false);
     bool flux_weighter_constructed_ = (false);
@@ -262,7 +271,9 @@ class Sterilizer {
     void ConstructSimulationHistogram();
     // functions to construct the likelihood problem
     void ConstructLikelihoodProblem(Priors priors, Nuisance nuisanceSeed, NuisanceFlag fixedParams);
-
+    // Construct nuSQuIDS objects on the fly
+    void ConstructNuSQuIDSObjects();
+    // Get Jordi delta
     double GetZenithCorrectionScale() const;
     // Converters between human and vector forms
     std::vector<double> ConvertNuisance(Nuisance ns) const;

@@ -8,7 +8,10 @@ namespace SterileSearch {
  * **********************************************************************************************************/
 
 Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp):
-  steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp){
+  steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp),
+  nus_atm_pion_(nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)),
+  nus_atm_kaon_(nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)){
+
   if(!steeringParams_.quiet) std::cout<<"Sterilizer constructor: checking paths" <<std::endl;
   CheckDataPaths(dataPaths_);
 
@@ -56,9 +59,6 @@ auto binner = [](HistType& h, const Event& e){
                 h.add(e.energy,cos(e.zenith),e.year,amount(std::cref(e)));
 };
 
-
-
-
 /*************************************************************************************************************
  * Functions to read and write data
  * **********************************************************************************************************/
@@ -99,7 +99,7 @@ void Sterilizer::LoadMC(){
     std::vector<std::string> simSetsToLoad;
     simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
     std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
-    
+
     struct domEffSetter{
       simpleEffRate<Event> convDOMEffRate;
       domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
@@ -907,5 +907,111 @@ void Sterilizer::SetupAsimov(std::vector<double> nuisance)
    return PullBinEdges(1,simHist_);
  }
 
+/*************************************************************************************************************
+ * Functions to construct nusquids state on the fly
+ * **********************************************************************************************************/
+
+void Sterilizer::ConstructNuSQuIDSObjects(){
+  using namespace nusquids;
+
+//  nus_atm_kaon_ = nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true);
+//  nus_atm_pion_ = nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true);
+
+  nus_atm_kaon_.Set_TauRegeneration(true);
+  nus_atm_pion_.Set_TauRegeneration(true);
+
+  nus_atm_kaon_.Set_MixingAngle(0,1,0.563942);
+  nus_atm_kaon_.Set_MixingAngle(0,2,0.154085);
+  nus_atm_kaon_.Set_MixingAngle(1,2,0.785398);
+  nus_atm_kaon_.Set_MixingAngle(0,3,sterileNuParams_.th14);
+  nus_atm_kaon_.Set_MixingAngle(1,3,sterileNuParams_.th24);
+  nus_atm_kaon_.Set_MixingAngle(2,3,sterileNuParams_.th34);
+
+  nus_atm_kaon_.Set_SquareMassDifference(1,7.65e-05);
+  nus_atm_kaon_.Set_SquareMassDifference(2,0.00247);
+  nus_atm_kaon_.Set_SquareMassDifference(3,sterileNuParams_.dm41sq);
+
+  nus_atm_kaon_.Set_CPPhase(0,2,0.0);
+  nus_atm_kaon_.Set_CPPhase(0,3,sterileNuParams_.del14);
+  nus_atm_kaon_.Set_CPPhase(1,3,sterileNuParams_.del24);
+
+  nus_atm_pion_.Set_MixingAngle(0,1,0.563942);
+  nus_atm_pion_.Set_MixingAngle(0,2,0.154085);
+  nus_atm_pion_.Set_MixingAngle(1,2,0.785398);
+  nus_atm_pion_.Set_MixingAngle(0,3,sterileNuParams_.th14);
+  nus_atm_pion_.Set_MixingAngle(1,3,sterileNuParams_.th24);
+  nus_atm_pion_.Set_MixingAngle(2,3,sterileNuParams_.th34);
+
+  nus_atm_pion_.Set_SquareMassDifference(1,7.65e-05);
+  nus_atm_pion_.Set_SquareMassDifference(2,0.00247);
+  nus_atm_pion_.Set_SquareMassDifference(3,sterileNuParams_.dm41sq);
+  nus_atm_pion_.Set_CPPhase(0,2,0.0);
+  nus_atm_pion_.Set_CPPhase(0,3,sterileNuParams_.del14);
+  nus_atm_pion_.Set_CPPhase(1,3,sterileNuParams_.del24);
+
+  double error = 1.0e-10;
+  // setup integration settings
+  nus_atm_pion_.Set_GSL_step(gsl_odeiv2_step_rkf45);
+  //nus_atm_pion.Set_GSL_step(gsl_odeiv2_step_rk4);
+  nus_atm_pion_.Set_rel_error(error);
+  nus_atm_pion_.Set_abs_error(error);
+
+  nus_atm_kaon_.Set_GSL_step(gsl_odeiv2_step_rkf45);
+  //nus_atm_kaon_.Set_GSL_step(gsl_odeiv2_step_rk4);
+  nus_atm_kaon_.Set_rel_error(error);
+  nus_atm_kaon_.Set_abs_error(error);
+
+  // read file
+  marray<double,2> input_pion_flux = quickread(dataPaths_.initial_flux_files_path + "/" + "initial_pion_atmopheric_" + steeringParams_.modelName + ".dat");
+  marray<double,2> input_kaon_flux = quickread(dataPaths_.initial_flux_files_path + "/" + "initial_kaon_atmopheric_" + steeringParams_.modelName + ".dat");
+
+  marray<double,4> inistate_kaon {nus_atm_kaon_.GetNumCos(),nus_atm_kaon_.GetNumE(),2,numneu};
+  std::fill(inistate_kaon.begin(),inistate_kaon.end(),0);
+
+  marray<double,1> cos_range = nus_atm_kaon_.GetCosthRange();
+  marray<double,1> e_range = nus_atm_kaon_.GetERange();
+  for ( int ci = 0 ; ci < nus_atm_kaon_.GetNumCos(); ci++){
+    for ( int ei = 0 ; ei < nus_atm_kaon_.GetNumE(); ei++){
+      double enu = e_range[ei]/units.GeV;
+      double cth = cos_range[ci];
+
+      inistate_kaon[ci][ei][0][0] = 0.;
+      inistate_kaon[ci][ei][0][1] = input_kaon_flux[ci*e_range.size() + ei][2];
+      inistate_kaon[ci][ei][0][2] = 0.;
+      inistate_kaon[ci][ei][0][3] = 0.;
+
+      inistate_kaon[ci][ei][1][0] = 0.;
+      inistate_kaon[ci][ei][1][1] = input_kaon_flux[ci*e_range.size() + ei][3];
+      inistate_kaon[ci][ei][1][2] = 0.;
+      inistate_kaon[ci][ei][1][3] = 0.;
+    }
+  }
+
+  nus_atm_kaon_.Set_initial_state(inistate_kaon,flavor);
+  nus_atm_kaon_.EvolveState();
+
+  marray<double,4> inistate_pion {nus_atm_pion_.GetNumCos(),nus_atm_pion_.GetNumE(),2,numneu};
+  std::fill(inistate_pion.begin(),inistate_pion.end(),0);
+
+  for ( int ci = 0 ; ci < nus_atm_pion_.GetNumCos(); ci++){
+    for ( int ei = 0 ; ei < nus_atm_pion_.GetNumE(); ei++){
+      double enu = e_range[ei]/units.GeV;
+      double cth = cos_range[ci];
+
+      inistate_pion[ci][ei][0][0] = 0.;
+      inistate_pion[ci][ei][0][1] = input_pion_flux[ci*e_range.size() + ei][2];
+      inistate_pion[ci][ei][0][2] = 0.;
+      inistate_pion[ci][ei][0][3] = 0.;
+
+      inistate_pion[ci][ei][1][0] = 0.;
+      inistate_pion[ci][ei][1][1] = input_pion_flux[ci*e_range.size() + ei][3];
+      inistate_pion[ci][ei][1][2] = 0.;
+      inistate_pion[ci][ei][1][3] = 0.;
+    }
+  }
+
+  nus_atm_pion_.Set_initial_state(inistate_pion,flavor);
+  nus_atm_pion_.EvolveState();
+}
 
 } // close namespace SterileSearch
