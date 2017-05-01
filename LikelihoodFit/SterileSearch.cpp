@@ -187,9 +187,11 @@ bool Sterilizer::WriteCompact() const {
     std::cout<<"Files " << original_data_file<<" " << original_simulation_file<<std::endl;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
+    return true;
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
     std::cerr << "Failed to save compact data" << std::endl;
+    return false;
   }
 }
 

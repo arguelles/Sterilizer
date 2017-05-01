@@ -1,4 +1,4 @@
-#import "SterileSearch.h"
+#include "SterileSearch.h"
 
 int main(int argc, char* argv[]){
   using namespace SterileSearch;
