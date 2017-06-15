@@ -264,7 +264,6 @@ namespace DOMEff3{
 	//used for initializing the per-event dom-eff related caches
 	template<typename Event>
 	struct simpleEffRate{
-		//Splinetable* rate2010;
 		Splinetable* rate2011;
 		double logEff;
 		typename Event::domEffValues Event::* cachedData;
@@ -272,16 +271,11 @@ namespace DOMEff3{
 		simpleEffRate(Splinetable* r2011, double eff, typename Event::domEffValues Event::* c):
 		rate2011(r2011),logEff(log10(eff)),cachedData(c){}
 
-		//simpleEffRate(Splinetable* r2010, Splinetable* r2011, double eff, typename Event::domEffValues Event::* c):
-		//rate2010(r2010),rate2011(r2011),logEff(log10(eff)),cachedData(c){}
-		//rate2010(r2010),rate2011(r2011),logEff(log10(0.9*(1.0+deltaEff))),cachedData(c){}
-
 		void setCache(Event& e) const{
 			typename Event::domEffValues& cache=e.*cachedData;
 			double coordinates[3]={log10(e.energy),cos(e.zenith),logEff};
 			Splinetable* rateTable=nullptr;
 			switch(e.year){
-		//		case 2010: rateTable=rate2010; break;
 				case 2011: rateTable=rate2011; break;
 				default: assert(false && "Unexpected year");
 			}

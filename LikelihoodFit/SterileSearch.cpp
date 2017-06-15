@@ -102,17 +102,17 @@ void Sterilizer::LoadMC(){
     simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
     std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
 
-    struct domEffSetter{
-      simpleEffRate<Event> convDOMEffRate;
-      domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
-	convDOMEffRate(domEffConv.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
-      void setCache(Event& e) const{
-	convDOMEffRate.setCache(e);
-      }
-    };
+    // struct domEffSetter{
+    //   simpleEffRate<Event> convDOMEffRate;
+    //   domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
+    //	convDOMEffRate(domEffConv.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
+    //   void setCache(Event& e) const{
+    //	convDOMEffRate.setCache(e);
+    //  }
+    // };
 
     try{
-      auto simAction=[&](RecordID id, Event& e, int simYear, const domEffSetter& domEff){
+      auto simAction=[&](RecordID id, Event& e, int simYear, const simpleEffRate<Event>& domEff){
 	if(e.check(true,Level::neutrino) && e.energy>1){
 	  e.year=simYear;
 	  e.cachedLivetime=livetime.find(simYear)->second;
@@ -132,8 +132,7 @@ void Sterilizer::LoadMC(){
       for(auto simSet : simSetsToLoad){
 	const auto& setInfo=simInfo.find(simSet)->second;
 	unsigned int simYear=setInfo.details.year;
-	//unsigned int yearindex=yearindices_[simYear];
-	domEffSetter domEff(setInfo.unshadowedFraction,domEffConv_[simYear]);
+	simpleEffRate<Event> domEff(domEffConv_[simYear].get(),setInfo.unshadowedFraction,&Event::cachedConvDOMEff);
 	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
 	auto path=CheckedFilePath(dataPaths_.mc_path+setInfo.filename);
 	readFile(path,callback);
