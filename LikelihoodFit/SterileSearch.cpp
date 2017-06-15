@@ -102,15 +102,6 @@ void Sterilizer::LoadMC(){
     simSetsToLoad.push_back(steeringParams_.simToLoad.c_str());
     std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
 
-    // struct domEffSetter{
-    //   simpleEffRate<Event> convDOMEffRate;
-    //   domEffSetter(double simulatedDOMEfficiency, std::shared_ptr<Splinetable> domEffConv):
-    //	convDOMEffRate(domEffConv.get(),simulatedDOMEfficiency,&Event::cachedConvDOMEff) {}
-    //   void setCache(Event& e) const{
-    //	convDOMEffRate.setCache(e);
-    //  }
-    // };
-
     try{
       auto simAction=[&](RecordID id, Event& e, int simYear, const simpleEffRate<Event>& domEff){
 	if(e.check(true,Level::neutrino) && e.energy>1){
@@ -895,18 +886,17 @@ void Sterilizer::SetupFastMode()
 	evnu.intY=0;
 	evnu.cutL3=false;
 	evnu.paraboloidStatus=0;
-	
 	evnu.cachedConvPionWeight=0;
 	evnu.cachedConvKaonWeight=0;
 	evnu.cachedPromptWeight=0;
 	evnu.cachedWeight=0;
-
 	evnu.injectedEnergy =0;
 	evnu.energy =0;
 	evnu.zenith =0;
 	evnu.livetime =0;
-	evnu.primaryType=particleType::NuMu;
-
+	evnu.primaryType=particleType::MuMinus;
+	evnu.cachedConvDOMEff.baseRate=0;
+	evnu.cachedPromptDOMEff.baseRate=0;
 
 	evnubar.leptonEnergyFraction=0;
 	evnubar.totalColumnDepth=0;
@@ -914,27 +904,27 @@ void Sterilizer::SetupFastMode()
 	evnubar.intX=0;
 	evnubar.intY=0;
 	evnubar.cutL3=false;
-	evnubar.paraboloidStatus=0;
-	
+	evnubar.paraboloidStatus=0;	
 	evnubar.cachedConvPionWeight=0;
 	evnubar.cachedConvKaonWeight=0;
 	evnubar.cachedPromptWeight=0;
 	evnubar.cachedWeight=0;
-
 	evnubar.injectedEnergy =0;
 	evnubar.energy =0;
 	evnubar.zenith =0;
 	evnubar.livetime =0;
-	evnubar.primaryType=particleType::NuMuBar;
-
+	evnubar.primaryType=particleType::MuPlus;
+	evnubar.cachedConvDOMEff.baseRate=0;
+	evnubar.cachedPromptDOMEff.baseRate=0;
 
         for(auto event : itc.entries()){
           double weight=weighter(event);
-
+	  //	  std::cout<<"This evt weight:" << weight<<std::endl;
 	  Event theev(event);
 	  
-	  if(theev.primaryType==particleType::NuMu)
+	  if(theev.primaryType==particleType::MuMinus)
 	    {
+	      //	      std::cout<<"nu"<<std::endl;
 	      expectationnu+=weight;
 	
 	      evnu.injectedEnergy += theev.injectedEnergy*weight;
@@ -946,12 +936,14 @@ void Sterilizer::SetupFastMode()
 	      evnu.cachedConvKaonWeight += theev.cachedConvKaonWeight;
 	      evnu.cachedPromptWeight   += theev.cachedPromptWeight;
 	      evnu.cachedWeight         += theev.cachedWeight;
-	      
+	      evnu.cachedConvDOMEff.baseRate += theev.cachedConvDOMEff.baseRate*weight;
+	      evnu.cachedPromptDOMEff.baseRate += theev.cachedPromptDOMEff.baseRate*weight;
 	      evnu.year=theev.year;
 	 	
 	    }
-	  else if (theev.primaryType==particleType::NuMuBar)
+	  else if (theev.primaryType==particleType::MuPlus)
 	    {
+	      //     std::cout<<"nubar"<<std::endl;
 	      expectationnubar+=weight;
 	
 	      evnubar.injectedEnergy += theev.injectedEnergy*weight;
@@ -963,7 +955,8 @@ void Sterilizer::SetupFastMode()
 	      evnubar.cachedConvKaonWeight += theev.cachedConvKaonWeight;
 	      evnubar.cachedPromptWeight   += theev.cachedPromptWeight;
 	      evnubar.cachedWeight         += theev.cachedWeight;
-	      
+	      evnubar.cachedConvDOMEff.baseRate += theev.cachedConvDOMEff.baseRate*weight;
+	      evnubar.cachedPromptDOMEff.baseRate += theev.cachedPromptDOMEff.baseRate*weight;
 	      evnubar.year=theev.year;
 
 	    }
@@ -972,11 +965,21 @@ void Sterilizer::SetupFastMode()
 	evnu.zenith/=expectationnu;
 	evnu.injectedEnergy/=expectationnu;
 	evnu.livetime/=expectationnu;
+	evnu.cachedConvDOMEff.baseRate /= expectationnu;
+	evnu.cachedPromptDOMEff.baseRate /= expectationnu;
 
 	evnubar.energy/=expectationnubar;
 	evnubar.zenith/=expectationnubar;
 	evnubar.injectedEnergy/=expectationnubar;
 	evnubar.livetime/=expectationnubar;
+	evnubar.cachedConvDOMEff.baseRate /= expectationnubar;
+	evnubar.cachedPromptDOMEff.baseRate /= expectationnubar;
+	
+	//	std::cout<<"exp " << expectationnu<<", " <<expectationnubar<<std::endl;
+	//	std::cout<<"ene " << evnu.energy<<", " <<evnubar.energy<<std::endl;
+	//	std::cout<<"zen " << evnu.zenith<<", " <<evnubar.zenith<<std::endl;
+	//	std::cout<<"dom " << evnu.cachedConvDOMEff.baseRate<<", " <<evnubar.cachedConvDOMEff.baseRate<<std::endl;
+
 	
 	if(expectationnu>0)
 	  auxSimulation_.push_back(evnu);

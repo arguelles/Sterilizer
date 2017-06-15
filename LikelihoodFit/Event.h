@@ -81,13 +81,13 @@ public:
 
   // dom eff structure
   struct domEffValues{
-		double baseRate;
-
-		domEffValues():baseRate(std::numeric_limits<double>::quiet_NaN()){}
-	};
-	domEffValues cachedConvDOMEff;
-	domEffValues cachedPromptDOMEff;
-
+    float baseRate;
+    
+  domEffValues():baseRate(std::numeric_limits<double>::quiet_NaN()){}
+  };
+  domEffValues cachedConvDOMEff;
+  domEffValues cachedPromptDOMEff;
+  
   // not pass analysis cuts, i.e. was cutted
   bool cutL3;
   int paraboloidStatus;

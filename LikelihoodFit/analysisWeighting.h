@@ -286,20 +286,6 @@ namespace DOMEff3{
 
 using namespace DOMEff3;
 
-template<typename Event, typename T>
-struct approximatePowerlawDOMEffCorrector : public GenericWeighter<approximatePowerlawDOMEffCorrector<Event,T>>{
-private:
-	T deltaIndex, deltaEff;
-public:
-	using result_type=T;
-	approximatePowerlawDOMEffCorrector(T dg, T de):
-	deltaIndex(dg),deltaEff(de){}
-	
-	result_type operator()(const Event& e) const{
-		result_type weight=pow(1+deltaEff,deltaIndex);
-		return(weight);
-	}
-};
 
 struct DiffuseFitWeighterMaker{
 private:
