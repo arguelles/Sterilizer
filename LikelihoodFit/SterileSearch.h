@@ -146,7 +146,7 @@ struct SteeringParams {
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
   std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
-
+  bool fastMode=false;
   SteeringParams(){};
 };
 
@@ -189,6 +189,9 @@ class Sterilizer {
     std::deque<Event> mainSimulation_;
     std::deque<Event> sample_;
 
+    // for fast mode only
+    std::deque<Event> auxSimulation_;
+
     // histograms
     HistType dataHist_;
     HistType simHist_;
@@ -226,6 +229,7 @@ class Sterilizer {
     bool data_loaded_ = (false);
     bool likelihood_problem_constructed_ = (false);
     bool simulation_initialized_ = (false);
+    bool fastmode_constructed_=(false);
 
     // DOM efficiency splines
     std::map<unsigned int,std::shared_ptr<Splinetable>> domEffConv_;
@@ -285,6 +289,7 @@ class Sterilizer {
     marray<double,2> SpitExpectation( std::vector<double> nuisance) const;
     std::vector<double> PullBinEdges(int dim, const  HistType& h) const;
     void SetupAsimov(std::vector<double> Nuisance);
+    void SetupFastMode();
 
   public:
 

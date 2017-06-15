@@ -244,6 +244,7 @@ BOOST_PYTHON_MODULE(SterileSearchPy)
     .def_readwrite("years",&SS::SteeringParams::years)
     .def_readwrite("fullLivetime",&SS::SteeringParams::fullLivetime)
     .def_readwrite("burnSampleLivetime",&SS::SteeringParams::burnSampleLivetime)
+    .def_readwrite("fastMode",&SS::SteeringParams::fastMode)
   ;
 
   class_<SS::SterileNuParams, boost::noncopyable,std::shared_ptr<SS::SterileNuParams> >("SterileNuParams",init<>())

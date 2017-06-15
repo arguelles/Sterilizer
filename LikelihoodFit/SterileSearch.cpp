@@ -44,6 +44,8 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   if(!steeringParams_.quiet) std::cout<<"Making sim hist" <<std::endl;
   ConstructSimulationHistogram();
   if(!steeringParams_.quiet) std::cout<<"Construcing likelihood problem with default settings" <<std::endl;
+  if(steeringParams_.fastMode)
+    SetupFastMode();
   ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
 }
 
@@ -737,6 +739,7 @@ std::string Sterilizer::CheckedFilePath(std::string FilePath) const {
  * Functions to spit out event distributions and swallow
  * **********************************************************************************************************/
 
+
 double Sterilizer::Swallow(marray<double,2> Data)
 {
   double TotalWeight=0;
@@ -754,8 +757,6 @@ double Sterilizer::Swallow(marray<double,2> Data)
   // remaking data histogram
   if(!steeringParams_.quiet) std::cout<<"Remaking data hist" <<std::endl;
   ConstructDataHistogram();
-  if(!steeringParams_.quiet) std::cout<<"ReMaking sim hist" <<std::endl;
-  ConstructSimulationHistogram();
   // TO DO Improve this
   if(!steeringParams_.quiet) std::cout<<"Reconstrucing likelihood problem" <<std::endl;
   ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
@@ -865,6 +866,131 @@ marray<double,2> Sterilizer::SpitExpectation( std::vector<double> nuisance) cons
     }
   }
   return ReturnVec;
+}
+
+
+// Warning - do not call this publically (runs in constructor)
+//  Setup fast mode (one sim event per bin)
+void Sterilizer::SetupFastMode()
+{
+  std::cout<<"Setting up fast mode"<<std::endl;
+  marray<double,2> ReturnVec { simHist_.getBinCount(2)*simHist_.getBinCount(1)*simHist_.getBinCount(0), 4} ;
+  auto weighter = DFWM(ConvertNuisance(Nuisance()));
+  auto EnergyBins=GetEnergyBinsMC();
+  auto ZenithBins=GetZenithBinsMC();
+  unsigned int count=0;
+  auxSimulation_.clear();
+
+  for(size_t iy=0; iy<simHist_.getBinCount(2); iy++){ // year
+    for(size_t ic=0; ic<simHist_.getBinCount(1); ic++){ // zenith
+      for(size_t ie=0; ie<simHist_.getBinCount(0); ie++){ // energy
+        auto itc = static_cast<likelihood::entryStoringBin<std::reference_wrapper<const Event>>>(simHist_(ie,ic,iy));
+        double expectationnu=0;
+        double expectationnubar=0;
+	Event evnu, evnubar;
+
+	evnu.leptonEnergyFraction=0;
+	evnu.totalColumnDepth=0;
+	evnu.inelasticityProbability=0;
+	evnu.intX=0;
+	evnu.intY=0;
+	evnu.cutL3=false;
+	evnu.paraboloidStatus=0;
+	
+	evnu.cachedConvPionWeight=0;
+	evnu.cachedConvKaonWeight=0;
+	evnu.cachedPromptWeight=0;
+	evnu.cachedWeight=0;
+
+	evnu.injectedEnergy =0;
+	evnu.energy =0;
+	evnu.zenith =0;
+	evnu.livetime =0;
+	evnu.primaryType=particleType::NuMu;
+
+
+	evnubar.leptonEnergyFraction=0;
+	evnubar.totalColumnDepth=0;
+	evnubar.inelasticityProbability=0;
+	evnubar.intX=0;
+	evnubar.intY=0;
+	evnubar.cutL3=false;
+	evnubar.paraboloidStatus=0;
+	
+	evnubar.cachedConvPionWeight=0;
+	evnubar.cachedConvKaonWeight=0;
+	evnubar.cachedPromptWeight=0;
+	evnubar.cachedWeight=0;
+
+	evnubar.injectedEnergy =0;
+	evnubar.energy =0;
+	evnubar.zenith =0;
+	evnubar.livetime =0;
+	evnubar.primaryType=particleType::NuMuBar;
+
+
+        for(auto event : itc.entries()){
+          double weight=weighter(event);
+
+	  Event theev(event);
+	  
+	  if(theev.primaryType==particleType::NuMu)
+	    {
+	      expectationnu+=weight;
+	
+	      evnu.injectedEnergy += theev.injectedEnergy*weight;
+	      evnu.energy   += theev.energy*weight;
+	      evnu.zenith   += theev.zenith*weight;
+	      evnu.livetime += theev.livetime*weight;
+	      
+	      evnu.cachedConvPionWeight += theev.cachedConvPionWeight;
+	      evnu.cachedConvKaonWeight += theev.cachedConvKaonWeight;
+	      evnu.cachedPromptWeight   += theev.cachedPromptWeight;
+	      evnu.cachedWeight         += theev.cachedWeight;
+	      
+	      evnu.year=theev.year;
+	 	
+	    }
+	  else if (theev.primaryType==particleType::NuMuBar)
+	    {
+	      expectationnubar+=weight;
+	
+	      evnubar.injectedEnergy += theev.injectedEnergy*weight;
+	      evnubar.energy   += theev.energy*weight;
+	      evnubar.zenith   += theev.zenith*weight;
+	      evnubar.livetime += theev.livetime*weight;
+	      
+	      evnubar.cachedConvPionWeight += theev.cachedConvPionWeight;
+	      evnubar.cachedConvKaonWeight += theev.cachedConvKaonWeight;
+	      evnubar.cachedPromptWeight   += theev.cachedPromptWeight;
+	      evnubar.cachedWeight         += theev.cachedWeight;
+	      
+	      evnubar.year=theev.year;
+
+	    }
+	}
+	evnu.energy/=expectationnu;
+	evnu.zenith/=expectationnu;
+	evnu.injectedEnergy/=expectationnu;
+	evnu.livetime/=expectationnu;
+
+	evnubar.energy/=expectationnubar;
+	evnubar.zenith/=expectationnubar;
+	evnubar.injectedEnergy/=expectationnubar;
+	evnubar.livetime/=expectationnubar;
+	
+	if(expectationnu>0)
+	  auxSimulation_.push_back(evnu);
+	if(expectationnubar>0)
+	  auxSimulation_.push_back(evnubar);
+      }
+    }
+  }
+  simHist_=makeEmptyHistogramCopy(dataHist_);
+  bin(auxSimulation_, simHist_, binner);
+  fastmode_constructed_=true;
+  std::cout<<"done constructing fast mode"<<std::endl;
+  
 }
 
 bool Sterilizer::SetupAsimov(Nuisance nuisance)
