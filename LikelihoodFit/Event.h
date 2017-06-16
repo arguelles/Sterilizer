@@ -78,16 +78,10 @@ public:
   float cachedConvKaonWeight;
   float cachedPromptWeight;
   float cachedWeight;
-
-  // dom eff structure
-  struct domEffValues{
-    float baseRate;
-    
-  domEffValues():baseRate(std::numeric_limits<double>::quiet_NaN()){}
-  };
-  domEffValues cachedConvDOMEff;
-  domEffValues cachedPromptDOMEff;
+  float cachedConvDOMEff;
   
+  float cachedDOMEff;
+
   // not pass analysis cuts, i.e. was cutted
   bool cutL3;
   int paraboloidStatus;

@@ -123,8 +123,8 @@ void Sterilizer::LoadMC(){
       for(auto simSet : simSetsToLoad){
 	const auto& setInfo=simInfo.find(simSet)->second;
 	unsigned int simYear=setInfo.details.year;
-	simpleEffRate<Event> domEff(domEffConv_[simYear].get(),setInfo.unshadowedFraction,&Event::cachedConvDOMEff);
-	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,domEff); };
+	domEffObject_=new simpleEffRate<Event>(domEffConv_[simYear].get(),setInfo.unshadowedFraction);
+	auto callback=[&,simYear](RecordID id, Event& e){ simAction(id,e,simYear,*domEffObject_); };
 	auto path=CheckedFilePath(dataPaths_.mc_path+setInfo.filename);
 	readFile(path,callback);
       }
@@ -202,9 +202,8 @@ void Sterilizer::ClearSimulation(){
 void Sterilizer::LoadDOMEfficiencySplines(){
   for(unsigned int year : steeringParams_.years){
     domEffConv_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(CheckedFilePath(dataPaths_.domeff_spline_path+"/conv_IC"+std::to_string(year)+".fits")))});
-    domEffPrompt_.insert({year,std::unique_ptr<Splinetable>(new Splinetable(CheckedFilePath(dataPaths_.domeff_spline_path+"/prompt_IC"+std::to_string(year)+".fits")))});
   }
-  DFWM.SetSplines(domEffConv_,domEffPrompt_);
+  DFWM.SetSplines(domEffConv_);
   dom_efficiency_splines_constructed_=true;
 }
 
@@ -895,8 +894,7 @@ void Sterilizer::SetupFastMode()
 	evnu.zenith =0;
 	evnu.livetime =0;
 	evnu.primaryType=particleType::MuMinus;
-	evnu.cachedConvDOMEff.baseRate=0;
-	evnu.cachedPromptDOMEff.baseRate=0;
+	evnu.cachedConvDOMEff=0;
 
 	evnubar.leptonEnergyFraction=0;
 	evnubar.totalColumnDepth=0;
@@ -914,8 +912,7 @@ void Sterilizer::SetupFastMode()
 	evnubar.zenith =0;
 	evnubar.livetime =0;
 	evnubar.primaryType=particleType::MuPlus;
-	evnubar.cachedConvDOMEff.baseRate=0;
-	evnubar.cachedPromptDOMEff.baseRate=0;
+	evnubar.cachedConvDOMEff=0;
 
         for(auto event : itc.entries()){
           double weight=weighter(event);
@@ -936,8 +933,6 @@ void Sterilizer::SetupFastMode()
 	      evnu.cachedConvKaonWeight += theev.cachedConvKaonWeight;
 	      evnu.cachedPromptWeight   += theev.cachedPromptWeight;
 	      evnu.cachedWeight         += theev.cachedWeight;
-	      evnu.cachedConvDOMEff.baseRate += theev.cachedConvDOMEff.baseRate*weight;
-	      evnu.cachedPromptDOMEff.baseRate += theev.cachedPromptDOMEff.baseRate*weight;
 	      evnu.year=theev.year;
 	 	
 	    }
@@ -955,36 +950,29 @@ void Sterilizer::SetupFastMode()
 	      evnubar.cachedConvKaonWeight += theev.cachedConvKaonWeight;
 	      evnubar.cachedPromptWeight   += theev.cachedPromptWeight;
 	      evnubar.cachedWeight         += theev.cachedWeight;
-	      evnubar.cachedConvDOMEff.baseRate += theev.cachedConvDOMEff.baseRate*weight;
-	      evnubar.cachedPromptDOMEff.baseRate += theev.cachedPromptDOMEff.baseRate*weight;
 	      evnubar.year=theev.year;
 
 	    }
 	}
-	evnu.energy/=expectationnu;
-	evnu.zenith/=expectationnu;
-	evnu.injectedEnergy/=expectationnu;
-	evnu.livetime/=expectationnu;
-	evnu.cachedConvDOMEff.baseRate /= expectationnu;
-	evnu.cachedPromptDOMEff.baseRate /= expectationnu;
-
-	evnubar.energy/=expectationnubar;
-	evnubar.zenith/=expectationnubar;
-	evnubar.injectedEnergy/=expectationnubar;
-	evnubar.livetime/=expectationnubar;
-	evnubar.cachedConvDOMEff.baseRate /= expectationnubar;
-	evnubar.cachedPromptDOMEff.baseRate /= expectationnubar;
-	
-	//	std::cout<<"exp " << expectationnu<<", " <<expectationnubar<<std::endl;
-	//	std::cout<<"ene " << evnu.energy<<", " <<evnubar.energy<<std::endl;
-	//	std::cout<<"zen " << evnu.zenith<<", " <<evnubar.zenith<<std::endl;
-	//	std::cout<<"dom " << evnu.cachedConvDOMEff.baseRate<<", " <<evnubar.cachedConvDOMEff.baseRate<<std::endl;
-
-	
 	if(expectationnu>0)
-	  auxSimulation_.push_back(evnu);
+	  {
+	    evnu.energy/=expectationnu;
+	    evnu.zenith/=expectationnu;
+	    evnu.injectedEnergy/=expectationnu;
+	    evnu.livetime/=expectationnu;
+	    domEffObject_->setCache(evnu);
+	    auxSimulation_.push_back(evnu);
+	  }
 	if(expectationnubar>0)
-	  auxSimulation_.push_back(evnubar);
+	  {
+	    evnubar.energy/=expectationnubar;
+	    evnubar.zenith/=expectationnubar;
+	    evnubar.injectedEnergy/=expectationnubar;
+	    evnubar.livetime/=expectationnubar;
+	    domEffObject_->setCache(evnubar);
+	    auxSimulation_.push_back(evnubar);    
+	  }
+		
       }
     }
   }

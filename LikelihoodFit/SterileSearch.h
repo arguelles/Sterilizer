@@ -191,6 +191,7 @@ class Sterilizer {
 
     // for fast mode only
     std::deque<Event> auxSimulation_;
+    simpleEffRate<Event> * domEffObject_;
 
     // histograms
     HistType dataHist_;
@@ -233,7 +234,6 @@ class Sterilizer {
 
     // DOM efficiency splines
     std::map<unsigned int,std::shared_ptr<Splinetable>> domEffConv_;
-    std::map<unsigned int,std::shared_ptr<Splinetable>> domEffPrompt_;
 
     // likehood problem object
     std::shared_ptr<LType> prob_;

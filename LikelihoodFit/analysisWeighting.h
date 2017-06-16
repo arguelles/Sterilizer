@@ -183,14 +183,12 @@ struct powerlawTiltWeighter : public GenericWeighter<powerlawTiltWeighter<Event,
 private:
 	double medianEnergy;
 	T deltaIndex;
-	//typename Event::crTiltValues Event::* cachedData;
 public:
 	using result_type=T;
-	powerlawTiltWeighter(double me, T dg/*, typename Event::crTiltValues Event::* c*/):
-	medianEnergy(me),deltaIndex(dg)/*,cachedData(c)*/{}
+	powerlawTiltWeighter(double me, T dg):
+	medianEnergy(me),deltaIndex(dg){}
 	
 	result_type operator()(const Event& e) const{
-		//const typename Event::crTiltValues& cache=e.*cachedData;
 		result_type weight=pow(e.injectedEnergy/medianEnergy,-deltaIndex);
 		return(weight);
 	}
@@ -203,21 +201,20 @@ namespace DOMEff3{
     private:
       DOMMapType domEffMap;
       DataType logEff;
-      typename Event::domEffValues Event::* cachedData;
     public:
-      domEffWeighter(DOMMapType domEffMap, DataType deltaEff, typename Event::domEffValues Event::* c):
-      domEffMap(domEffMap),logEff(log10(0.9*(1.0+deltaEff))),cachedData(c){}
+      domEffWeighter(DOMMapType domEffMap, DataType deltaEff):
+      domEffMap(domEffMap),logEff(log10(0.9*(1.0+deltaEff))){}
 
       using result_type=DataType;
       result_type operator()(const Event& e) const{
-        const typename Event::domEffValues& cache=e.*cachedData;
+        float cache=e.cachedDOMEff;
         double coordinates[3]={log10(e.energy),cos(e.zenith),logEff};
 
         auto domcorrection = domEffMap.find(e.year);
         if( domcorrection == domEffMap.end() )
-          throw std::runtime_error("DOm efficiency correction for year "+std::to_string(e.year) + " not found.");
+          throw std::runtime_error("Dom efficiency correction for year "+std::to_string(e.year) + " not found.");
         double rate=(*(*domcorrection).second)(coordinates);
-        return(pow(10.,rate-cache.baseRate));
+        return(pow(10.,rate-cache));
       }
     };
 
@@ -227,12 +224,11 @@ namespace DOMEff3{
       DOMMapType domEffMap;
       FD<Dim> logEff;
       unsigned int didx;
-      typename Event::domEffValues Event::* cachedData;
     public:
-      domEffWeighter(DOMMapType domEffMap, FD<Dim> deltaEff, typename Event::domEffValues Event::* c):
+      domEffWeighter(DOMMapType domEffMap, FD<Dim> deltaEff):
       domEffMap(domEffMap),
-      logEff(log10(0.9*(1.0+deltaEff))),
-      cachedData(c){
+      logEff(log10(0.9*(1.0+deltaEff)))
+      {
 
         const unsigned int n=detail::dimensionExtractor<FD,Dim,double>::nVars(deltaEff);
         for(int i=0; i<Dim; i++){ //this will break if Dim is Dynamic
@@ -244,20 +240,20 @@ namespace DOMEff3{
       }
       using result_type=FD<Dim>;
       result_type operator()(const Event& e) const{
-        const typename Event::domEffValues& cache=e.*cachedData;
+        float cache=e.cachedDOMEff;
         double rate, derivative;
         double coordinates[3]={log10(e.energy),cos(e.zenith),logEff.value()};
 
         auto domcorrection = domEffMap.find(e.year);
         if( domcorrection == domEffMap.end() )
-          throw std::runtime_error("DOm efficiency correction for year "+std::to_string(e.year) + " not found.");
+          throw std::runtime_error("Dom efficiency correction for year "+std::to_string(e.year) + " not found.");
         rate=(*(*domcorrection).second)(coordinates);
         derivative=((*domcorrection).second)->derivative(coordinates,2);
         derivative*=logEff.derivative(didx);
 
         result_type r(rate);
         r.setDerivative(derivative,didx);
-        return(pow(10.,r-cache.baseRate));
+        return(pow(10.,r-cache));
       }
 	};
 
@@ -266,20 +262,17 @@ namespace DOMEff3{
 	struct simpleEffRate{
 		Splinetable* rate2011;
 		double logEff;
-		typename Event::domEffValues Event::* cachedData;
-
-		simpleEffRate(Splinetable* r2011, double eff, typename Event::domEffValues Event::* c):
-		rate2011(r2011),logEff(log10(eff)),cachedData(c){}
+		simpleEffRate(Splinetable* r2011, double eff):
+		rate2011(r2011),logEff(log10(eff)){}
 
 		void setCache(Event& e) const{
-			typename Event::domEffValues& cache=e.*cachedData;
 			double coordinates[3]={log10(e.energy),cos(e.zenith),logEff};
 			Splinetable* rateTable=nullptr;
 			switch(e.year){
 				case 2011: rateTable=rate2011; break;
 				default: assert(false && "Unexpected year");
 			}
-			cache.baseRate=(*rateTable)(coordinates);
+			e.cachedDOMEff=(*rateTable)(coordinates);
 		}
 	};
 }
@@ -306,9 +299,8 @@ public:
   // default constructor // bad bad
 	DiffuseFitWeighterMaker():spline_sets(false){}
 
-  void SetSplines(DOMMapType domEffConv,DOMMapType domEffPrompt){
+  void SetSplines(DOMMapType domEffConv){
     domEffConv_=domEffConv;
-    domEffPrompt_=domEffPrompt_;
     spline_sets=true;
   }
 
@@ -334,8 +326,7 @@ public:
 		cachedWeighter promptFlux(&Event::cachedPromptWeight);
 
 		using domEffW_t = domEffWeighter<Event,DataType>;
-		domEffW_t convDOMEff(domEffConv_,deltaDomEff,&Event::cachedConvDOMEff);
-		domEffW_t promptDOMEff(domEffPrompt_,deltaDomEff,&Event::cachedPromptDOMEff);
+		domEffW_t convDOMEff(domEffConv_,deltaDomEff);
 
 		using neuaneu_t = neuaneu<Event,DataType>;
 		neuaneu_t neuaneu_w(NeutrinoAntineutrinoRatio);
