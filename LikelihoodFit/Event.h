@@ -78,8 +78,6 @@ public:
   float cachedConvKaonWeight;
   float cachedPromptWeight;
   float cachedWeight;
-  float cachedConvDOMEff;
-  
   float cachedDOMEff;
 
   // not pass analysis cuts, i.e. was cutted

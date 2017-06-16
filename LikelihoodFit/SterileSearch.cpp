@@ -894,7 +894,6 @@ void Sterilizer::SetupFastMode()
 	evnu.zenith =0;
 	evnu.livetime =0;
 	evnu.primaryType=particleType::MuMinus;
-	evnu.cachedConvDOMEff=0;
 
 	evnubar.leptonEnergyFraction=0;
 	evnubar.totalColumnDepth=0;
@@ -912,7 +911,6 @@ void Sterilizer::SetupFastMode()
 	evnubar.zenith =0;
 	evnubar.livetime =0;
 	evnubar.primaryType=particleType::MuPlus;
-	evnubar.cachedConvDOMEff=0;
 
         for(auto event : itc.entries()){
           double weight=weighter(event);
