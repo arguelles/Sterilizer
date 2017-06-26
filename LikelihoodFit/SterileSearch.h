@@ -104,7 +104,7 @@ struct DataPaths {
     std::string domeff_spline_path =       "/data/ana/NuFSGenMC/DomEffSplines/";
     std::string flux_splines_path =        "/home/carguelles/programs/SNOT/FluxSplines/propagated_splines/";
     std::string initial_flux_files_path =  "/home/carguelles/work/Sterilizer/InitialFluxes/";
-    bool use_simple_filename=false;
+    bool use_simple_filename=true;
     DataPaths(){};
 
     bool CheckDataPaths() const {
@@ -141,7 +141,7 @@ struct SteeringParams {
   size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";
-  bool ReadCompact=true;
+  bool readCompact=true;
   std::string xs_model_name="";
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
@@ -251,12 +251,14 @@ class Sterilizer {
     std::string CheckedFilePath(std::string) const;
 
     bool WriteCompact() const;
+    bool WriteFastCompact() const;
 
   protected:
     // Functions to load and unload data
     void LoadData();
     void LoadMC();
     void LoadCompact();
+    void LoadFastCompact();
     void ClearData();
     void ClearSimulation();
     // loading DOM efficiency splines

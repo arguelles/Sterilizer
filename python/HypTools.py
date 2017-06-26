@@ -6,7 +6,7 @@ import SterileSearchPy as ssp
 
 CachedLookups={}
 
-def Make2DHypDicts(FileName):
+def Make2DHypDicts(FileName="/data/ana/NuFSGenMC/ScanValues/scan_values_extended.3p1"):
     if FileName in CachedLookups:
         return CachedLookups[FileName]
     else:
@@ -47,7 +47,7 @@ def Make2DScanFile(FileName, FirstLogDM2=-2, LastLogDM2=2., LogDM2Step=0.05, Fir
     File.close()
 
 
-def MakeSNP(ScanValsFile,LineNumber,filetype='2D'):
+def MakeSNP(LineNumber=0,ScanValsFile="/data/ana/NuFSGenMC/ScanValues/scan_values_extended.3p1",filetype='2D'):
     snp=ssp.SterileNuParams()
     if filetype=='2D':
         # Key 0 is always the null hypothesis.
@@ -62,7 +62,7 @@ def MakeSNP(ScanValsFile,LineNumber,filetype='2D'):
             return snp
         else:
             HypDict=Make2DHypDicts(ScanValsFile)
-            [Log10Sin2, Log10Dm2]=HypDict['HypothesisNumberToParams'][LineNumber]
+            [Log10Sin2, Log10Dm2]=HypDict['HypothesisNumberToParams'][abs(LineNumber)]
             snp.modelId=LineNumber
             snp.dm41sq=np.round(pow(10.,Log10Dm2),6)
             snp.th24=np.round(np.arcsin(pow(pow(10.,Log10Sin2),0.5))/2.,6)
@@ -70,6 +70,8 @@ def MakeSNP(ScanValsFile,LineNumber,filetype='2D'):
             snp.del24=0
             snp.th14=0
             snp.th34=0
+            if(LineNumber<0):  #Negative lines are 1+3
+                snp.dm41sq=-snp.dm41sq
             return snp
     else:
         #Here we will eventually extend to 2D file lists.

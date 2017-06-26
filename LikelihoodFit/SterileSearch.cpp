@@ -18,34 +18,41 @@ Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, Steri
   if(!steeringParams_.quiet) std::cout<<"Loading Splines" <<std::endl;
   LoadDOMEfficiencySplines();
 
-  if(steeringParams_.ReadCompact){
+  if(steeringParams_.readCompact){
     if(!steeringParams_.quiet) std::cout<<"Loading compact data" <<std::endl;
-    LoadCompact();
+    if(steeringParams_.fastMode)
+      LoadFastCompact();
+    else
+      LoadCompact();
   } else {
     if(!steeringParams_.quiet) std::cout<<"Loading data" <<std::endl;
     LoadData();
     if(!steeringParams_.quiet) std::cout<<"Loading MC" <<std::endl;
     LoadMC();
   }
-  if(!steeringParams_.quiet) std::cout<<"Loading  XS" <<std::endl;
-  ConstructCrossSectionWeighter();
-  if(!steeringParams_.quiet) std::cout<<"Loading Flux weighter" <<std::endl;
-  ConstructFluxWeighter();
-  if(!steeringParams_.quiet) std::cout<<"Loading MC weighter" <<std::endl;
-  ConstructMonteCarloGenerationWeighter();
-  if(!steeringParams_.quiet) std::cout<<"Loading Lepton weighter" <<std::endl;
-  ConstructLeptonWeighter();
-  if(!steeringParams_.quiet) std::cout<<"Loading Oversize weighter" <<std::endl;
-  ConstructOversizeWeighter();
-  if(!steeringParams_.quiet) std::cout<<"Weighting MC" <<std::endl;
-  WeightMC();
+  if(!(steeringParams_.readCompact && steeringParams_.fastMode))
+    {
+      if(!steeringParams_.quiet) std::cout<<"Loading  XS" <<std::endl;
+      ConstructCrossSectionWeighter();
+      if(!steeringParams_.quiet) std::cout<<"Loading Flux weighter" <<std::endl;
+      ConstructFluxWeighter();
+      if(!steeringParams_.quiet) std::cout<<"Loading MC weighter" <<std::endl;
+      ConstructMonteCarloGenerationWeighter();
+      if(!steeringParams_.quiet) std::cout<<"Loading Lepton weighter" <<std::endl;
+      ConstructLeptonWeighter();
+      if(!steeringParams_.quiet) std::cout<<"Loading Oversize weighter" <<std::endl;
+      ConstructOversizeWeighter();
+      if(!steeringParams_.quiet) std::cout<<"Weighting MC" <<std::endl;
+      WeightMC();
+    }
   if(!steeringParams_.quiet) std::cout<<"Making data hist" <<std::endl;
   ConstructDataHistogram();
   if(!steeringParams_.quiet) std::cout<<"Making sim hist" <<std::endl;
   ConstructSimulationHistogram();
   if(!steeringParams_.quiet) std::cout<<"Construcing likelihood problem with default settings" <<std::endl;
   if(steeringParams_.fastMode)
-    SetupFastMode();
+    if(!steeringParams_.readCompact)
+      SetupFastMode();
   ConstructLikelihoodProblem(Priors(), Nuisance(),NuisanceFlag());
 }
 
@@ -168,6 +175,25 @@ void Sterilizer::LoadCompact(){
   std::cout<<"end of load compact"<<std::endl;
 }
 
+
+void Sterilizer::LoadFastCompact(){
+  try{
+    unsplatData(CheckedFilePath(dataPaths_.compact_file_path+"/fast_sim_hist_"+std::to_string(sterileNuParams_.modelId)+".dat"),
+        0,sample_,mainSimulation_);
+
+    if(!steeringParams_.quiet){
+      std::cout << "Loaded " << sample_.size() << " experimental events." << std::endl;
+      std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set." << std::endl;
+    }
+  } catch(std::runtime_error& re){
+    std::cerr << re.what() << std::endl;
+    std::cerr << "Failed to load compact data" << std::endl;
+  }
+  data_loaded_=true;
+  simulation_loaded_=true;
+  std::cout<<"end of load compact"<<std::endl;
+}
+
 bool Sterilizer::WriteCompact() const {
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
@@ -179,6 +205,21 @@ bool Sterilizer::WriteCompact() const {
     std::cout<<"Files " << original_data_file<<" " << original_simulation_file<<std::endl;
     splatData(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat",
 	      getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
+    return true;
+  } catch(std::runtime_error& re){
+    std::cerr << re.what() << std::endl;
+    std::cerr << "Failed to save compact data" << std::endl;
+    return false;
+  }
+}
+
+
+
+bool Sterilizer::WriteFastCompact() const {
+  std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
+  try{
+    splatData(dataPaths_.compact_file_path+"/fast_sim_hist_"+std::to_string(sterileNuParams_.modelId)+".dat",
+	      0,sample_,auxSimulation_);
     return true;
   } catch(std::runtime_error& re){
     std::cerr << re.what() << std::endl;
@@ -305,7 +346,9 @@ void Sterilizer::WeightMC(){
     throw std::runtime_error("OversizeWeighter has to be constructed first.");
   if(not simulation_loaded_)
     throw std::runtime_error("No simulation has been loaded. Cannot construct simulation histogram.");
+
   InitializeSimulationWeights();
+
   simulation_initialized_=true;
 }
 
@@ -435,6 +478,13 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 }
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
+
+  if(steeringParams_.fastMode && steeringParams_.readCompact)
+    {
+      std::cout<<"This functionality is not available in fast / compact mode!"<<std::endl;
+      assert(0);
+    } 
+
 
   std::mt19937 rng;
   rng.seed(seed);
