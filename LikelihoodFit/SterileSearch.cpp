@@ -568,8 +568,11 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
 
   auto fitseedvec = ConvertNuisance(nuisanceSeed);
 
+
+
+
   prob_ = std::make_shared<LType>(likelihood::makeLikelihoodProblem<std::reference_wrapper<const Event>, 3, 8>(
-      dataHist_, {simHist_}, llhpriors, {1.0}, likelihood::simpleDataWeighter(), DFWM,
+      dataHist_, {simHist_}, llhpriors, {1.0}, simpleLocalDataWeighter(), DFWM,
       likelihood::poissonLikelihood(), fitseedvec ));
   prob_->setEvaluationThreadCount(steeringParams_.evalThreads);
 
@@ -616,7 +619,7 @@ FitResult Sterilizer::MinLLH() const {
 
   LBFGSB_Driver minimizer;
 
-  minimizer.addParameter(seed[0],.001,0.0);
+  minimizer.addParameter(seed[0],.001,0.5,3);
   minimizer.addParameter(seed[1],.001,0.0);
   minimizer.addParameter(seed[2],.01,0.0);
   minimizer.addParameter(seed[3],.005);
@@ -787,7 +790,7 @@ double Sterilizer::Swallow(marray<double,2> Data)
     {
       Event e;
       e.energy       = Data[i][0];
-      e.zenith       = Data[i][1];
+      e.zenith       = acos(Data[i][1]);
       e.year         = Data[i][2];
       e.cachedWeight = Data[i][3];
       TotalWeight+=Data[i][3];

@@ -92,7 +92,8 @@ std::map<std::string,run> GetSimInfo(std::string mc_dataPath)
                                                         2} // spectral index
                                 )},
                                 {"nufsgen_noholeice_mie_0_99",run(mc_dataPath,"noholeice_mie_0.99.h5",particleType::NuMu,0.99,
-                                        LW::SimDetails {1,78856000, //total events
+				     // LW::SimDetails {1,78856000, //total events
+					LW::SimDetails {1,295710000, //total events
                                                         2011,//year
                                                         800, //injection radius
                                                         0,2*pi<double>(), //azimuth range
@@ -101,7 +102,8 @@ std::map<std::string,run> GetSimInfo(std::string mc_dataPath)
                                                         2} // spectral index
                                 )},
                                 {"nufsgen_ice1_mie_0_99",run(mc_dataPath,"ice1_mie_0.99.h5",particleType::NuMu,0.99,
-                                        LW::SimDetails {1,79536000,//total events
+				     // LW::SimDetails {1,79536000,//total events
+                                        LW::SimDetails {1,298260000,//total events
                                                         2011,//year
                                                         800, //injection radius
                                                         0,2*pi<double>(), //azimuth range
@@ -110,14 +112,27 @@ std::map<std::string,run> GetSimInfo(std::string mc_dataPath)
                                                         2} // spectral index
                                 )},
                                 {"nufsgen_ice2_mie_0_99",run(mc_dataPath,"ice2_mie_0.99.h5",particleType::NuMu,0.99,
-                                        LW::SimDetails {1,79584000,//total events
+				 //    LW::SimDetails {1,79584000,//total events
+				       LW::SimDetails {1,298440000,//total events
                                                         2011,//year
                                                         800, //injection radius
                                                         0,2*pi<double>(), //azimuth range
                                                         80.0*pi<double>()/180.0,pi<double>(), //zenith range
                                                         2e2,1e6, //energy range
                                                         2} // spectral index
-                                )}
+							     )},
+
+				{"nufsgen_mie_0_99_over",run(mc_dataPath,"mie_0.99.h5",particleType::NuMu,0.99,
+							     LW::SimDetails {1,	297840000, //total events                    
+								 2011,//year              
+								 800, //injection radius  
+								 0,2*pi<double>(), //azimuth range                                                                        
+								 80.0*pi<double>()/180.0,
+								 pi<double>(), //zenith range 					
+								 2e2,1e6, //energy range  
+							     2} // spectral index     
+							 )},
+
                               };
 
   return simInfo;

@@ -151,7 +151,7 @@ struct SteeringParams {
 };
 
 struct SterileNuParams {
-  unsigned int modelId = 0;
+  int modelId = 0;
   double th14 = 0;
   double th24 = 0;
   double th34 = 0;
@@ -163,12 +163,16 @@ struct SterileNuParams {
   SterileNuParams(){};
 };
 
+struct simpleLocalDataWeighter{
+   double operator()(const Event& e) const{ return(e.cachedWeight); }
+};
+
 using namespace nusquids;
 using namespace phys_tools::histograms;
 using namespace likelihood;
 using HistType = histogram<3,entryStoringBin<std::reference_wrapper<const Event>>>;
 using CPrior=FixedSizePriorSet<GaussianPrior,UniformPrior,UniformPrior,GaussianPrior,LimitedGaussianPrior,GaussianPrior,GaussianPrior,GaussianPrior>;
-using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,8>;
+using LType=LikelihoodProblem<std::reference_wrapper<const Event>,simpleLocalDataWeighter,DiffuseFitWeighterMaker,CPrior,poissonLikelihood,3,8>;
 
 template<typename ContainerType, typename HistType, typename BinnerType>
   void bin(const ContainerType& data, HistType& hist, const BinnerType& binner){
@@ -342,6 +346,10 @@ class Sterilizer {
 	minimizer.minimize(BFGS_Function<LikelihoodType>(likelihood));
       return succeeded;
     };
+
+
+
+
 
   public:
     // set functions
