@@ -164,7 +164,9 @@ struct SterileNuParams {
 };
 
 struct simpleLocalDataWeighter{
-   double operator()(const Event& e) const{ return(e.cachedWeight); }
+   double operator()(const Event& e) const{ 
+     std::cout<<e.cachedWeight<<std::endl;
+     return(e.cachedWeight); }
 };
 
 using namespace nusquids;
