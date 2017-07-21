@@ -408,6 +408,12 @@ namespace likelihood{
 		return(FixedSizePriorSet<PriorTypes...>(priors...));
 	}
 	
+	struct simpleDataWeighter{
+	  using result_type=double;
+	  template<typename Event>
+	  result_type operator()(const Event& e) const{ return(1.0); }
+	};
+
 	// fundamental wrapper object for setting up likelihood fits for models by comparing observed data
 	// events to simulated events
 	template<typename Event, typename DataWeighter, typename SimulationWeighterConstructor, typename CPrior, typename LFunc, int DataDimension, int MaxDerivativeDimension=-1>
