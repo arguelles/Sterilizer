@@ -53,7 +53,7 @@ struct Priors {
   float crSlopeCenter=0.0;
   float crSlopeWidth=0.05;
   float domEffCenter=0.1;
-  float domEffWidth=0.1;
+  float domEffWidth=100.0;
   float piKRatioCenter=1.0;
   float piKRatioWidth=0.1;
   float nuNubarRatioCenter=1.0;
