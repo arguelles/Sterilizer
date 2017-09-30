@@ -10,7 +10,7 @@ int main(int argc, char* argv[]){
 
 
   dp.squids_files_path="/data/user/bjones/Sterilizer/Sterilizer/test_data/";
-  sp.ReadCompact=false;
+  sp.readCompact=false;
 
   //Make the object
   std::shared_ptr<Sterilizer> ster = std::make_shared<Sterilizer>(dp, sp, snp);

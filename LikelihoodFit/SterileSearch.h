@@ -145,7 +145,7 @@ struct SteeringParams {
   std::string xs_model_name="";
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
-  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
+  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600*7}};
   bool fastMode=false;
   SteeringParams(){};
 };
@@ -296,6 +296,7 @@ class Sterilizer {
     marray<double,2> SpitExpectation( std::vector<double> nuisance) const;
     std::vector<double> PullBinEdges(int dim, const  HistType& h) const;
     void SetupAsimov(std::vector<double> Nuisance);
+    double SetupAsimovForAlternativeHypothesis(std::vector<double> nuisance, SterileNuParams snp_dc);
     void SetupFastMode();
 
   public:
@@ -306,6 +307,7 @@ class Sterilizer {
     marray<double,2> SpitExpectation(Nuisance nuisance) const;
     double Swallow(marray<double,2> Data);
     bool SetupAsimov(Nuisance nuisance);
+    double SetupAsimovForAlternativeHypothesis(Nuisance nuisance, SterileNuParams snp_dc);
     double SetupDataChallenge(int seed, Nuisance nuisance_dc, SterileNuParams snp_dc);
 
     // Methods to get histogram binning
