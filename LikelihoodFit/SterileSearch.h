@@ -135,6 +135,7 @@ struct SteeringParams {
   bool onePromptFitsAll = true;
   bool useFactorization = false;
   bool useBurnSample=false;
+  bool calculate_nusquids_on_the_fly = false;
   std::string simToLoad="nufsgen_mie_0_99";
   bool quiet=false;
   bool generate_nusquids_file=false;
@@ -145,7 +146,7 @@ struct SteeringParams {
   std::string xs_model_name="";
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
-  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600*7}};
+  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600*7*1.2}};
   bool fastMode=false;
   SteeringParams(){};
 };
@@ -235,7 +236,7 @@ class Sterilizer {
     bool data_loaded_ = (false);
     bool likelihood_problem_constructed_ = (false);
     bool simulation_initialized_ = (false);
-    bool fastmode_constructed_=(false);
+    bool fastmode_constructed_= (false);
 
     // DOM efficiency splines
     std::map<unsigned int,std::shared_ptr<Splinetable>> domEffConv_;
@@ -338,7 +339,6 @@ class Sterilizer {
     double EvalLLH(Nuisance nuisance) const;
     FitResult MinLLH() const;
     void SetSterileNuParams(SterileNuParams snp);
-
   private:
 
     // Nasty template part of fit function

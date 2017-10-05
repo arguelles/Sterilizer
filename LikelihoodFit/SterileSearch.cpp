@@ -283,19 +283,22 @@ void Sterilizer::ConstructFluxWeighter(){
                                                            CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_kaon+"_neutrino_spline.fits"),
                                                            CheckedFilePath(dataPaths_.flux_splines_path+atmospheric_model_kaon+"_antineutrino_spline.fits"));
   } else {
-      std::string flux_pion_filename = "pion_atmospheric_"+sterile_neutrino_model_identifier;
-      std::string flux_kaon_filename = "kaon_atmospheric_"+sterile_neutrino_model_identifier;
-      flux_pion_filename+="_"+steeringParams_.modelName;
-      flux_kaon_filename+="_"+steeringParams_.modelName;
+    std::string flux_pion_filename = "pion_atmospheric_"+sterile_neutrino_model_identifier;
+    std::string flux_kaon_filename = "kaon_atmospheric_"+sterile_neutrino_model_identifier;
+    flux_pion_filename+="_"+steeringParams_.modelName;
+    flux_kaon_filename+="_"+steeringParams_.modelName;
 
-      if(dataPaths_.use_simple_filename)
-	{
-	  flux_pion_filename = "pion_"+std::to_string(sterileNuParams_.modelId);
-	  flux_kaon_filename = "kaon_"+std::to_string(sterileNuParams_.modelId);
-	}
+    if(dataPaths_.use_simple_filename){
+      flux_pion_filename = "pion_"+std::to_string(sterileNuParams_.modelId);
+      flux_kaon_filename = "kaon_"+std::to_string(sterileNuParams_.modelId);
+    }
 
+    if(steeringParams_.calculate_nusquids_on_the_fly){
+      ConstructNuSQuIDSObjects();
+    } else {
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5"));
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5"));
+    }
   }
   std::string PromptPath;
   if(steeringParams_.onePromptFitsAll)
