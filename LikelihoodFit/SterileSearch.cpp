@@ -9,8 +9,8 @@ namespace SterileSearch {
 
 Sterilizer::Sterilizer(DataPaths dataPaths, SteeringParams steeringParams, SterileNuParams snp):
   steeringParams_(steeringParams),dataPaths_(dataPaths),sterileNuParams_(snp),
-  nus_atm_pion_(nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)),
-  nus_atm_kaon_(nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)){
+  nus_atm_pion_(nuSQUIDSAtm<>(linspace(-1.,0.2,40),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)),
+  nus_atm_kaon_(nuSQUIDSAtm<>(linspace(-1.,0.2,40),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true)){
 
   if(!steeringParams_.quiet) std::cout<<"Sterilizer constructor: checking paths" <<std::endl;
   CheckDataPaths(dataPaths_);
@@ -295,6 +295,8 @@ void Sterilizer::ConstructFluxWeighter(){
 
     if(steeringParams_.calculate_nusquids_on_the_fly){
       ConstructNuSQuIDSObjects();
+      fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(std::move(nus_atm_kaon_));
+      fluxPion_ = std::make_shared<LW::SQUIDSFlux>(std::move(nus_atm_pion_));
     } else {
       fluxKaon_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_kaon_filename + ".hdf5"));
       fluxPion_ = std::make_shared<LW::SQUIDSFlux>(CheckedFilePath(dataPaths_.squids_files_path + flux_pion_filename + ".hdf5"));
@@ -482,12 +484,10 @@ marray<double,3> Sterilizer::GetExpectation(Nuisance nuisance) const{
 
 marray<double,3> Sterilizer::GetRealization(std::vector<double> nuisance, int seed) const{
 
-  if(steeringParams_.fastMode && steeringParams_.readCompact)
-    {
-      std::cout<<"This functionality is not available in fast / compact mode!"<<std::endl;
-      assert(0);
-    } 
-
+  if(steeringParams_.fastMode && steeringParams_.readCompact){
+    std::cout<<"This functionality is not available in fast / compact mode!"<<std::endl;
+    assert(0);
+  }
 
   std::mt19937 rng;
   rng.seed(seed);
@@ -1106,11 +1106,8 @@ double Sterilizer::SetupAsimovForAlternativeHypothesis(std::vector<double> nuisa
 void Sterilizer::ConstructNuSQuIDSObjects(){
   using namespace nusquids;
 
-//  nus_atm_kaon_ = nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true);
-//  nus_atm_pion_ = nuSQUIDSAtm<>(linspace(-1.,0.2,50),logspace(1.e2*units.GeV,1.e6*units.GeV,150),numneu,both,true);
-
-  nus_atm_kaon_.Set_TauRegeneration(true);
-  nus_atm_pion_.Set_TauRegeneration(true);
+  nus_atm_kaon_.Set_TauRegeneration(false);
+  nus_atm_pion_.Set_TauRegeneration(false);
 
   nus_atm_kaon_.Set_MixingAngle(0,1,0.563942);
   nus_atm_kaon_.Set_MixingAngle(0,2,0.154085);
@@ -1153,9 +1150,17 @@ void Sterilizer::ConstructNuSQuIDSObjects(){
   nus_atm_kaon_.Set_rel_error(error);
   nus_atm_kaon_.Set_abs_error(error);
 
+  if(not steeringParams_.quiet){
+    nus_atm_kaon_.Set_ProgressBar(true);
+    nus_atm_pion_.Set_ProgressBar(true);
+  } else {
+    nus_atm_kaon_.Set_ProgressBar(false);
+    nus_atm_pion_.Set_ProgressBar(false);
+  }
+
   // read file
-  marray<double,2> input_pion_flux = quickread(dataPaths_.initial_flux_files_path + "/" + "initial_pion_atmopheric_" + steeringParams_.modelName + ".dat");
-  marray<double,2> input_kaon_flux = quickread(dataPaths_.initial_flux_files_path + "/" + "initial_kaon_atmopheric_" + steeringParams_.modelName + ".dat");
+  marray<double,2> input_pion_flux = quickread(CheckedFilePath(dataPaths_.initial_flux_files_path + "/" + "initial_pion_atmopheric_" + steeringParams_.modelName + ".dat"));
+  marray<double,2> input_kaon_flux = quickread(CheckedFilePath(dataPaths_.initial_flux_files_path + "/" + "initial_kaon_atmopheric_" + steeringParams_.modelName + ".dat"));
 
   marray<double,4> inistate_kaon {nus_atm_kaon_.GetNumCos(),nus_atm_kaon_.GetNumE(),2,numneu};
   std::fill(inistate_kaon.begin(),inistate_kaon.end(),0);

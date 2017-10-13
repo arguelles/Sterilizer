@@ -146,7 +146,7 @@ struct SteeringParams {
   std::string xs_model_name="";
   std::vector<unsigned int> years={2011};
   std::map<unsigned int, double> burnSampleLivetime = std::map<unsigned int,double>{{2011,758.59*60*60}};
-  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600*7*1.2}};
+  std::map<unsigned int, double> fullLivetime= std::map<unsigned int,double>{{2011,8249.6*3600}};
   bool fastMode=false;
   SteeringParams(){};
 };
