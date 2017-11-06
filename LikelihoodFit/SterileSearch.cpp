@@ -151,14 +151,9 @@ void Sterilizer::LoadCompact(){
     if(simulation_information==simInfo.end())
       throw std::runtime_error("Could not find " + steeringParams_.simToLoad + " in simulation list");
 
-    std::cout<<"There is a segfault between this line"<<std::endl;
-    std::cout<<std::string(dataPaths_.data_path+simulation_information->second.filename)<<std::endl;
-    std::cout<<CheckedFilePath(std::string(dataPaths_.data_path+simulation_information->second.filename))<<std::endl;
     std::string original_data_file = CheckedFilePath(dataPaths_.data_path+"IC86.h5");
-    std::cout<<" and this one"<<std::endl;
-
     std::string original_simulation_file = CheckedFilePath(dataPaths_.mc_path+(*simulation_information).second.filename);
-    CheckedFilePath(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat");
+
     unsplatData(CheckedFilePath(dataPaths_.compact_file_path+"/"+steeringParams_.simToLoad+"_compact_data.dat"),
         getFileChecksum(original_data_file)+getFileChecksum(original_simulation_file),sample_,mainSimulation_);
 
@@ -375,7 +370,7 @@ void Sterilizer::InitializeSimulationWeights(){
       e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
       e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
-
+      //     std::cout<< e.injectedEnergy<<", " <<e.injectedMuonZenith<<", " <<e.cachedConvPionWeight<<", " <<e.cachedConvKaonWeight<<std::endl;
     }
   };
 
@@ -557,11 +552,12 @@ void Sterilizer::ConstructLikelihoodProblem(Priors pr, Nuisance nuisanceSeed, Nu
   GaussianPrior nanPrior(pr.nuNubarRatioCenter,pr.nuNubarRatioWidth);
   GaussianPrior ZCPrior(0.0,pr.zenithCorrectionMultiplier*GetZenithCorrectionScale());
 
+ 
   auto llhpriors=makePriorSet(normalizationPrior,
 			      positivePrior,
 			      positivePrior,
 			      crSlopePrior,
-			      simple_domEffPrior,
+			      positivePrior,
 			      kaonPrior,
 			      nanPrior,
 			      ZCPrior);
