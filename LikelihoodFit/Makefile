@@ -34,7 +34,7 @@ ICSterile_OBJECT = SterileSearchTestMinimal.o
 
 .PHONY: all clean
 
-all:  SterileSearchTestMinimal 
+all:  SterileSearchTestMinimal SterileSearchRun
 
 clean:
 	rm -rf SterileSearchFit $(ICSterileRemastered_OBJECT) $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
@@ -69,4 +69,5 @@ SterileSearchTestMinimal.o : SterileSearchTestMinimal.cpp $(LIKELIHOOD_HEADERS) 
 SterileSearchTestMinimal : $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT) -o SterileSearchTestMinimal
 
-
+SterileSearchRun: $(ICSterile_HELPER_OBJECTS) $(ICSterile_OBJECT)
+	$(CXX) $(CXXFLAGS) SterileSearchRun.cpp $(LDFLAGS) -lphotospline $(ICSterile_HELPER_OBJECTS) -o SterileSearchRun
