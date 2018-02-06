@@ -553,19 +553,19 @@ namespace likelihood{
 				}
 				
 				auto contribution=likelihoodFunction(observationAmount,expectationWeights);
-				/*{
+				{
 					std::lock_guard<std::mutex> lck(printMtx);
 					DataType expectationAmount=std::accumulate(expectationWeights.begin(),expectationWeights.end(),DataType(0));
-					std::cout << "   obs coords:";
-					for(unsigned int i=0; i<3; i++)
-						std::cout << ' ' << it.getBinEdge(i);
-					std::cout << ' ' << contribution
-					<< ' ' << observationAmount << ' ' << expectationAmount;
-					std::cout << " [";
-					for(const auto& w : expectationWeights)
-						std::cout << ' ' << w;
-					std::cout << ']' << std::endl;
-				}*/
+					//	std::cout << "   obs coords:";
+					//		for(unsigned int i=0; i<3; i++)
+					//				std::cout << ' ' << it.getBinEdge(i);
+					//		std::cout << ' ' << contribution
+					//					<< ' ' << observationAmount << ' ' << expectationAmount;
+					//	std::cout << " [";
+					//			for(const auto& w : expectationWeights)
+					//				std::cout << ' ' << w;
+					//				std::cout << ']' << std::endl;
+				}
 				return(contribution);
 			};
 			auto likelihoodContributionNoObs=[&weighter,&observation,&likelihoodFunction,&printMtx](typename HistogramType::const_iterator it)->DataType{
@@ -716,7 +716,7 @@ namespace likelihood{
 				}
 			}
 			//std::cout << "Total LLH for bins without observations was " << noObsLLH << " for " << nNoObsBins << " bins" << std::endl;
-			noObsLLH/=nNoObsBins;
+			 noObsLLH/=nNoObsBins;
 			//second pass: fill in the (average) shared LLH value in the result histogram
 			for(auto it=simulation.begin(), end=simulation.end(); it!=end; it++){
 				auto obsIt=observation.findBinIterator(it);
@@ -813,7 +813,7 @@ namespace likelihood{
 			
 			return(nTerms);
 		}
-		
+	
 		template<typename DataType>
 		DataType evaluateLikelihood(const std::vector<DataType>& rawParams, bool includePriors=true) const{
 			std::vector<DataType> params;
@@ -847,7 +847,7 @@ namespace likelihood{
 			}
 			//std::cout << "(prior=" << cPrior << ") ";
 			cPrior=log(cPrior); //convert to log(P) for rest of calculation
-			
+			//	std::cout<<" cPrior " << cPrior<<std::endl;
 			//compute the actual llh for every necessary discrete nuisance index
 			//(of which there will only be one unless we've been called by a minimizer)
 			//and keep the best value
@@ -1050,6 +1050,8 @@ namespace likelihood{
 		template<typename DataType>
 		DataType operator()(DataType x) const{
 			DataType z=(x-mean)/stddev;
+			//		std::cout<<"Z for this prior " << z<<std::endl;
+			//			std::cout<<"Contrib from this prior " << norm*exp(-z*z/2)<<std::endl;
 			return(norm*exp(-z*z/2));
 		}
 	};
