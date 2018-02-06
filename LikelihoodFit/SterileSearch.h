@@ -237,6 +237,7 @@ class Sterilizer {
     bool likelihood_problem_constructed_ = (false);
     bool simulation_initialized_ = (false);
     bool fastmode_constructed_= (false);
+    bool simplified_simulation_= (false);
 
     // DOM efficiency splines
     std::map<unsigned int,std::shared_ptr<Splinetable>> domEffConv_;
@@ -263,6 +264,7 @@ class Sterilizer {
     // Functions to load and unload data
     void LoadData();
     void LoadMC();
+    void LoadMCFromTextFile();
     void LoadCompact();
     void LoadFastCompact();
     void ClearData();

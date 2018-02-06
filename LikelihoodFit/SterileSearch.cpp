@@ -144,6 +144,36 @@ void Sterilizer::LoadMC(){
     simulation_loaded_=true;
 }
 
+void Sterilizer::LoadMCFromTextFile(){
+  if (!steeringParams_.quiet)
+    std::cout << "Loading MC from TXT file data." << std::endl;
+
+  auto mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
+  mainSimulation_.clear();
+
+  for (unsigned int irow = 0; irow < mc_dump.extent(0); irow++){
+    Event evt;
+
+    if(mc_dump[irow][0] == 14)
+      evt.primaryType = particleType::NuMu;
+    else if(mc_dump[irow][0] == -14)
+      evt.primaryType = particleType::NuMuBar;
+    else
+      throw std::runtime_error( "what particle" );
+    evt.injectedEnergy=mc_dump[irow][1]; // neutrino energy
+    evt.injectedMuonZenith=mc_dump[irow][2]; // neutrino direction
+    evt.energy=mc_dump[irow][3]; // reconstructed energy
+    evt.zenith=mc_dump[irow][4]; // reconstructed zenith
+    evt.cachedWeight=mc_dump[irow][5]; // one event is one event
+    evt.year=static_cast<unsigned int>(2011); // year of the event
+
+    mainSimulation_.push_back(evt); // push it
+  }
+
+  simulation_loaded_=true;
+  simplified_simulation_=true;
+}
+
 void Sterilizer::LoadCompact(){
   std::map<std::string,run> simInfo=GetSimInfo(dataPaths_.mc_path);
   try{
