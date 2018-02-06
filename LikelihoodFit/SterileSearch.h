@@ -139,6 +139,7 @@ struct SteeringParams {
   std::string simToLoad="nufsgen_mie_0_99";
   bool quiet=false;
   bool generate_nusquids_file=false;
+  bool use_simplified_simulation=false;
   size_t evalThreads=1;
   std::string modelName = "HondaGaisser";
   std::string oversizeFunction="NullCorrection";

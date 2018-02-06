@@ -99,6 +99,13 @@ void Sterilizer::LoadMC(){
 
   if(not dom_efficiency_splines_constructed_)
     throw std::runtime_error("MC cannot be loaded until dom splines are loaded");
+
+
+  if(steeringParams_.use_simplified_simulation){
+    LoadMCFromTextFile();
+    return;
+  }
+
     std::map<unsigned int,double> livetime;
     if(!steeringParams_.useBurnSample)
       livetime=steeringParams_.fullLivetime;
@@ -402,9 +409,15 @@ void Sterilizer::InitializeSimulationWeights(){
       static_cast<int>(e.year)};
 
       double osweight = osw_.EvaluateOversizeCorrection(e.energy, e.zenith);
-      e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
-      e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
-      e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      if( not simplified_simulation_ ) {
+        e.cachedConvPionWeight=(*pionFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+        e.cachedConvKaonWeight=(*kaonFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+        e.cachedPromptWeight=(*promptFluxWeighter_)(lw_e)*e.cachedLivetime*osweight;
+      } else {
+        e.cachedConvPionWeight=(*fluxPion_)(lw_e)*e.cachedWeight*e.cachedLivetime*osweight;
+        e.cachedConvKaonWeight=(*fluxKaon_)(lw_e)*e.cachedWeight*e.cachedLivetime*osweight;
+        e.cachedPromptWeight=(*fluxPrompt_)(lw_e)*e.cachedWeight*e.cachedLivetime*osweight;
+      }
       //     std::cout<< e.injectedEnergy<<", " <<e.injectedMuonZenith<<", " <<e.cachedConvPionWeight<<", " <<e.cachedConvKaonWeight<<std::endl;
     }
   };
