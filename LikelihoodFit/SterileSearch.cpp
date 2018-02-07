@@ -155,8 +155,12 @@ void Sterilizer::LoadMCFromTextFile(){
   if (!steeringParams_.quiet)
     std::cout << "Loading MC from TXT file data." << std::endl;
 
-  auto mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
+  nusquids::marray<double,2> mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
   mainSimulation_.clear();
+
+  if(!steeringParams_.quiet)
+    std::cout << "dump extent " << mc_dump.extent(0) << " " << mc_dump.extent(1) << std::endl;
+  assert(mc_dump.extent(0) > 0 && mc_dump.extent(1) > 0);
 
   for (unsigned int irow = 0; irow < mc_dump.extent(0); irow++){
     Event evt;
