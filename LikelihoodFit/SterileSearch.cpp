@@ -172,8 +172,8 @@ void Sterilizer::LoadMCFromTextFile(){
     evt.energy=mc_dump[irow][3]; // reconstructed energy
     evt.zenith=mc_dump[irow][4]; // reconstructed zenith
     evt.cachedWeight=mc_dump[irow][5]; // one event is one event
-    evt.year=static_cast<unsigned int>(2011); // year of the event
 
+    evt.year=2011; // year of the event
     mainSimulation_.push_back(evt); // push it
   }
 
