@@ -177,6 +177,8 @@ void Sterilizer::LoadMCFromTextFile(){
     mainSimulation_.push_back(evt); // push it
   }
 
+  if(!steeringParams_.quiet)
+    std::cout << "Loaded " << mainSimulation_.size() << " events in main simulation set" << std::endl;
   simulation_loaded_=true;
   simplified_simulation_=true;
 }
