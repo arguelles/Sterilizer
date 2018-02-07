@@ -154,6 +154,11 @@ void Sterilizer::LoadMC(){
 void Sterilizer::LoadMCFromTextFile(){
   if (!steeringParams_.quiet)
     std::cout << "Loading MC from TXT file data." << std::endl;
+  std::map<unsigned int,double> livetime;
+  if(!steeringParams_.useBurnSample)
+    livetime=steeringParams_.fullLivetime;
+  else
+    livetime=steeringParams_.burnSampleLivetime;
 
   nusquids::marray<double,2> mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
   mainSimulation_.clear();
@@ -171,13 +176,17 @@ void Sterilizer::LoadMCFromTextFile(){
       evt.primaryType = particleType::NuMuBar;
     else
       throw std::runtime_error( "what particle" );
+
+    double num_events = 1.e5*77510; // check me
     evt.injectedEnergy=mc_dump[irow][1]; // neutrino energy
     evt.injectedMuonZenith=mc_dump[irow][2]; // neutrino direction
     evt.energy=mc_dump[irow][3]; // reconstructed energy
     evt.zenith=mc_dump[irow][4]; // reconstructed zenith
-    evt.cachedWeight=mc_dump[irow][5]; // one event is one event
+    evt.cachedWeight=mc_dump[irow][5]/num_events; // one event is one event
 
     evt.year=2011; // year of the event
+	  evt.cachedLivetime=livetime.find(evt.year)->second;
+
     mainSimulation_.push_back(evt); // push it
   }
 
@@ -424,7 +433,7 @@ void Sterilizer::InitializeSimulationWeights(){
         e.cachedConvKaonWeight=(*fluxKaon_)(lw_e)*e.cachedWeight*e.cachedLivetime*osweight;
         e.cachedPromptWeight=(*fluxPrompt_)(lw_e)*e.cachedWeight*e.cachedLivetime*osweight;
       }
-      //     std::cout<< e.injectedEnergy<<", " <<e.injectedMuonZenith<<", " <<e.cachedConvPionWeight<<", " <<e.cachedConvKaonWeight<<std::endl;
+       //std::cout<< e.injectedEnergy<<", " <<e.injectedMuonZenith<<", " << e.cachedWeight << ", " <<e.cachedConvPionWeight<<", " <<e.cachedConvKaonWeight << ", " << e.cachedPromptWeight<<std::endl;
     }
   };
 
