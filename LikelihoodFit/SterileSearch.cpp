@@ -162,7 +162,7 @@ void Sterilizer::LoadMCFromTextFile(){
 
   unsigned int simYear = 2011;
   double unshadowedFraction = 0.99; // check me
-  double num_events = 1.e5*77510; // check me
+  double num_events = 1.e4*77510; // check me
 
 	domEffObject_=new simpleEffRate<Event>(domEffConv_[simYear].get(),unshadowedFraction);
   nusquids::marray<double,2> mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
