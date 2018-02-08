@@ -182,6 +182,9 @@ void Sterilizer::LoadMCFromTextFile(){
     else
       throw std::runtime_error( "what particle" );
 
+    evt.year=simYear; // year of the event
+	  evt.cachedLivetime=livetime.find(simYear)->second;
+
     evt.injectedEnergy=mc_dump[irow][1]; // neutrino energy
     evt.injectedMuonZenith=mc_dump[irow][2]; // neutrino direction
     evt.energy=mc_dump[irow][3]; // reconstructed energy
@@ -193,9 +196,6 @@ void Sterilizer::LoadMCFromTextFile(){
 	  evt.cachedPromptWeight=0;
 
 	  domEffObject_->setCache(evt);
-
-    evt.year=simYear; // year of the event
-	  evt.cachedLivetime=livetime.find(evt.year)->second;
 
     mainSimulation_.push_back(evt); // push it
   }
