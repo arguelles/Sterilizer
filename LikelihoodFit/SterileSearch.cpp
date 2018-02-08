@@ -160,6 +160,11 @@ void Sterilizer::LoadMCFromTextFile(){
   else
     livetime=steeringParams_.burnSampleLivetime;
 
+  unsigned int simYear = 2011;
+  double unshadowedFraction = 0.99; // check me
+  double num_events = 1.e5*77510; // check me
+
+	domEffObject_=new simpleEffRate<Event>(domEffConv_[simYear].get(),unshadowedFraction);
   nusquids::marray<double,2> mc_dump= nusquids::quickread(CheckedFilePath(dataPaths_.data_path+"mc_dump.dat"));
   mainSimulation_.clear();
 
@@ -177,14 +182,19 @@ void Sterilizer::LoadMCFromTextFile(){
     else
       throw std::runtime_error( "what particle" );
 
-    double num_events = 1.e5*77510; // check me
     evt.injectedEnergy=mc_dump[irow][1]; // neutrino energy
     evt.injectedMuonZenith=mc_dump[irow][2]; // neutrino direction
     evt.energy=mc_dump[irow][3]; // reconstructed energy
     evt.zenith=mc_dump[irow][4]; // reconstructed zenith
     evt.cachedWeight=mc_dump[irow][5]/num_events; // one event is one event
 
-    evt.year=2011; // year of the event
+	  evt.cachedConvPionWeight=0;
+	  evt.cachedConvKaonWeight=0;
+	  evt.cachedPromptWeight=0;
+
+	  domEffObject_->setCache(evt);
+
+    evt.year=simYear; // year of the event
 	  evt.cachedLivetime=livetime.find(evt.year)->second;
 
     mainSimulation_.push_back(evt); // push it
