@@ -40,6 +40,12 @@ int main(int argc, char* argv[]){
   std::cout << result.likelihood << std::endl;
 
   std::cout << result.params.normalization << std::endl;
+  std::cout << result.params.crSlope << std::endl;
+  std::cout << result.params.domEfficiency << std::endl;
+  std::cout << result.params.piKRatio << std::endl;
+  std::cout << result.params.nuNubarRatio << std::endl;
+  std::cout << result.params.zenithCorrection << std::endl;
+
   /*
   auto expect_it = expect.begin();
   auto extents = expect.get_extents();
